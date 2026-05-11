@@ -8,43 +8,39 @@ const { init: initDb } = require('./db');
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// Init database
-initDb();
+async function start() {
+  await initDb();
 
-// Middleware
-app.use(helmet());
-app.use(cors({ origin: '*', credentials: true }));
-app.use(express.json());
+  app.use(helmet());
+  app.use(cors({ origin: '*', credentials: true }));
+  app.use(express.json());
 
-// Rate limiting
-const registerLimiter = rateLimit({ windowMs: 60000, max: 3, message: { message: '注册太频繁，请稍后再试' } });
-const loginLimiter = rateLimit({ windowMs: 60000, max: 10, message: { message: '登录太频繁，请稍后再试' } });
+  const registerLimiter = rateLimit({ windowMs: 60000, max: 3, message: { message: '注册太频繁，请稍后再试' } });
+  const loginLimiter = rateLimit({ windowMs: 60000, max: 10, message: { message: '登录太频繁，请稍后再试' } });
 
-// Routes
-app.use('/api/auth/register', registerLimiter);
-app.use('/api/auth/login', loginLimiter);
-app.use('/api/auth', require('./routes/auth'));
-app.use('/api/weather', require('./routes/weather'));
+  app.use('/api/auth/register', registerLimiter);
+  app.use('/api/auth/login', loginLimiter);
+  app.use('/api/auth', require('./routes/auth'));
+  app.use('/api/weather', require('./routes/weather'));
+  app.use('/api/mood', require('./routes/mood'));
+  app.use('/api/diary', require('./routes/diary'));
+  app.use('/api/checkin', require('./routes/checkin'));
+  app.use('/api/friends', require('./routes/friends'));
+  app.use('/api/treehole', require('./routes/treehole'));
+  app.use('/api/capsule', require('./routes/capsule'));
+  app.use('/api/poems', require('./routes/poems'));
+  app.use('/api/wallpapers', (_, res) => res.json({ wallpapers: [] }));
 
-// Placeholder routes (will be built out)
-app.use('/api/mood', require('./routes/mood'));
-app.use('/api/diary', require('./routes/diary'));
-app.use('/api/checkin', require('./routes/checkin'));
-app.use('/api/friends', require('./routes/friends'));
-app.use('/api/treehole', require('./routes/treehole'));
-app.use('/api/capsule', require('./routes/capsule'));
-app.use('/api/poems', require('./routes/poems'));
-app.use('/api/wallpapers', (_, res) => res.json({ wallpapers: [] }));
+  app.get('/api/health', (_, res) => res.json({ status: 'ok', time: new Date().toISOString() }));
 
-// Health check
-app.get('/api/health', (_, res) => res.json({ status: 'ok', time: new Date().toISOString() }));
+  app.use((err, _req, res, _next) => {
+    console.error(err);
+    res.status(500).json({ message: '服务器内部错误' });
+  });
 
-// Error handler
-app.use((err, _req, res, _next) => {
-  console.error(err);
-  res.status(500).json({ message: '服务器内部错误' });
-});
+  app.listen(PORT, () => {
+    console.log(`心晴日记 API running on port ${PORT}`);
+  });
+}
 
-app.listen(PORT, () => {
-  console.log(`心晴日记 API running on port ${PORT}`);
-});
+start();

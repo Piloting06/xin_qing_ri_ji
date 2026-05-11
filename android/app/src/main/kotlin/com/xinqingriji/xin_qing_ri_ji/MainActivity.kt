@@ -1,0 +1,5 @@
+package com.xinqingriji.xin_qing_ri_ji
+
+import io.flutter.embedding.android.FlutterActivity
+
+class MainActivity : FlutterActivity()

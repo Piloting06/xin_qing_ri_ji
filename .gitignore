@@ -1,0 +1,10 @@
+.metadata
+build/
+.dart_tool/
+*.lock
+*.g.dart
+*.freezed.dart
+*.db
+*.db-journal
+.env
+node_modules/

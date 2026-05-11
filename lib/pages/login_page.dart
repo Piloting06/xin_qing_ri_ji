@@ -73,7 +73,7 @@ class _LoginPageState extends State<LoginPage>
       setState(() => _error = e.message);
       _shake();
     } catch (e) {
-      setState(() => _error = '网络连接失败，请检查网络');
+      setState(() => _error = '网络错误: ${e.toString().substring(0, e.toString().length.clamp(0, 60))}');
       _shake();
     } finally {
       if (mounted) setState(() => _loading = false);

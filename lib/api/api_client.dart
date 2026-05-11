@@ -1,0 +1,375 @@
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
+import '../constants/keys.dart';
+
+class Api {
+  static const String baseUrl = 'http://114.55.138.55:8888/api';
+  static const Duration timeout = Duration(seconds: 15);
+
+  static Future<Map<String, String>> _headers({bool auth = true}) async {
+    final headers = <String, String>{'Content-Type': 'application/json'};
+    if (auth) {
+      final prefs = await SharedPreferences.getInstance();
+      final t = prefs.getString(StorageKeys.token) ?? '';
+      if (t.isNotEmpty) headers['Authorization'] = 'Bearer $t';
+    }
+    return headers;
+  }
+
+  static Future<Map<String, dynamic>> _handle(http.Response res) async {
+    if (res.statusCode == 401) {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(StorageKeys.token);
+      throw ApiException('登录已过期，请重新登录', 401);
+    }
+    if (res.statusCode >= 400) {
+      String msg = '请求失败';
+      try {
+        final body = json.decode(res.body);
+        if (body is Map && body['message'] != null) msg = body['message'];
+      } catch (_) {}
+      throw ApiException(msg, res.statusCode);
+    }
+    if (res.body.isEmpty) return {};
+    return Map<String, dynamic>.from(json.decode(res.body));
+  }
+
+  // ── Auth ──
+  static Future<Map<String, dynamic>> register(String phone, String password,
+      {String? questionType, String? question, String? answer}) async {
+    final res = await http
+        .post(Uri.parse('$baseUrl/auth/register'),
+            headers: await _headers(auth: false),
+            body: json.encode({
+              'phone': phone,
+              'password': password,
+              'security_question_type': questionType,
+              'security_question': question,
+              'security_answer': answer,
+            }))
+        .timeout(timeout);
+    final data = await _handle(res);
+    if (data['token'] != null) {
+      final prefs = await SharedPreferences.getInstance();
+      prefs.setString(StorageKeys.token, data['token']);
+      prefs.setString(StorageKeys.phone, phone);
+      if (data['display_name'] != null) {
+        prefs.setString(StorageKeys.displayName, data['display_name']);
+      }
+    }
+    return data;
+  }
+
+  static Future<Map<String, dynamic>> login(
+      String phone, String password) async {
+    final res = await http
+        .post(Uri.parse('$baseUrl/auth/login'),
+            headers: await _headers(auth: false),
+            body: json.encode({'phone': phone, 'password': password}))
+        .timeout(timeout);
+    final data = await _handle(res);
+    if (data['token'] != null) {
+      final prefs = await SharedPreferences.getInstance();
+      prefs.setString(StorageKeys.token, data['token']);
+      prefs.setString(StorageKeys.phone, phone);
+      if (data['display_name'] != null) {
+        prefs.setString(StorageKeys.displayName, data['display_name']);
+      }
+    }
+    return data;
+  }
+
+  static Future<void> changePassword(
+      String oldPassword, String newPassword) async {
+    final res = await http
+        .post(Uri.parse('$baseUrl/auth/change-password'),
+            headers: await _headers(),
+            body: json
+                .encode({'old_password': oldPassword, 'new_password': newPassword}))
+        .timeout(timeout);
+    await _handle(res);
+  }
+
+  static Future<void> deleteAccount() async {
+    final res = await http
+        .post(Uri.parse('$baseUrl/auth/delete-account'),
+            headers: await _headers())
+        .timeout(timeout);
+    await _handle(res);
+  }
+
+  static Future<void> updateDisplayName(String name) async {
+    final prefs = await SharedPreferences.getInstance();
+    final res = await http
+        .post(Uri.parse('$baseUrl/auth/change-username'),
+            headers: await _headers(),
+            body: json.encode({'username': name}))
+        .timeout(timeout);
+    await _handle(res);
+    prefs.setString(StorageKeys.displayName, name);
+  }
+
+  // ── Weather ──
+  static Future<Map<String, dynamic>> getWeather(
+      double lat, double lon) async {
+    final res = await http
+        .get(Uri.parse('$baseUrl/weather?lat=$lat&lon=$lon'),
+            headers: await _headers())
+        .timeout(timeout);
+    return await _handle(res);
+  }
+
+  static Future<Map<String, dynamic>> searchWeather(String query) async {
+    final res = await http
+        .get(Uri.parse('$baseUrl/weather/search?q=$query'),
+            headers: await _headers())
+        .timeout(timeout);
+    return await _handle(res);
+  }
+
+  static Future<Map<String, dynamic>> getLocation() async {
+    final res = await http
+        .get(Uri.parse('$baseUrl/location'), headers: await _headers())
+        .timeout(timeout);
+    return await _handle(res);
+  }
+
+  // ── Mood ──
+  static Future<Map<String, dynamic>> saveMood(String date, int score,
+      String text, List<String> tags, List<String> activities) async {
+    final res = await http
+        .post(Uri.parse('$baseUrl/mood'),
+            headers: await _headers(),
+            body: json.encode({
+              'date': date,
+              'emotion_type': score,
+              'emotion_tags': tags.join(','),
+              'notes': text,
+            }))
+        .timeout(timeout);
+    return await _handle(res);
+  }
+
+  static Future<Map<String, dynamic>?> getMood(String date) async {
+    final res = await http
+        .get(Uri.parse('$baseUrl/mood?date=$date'), headers: await _headers())
+        .timeout(timeout);
+    try {
+      return await _handle(res);
+    } on ApiException catch (e) {
+      if (e.statusCode == 404) return null;
+      rethrow;
+    }
+  }
+
+  static Future<Map<String, dynamic>> getAllMoods() async {
+    final res = await http
+        .get(Uri.parse('$baseUrl/mood/all'), headers: await _headers())
+        .timeout(timeout);
+    return await _handle(res);
+  }
+
+  static Future<Map<String, dynamic>> aiRespond(
+      int emotionType, String notes, String weatherCode) async {
+    final res = await http
+        .post(Uri.parse('$baseUrl/mood/ai-respond'),
+            headers: await _headers(),
+            body: json.encode({
+              'emotion_type': emotionType,
+              'notes': notes,
+              'weather_code': weatherCode,
+            }))
+        .timeout(const Duration(seconds: 30));
+    return await _handle(res);
+  }
+
+  // ── Diary ──
+  static Future<Map<String, dynamic>> saveDiary(
+      String date, String title, String content, int? moodId) async {
+    final res = await http
+        .post(Uri.parse('$baseUrl/diary'),
+            headers: await _headers(),
+            body: json.encode(
+                {'date': date, 'title': title, 'content': content, 'mood_id': moodId}))
+        .timeout(timeout);
+    return await _handle(res);
+  }
+
+  static Future<Map<String, dynamic>?> getDiary(String date) async {
+    final res = await http
+        .get(Uri.parse('$baseUrl/diary?date=$date'), headers: await _headers())
+        .timeout(timeout);
+    try {
+      return await _handle(res);
+    } on ApiException catch (e) {
+      if (e.statusCode == 404) return null;
+      rethrow;
+    }
+  }
+
+  static Future<Map<String, dynamic>> searchDiary(String query) async {
+    final res = await http
+        .get(Uri.parse('$baseUrl/diary/search?q=$query'),
+            headers: await _headers())
+        .timeout(timeout);
+    return await _handle(res);
+  }
+
+  // ── Checkin ──
+  static Future<Map<String, dynamic>> checkin() async {
+    final res = await http
+        .post(Uri.parse('$baseUrl/checkin'),
+            headers: await _headers(), body: '{}')
+        .timeout(timeout);
+    return await _handle(res);
+  }
+
+  static Future<Map<String, dynamic>> getCheckinStatus() async {
+    final res = await http
+        .get(Uri.parse('$baseUrl/checkin/status'), headers: await _headers())
+        .timeout(timeout);
+    return await _handle(res);
+  }
+
+  static Future<Map<String, dynamic>> getTodayCard() async {
+    final res = await http
+        .get(Uri.parse('$baseUrl/checkin/card/today'),
+            headers: await _headers())
+        .timeout(timeout);
+    return await _handle(res);
+  }
+
+  // ── Friends ──
+  static Future<Map<String, dynamic>> addFriend(String phone) async {
+    final res = await http
+        .post(Uri.parse('$baseUrl/friends/add'),
+            headers: await _headers(),
+            body: json.encode({'phone': phone}))
+        .timeout(timeout);
+    return await _handle(res);
+  }
+
+  static Future<Map<String, dynamic>> getFriendRequests() async {
+    final res = await http
+        .get(Uri.parse('$baseUrl/friends/requests'),
+            headers: await _headers())
+        .timeout(timeout);
+    return await _handle(res);
+  }
+
+  static Future<void> respondFriend(int id, String status,
+      {bool canViewMood = false}) async {
+    final res = await http
+        .post(Uri.parse('$baseUrl/friends/respond'),
+            headers: await _headers(),
+            body: json.encode(
+                {'id': id, 'status': status, 'can_view_mood': canViewMood}))
+        .timeout(timeout);
+    await _handle(res);
+  }
+
+  static Future<Map<String, dynamic>> getFriendList() async {
+    final res = await http
+        .get(Uri.parse('$baseUrl/friends/list'), headers: await _headers())
+        .timeout(timeout);
+    return await _handle(res);
+  }
+
+  static Future<Map<String, dynamic>> getFriendMood(int friendId) async {
+    final res = await http
+        .get(Uri.parse('$baseUrl/friends/$friendId/mood'),
+            headers: await _headers())
+        .timeout(timeout);
+    return await _handle(res);
+  }
+
+  // ── Treehole ──
+  static Future<Map<String, dynamic>> getTreeholeMessages(
+      {int page = 1}) async {
+    final res = await http
+        .get(Uri.parse('$baseUrl/treehole?page=$page'),
+            headers: await _headers())
+        .timeout(timeout);
+    return await _handle(res);
+  }
+
+  static Future<void> postTreehole(String content) async {
+    final res = await http
+        .post(Uri.parse('$baseUrl/treehole'),
+            headers: await _headers(),
+            body: json.encode({'content': content}))
+        .timeout(timeout);
+    await _handle(res);
+  }
+
+  static Future<void> interactTreehole(int messageId, String type) async {
+    final res = await http
+        .post(Uri.parse('$baseUrl/treehole/$messageId/interact'),
+            headers: await _headers(),
+            body: json.encode({'interaction_type': type}))
+        .timeout(timeout);
+    await _handle(res);
+  }
+
+  // ── Capsule ──
+  static Future<void> createCapsule(String content, String openDate) async {
+    final res = await http
+        .post(Uri.parse('$baseUrl/capsule'),
+            headers: await _headers(),
+            body: json.encode({'content': content, 'open_date': openDate}))
+        .timeout(timeout);
+    await _handle(res);
+  }
+
+  static Future<Map<String, dynamic>> getCapsuleList() async {
+    final res = await http
+        .get(Uri.parse('$baseUrl/capsule/list'), headers: await _headers())
+        .timeout(timeout);
+    return await _handle(res);
+  }
+
+  static Future<Map<String, dynamic>> openCapsule(int id) async {
+    final res = await http
+        .get(Uri.parse('$baseUrl/capsule/$id'), headers: await _headers())
+        .timeout(timeout);
+    return await _handle(res);
+  }
+
+  // ── Poems ──
+  static Future<Map<String, dynamic>> matchPoem(
+      int emotionType, String weatherType) async {
+    final res = await http
+        .get(
+            Uri.parse(
+                '$baseUrl/poems/match?emotion=$emotionType&weather=$weatherType'),
+            headers: await _headers())
+        .timeout(timeout);
+    return await _handle(res);
+  }
+
+  // ── Wallpapers ──
+  static Future<Map<String, dynamic>> getUnlockedWallpapers() async {
+    final res = await http
+        .get(Uri.parse('$baseUrl/wallpapers/unlocked'),
+            headers: await _headers())
+        .timeout(timeout);
+    return await _handle(res);
+  }
+
+  static Future<Map<String, dynamic>> checkNewWallpapers() async {
+    final res = await http
+        .get(Uri.parse('$baseUrl/wallpapers/check'),
+            headers: await _headers())
+        .timeout(timeout);
+    return await _handle(res);
+  }
+}
+
+class ApiException implements Exception {
+  final String message;
+  final int statusCode;
+  ApiException(this.message, this.statusCode);
+  @override
+  String toString() => message;
+}

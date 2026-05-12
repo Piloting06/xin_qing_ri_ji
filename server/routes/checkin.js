@@ -6,8 +6,8 @@ const router = express.Router();
 router.post('/', auth, (req, res) => {
   try {
     const today = new Date().toISOString().slice(0, 10);
-    const existing = db.prepare('SELECT id FROM checkins WHERE user_id = ? AND date = ?').get(req.userId, today);
-    if (existing) return res.json({ consecutive_days: 0, message: '今天已签到' });
+    const existing = db.prepare('SELECT id, consecutive_days FROM checkins WHERE user_id = ? AND date = ?').get(req.userId, today);
+    if (existing) return res.json({ consecutive_days: existing.consecutive_days, message: '今天已签到' });
     const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
     const prev = db.prepare('SELECT consecutive_days FROM checkins WHERE user_id = ? AND date = ?').get(req.userId, yesterday);
     const consecutive = (prev?.consecutive_days || 0) + 1;

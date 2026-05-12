@@ -305,70 +305,27 @@ class _HomePageState extends State<HomePage> {
               ],
               // City search
               if (_showCitySearch) _buildCitySearch(theme),
+              // 日记快捷入口
               const SizedBox(height: 24),
-              // Check-in button
               Center(
-                child: Column(children: [
-                  FeatureTip(
-                    tipKey: 'checkin',
-                    text: '每天签到，连续7天解锁限定壁纸～',
-                    offset: const Offset(40, -44),
-                    child: GestureDetector(
-                      onTap: _checkedIn
-                          ? null
-                          : () async {
-                              HapticFeedback.heavyImpact();
-                              try {
-                                final r = await Api.checkin();
-                                if (mounted) {
-                                  setState(() {
-                                    _checkedIn = true;
-                                    _consecutive =
-                                        r['consecutive_days'] ?? _consecutive + 1;
-                                  });
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                        content: Text(
-                                            '签到成功！连续${_consecutive}天',
-                                            textAlign: TextAlign.center),
-                                        duration: const Duration(seconds: 1),
-                                        backgroundColor:
-                                            const Color(0xFFC4A46C)),
-                                  );
-                                }
-                              } catch (_) {}
-                            },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 32, vertical: 14),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(24),
-                          border: Border.all(
-                              color: _checkedIn
-                                  ? const Color(0xFF7B9E7B).withAlpha(150)
-                                  : const Color(0xFFC4A46C).withAlpha(150)),
-                        ),
-                        child: Text(
-                            _checkedIn ? '今日已签到 · $_consecutive天' : '今日签到',
-                            style: TextStyle(
-                                color: _checkedIn
-                                    ? const Color(0xFF7B9E7B)
-                                    : const Color(0xFFC4A46C),
-                                fontSize: 16,
-                                letterSpacing: 2)),
-                      ),
+                child: GestureDetector(
+                  onTap: () {
+                    Navigator.push(context,
+                        MaterialPageRoute(builder: (_) => const DiaryPage()));
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(24),
+                      color: const Color(0xFFC4A46C).withAlpha(20),
+                      border: Border.all(color: const Color(0xFFC4A46C).withAlpha(80)),
                     ),
+                    child: const Text('📔 写日记',
+                        style: TextStyle(color: Color(0xFF8B7355), fontSize: 16, letterSpacing: 2)),
                   ),
-                  if (_consecutive >= 7)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 6),
-                      child: Text('🎉 连续$_consecutive天！限定壁纸已解锁',
-                          style: const TextStyle(
-                              color: Color(0xFFC4A46C), fontSize: 12)),
-                    ),
-                ]),
+                ),
               ),
-              const SizedBox(height: 60),
+              const SizedBox(height: 100),
             ],
           ),
         ),

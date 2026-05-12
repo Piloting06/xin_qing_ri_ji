@@ -250,6 +250,14 @@ class Api {
     return await _handle(res);
   }
 
+  static Future<Map<String, dynamic>> searchUser(String query) async {
+    final res = await http
+        .get(Uri.parse('$baseUrl/friends/search?q=${Uri.encodeComponent(query)}'),
+            headers: await _headers())
+        .timeout(timeout);
+    return await _handle(res);
+  }
+
   static Future<Map<String, dynamic>> getFriendRequests() async {
     final res = await http
         .get(Uri.parse('$baseUrl/friends/requests'),

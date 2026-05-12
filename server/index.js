@@ -18,6 +18,8 @@ async function start() {
   const registerLimiter = rateLimit({ windowMs: 60000, max: 3, message: { message: '注册太频繁，请稍后再试' } });
   const loginLimiter = rateLimit({ windowMs: 60000, max: 10, message: { message: '登录太频繁，请稍后再试' } });
 
+  app.use('/audio', express.static('public/audio'));
+
   app.use('/api/auth/register', registerLimiter);
   app.use('/api/auth/login', loginLimiter);
   app.use('/api/auth', require('./routes/auth'));

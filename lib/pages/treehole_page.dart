@@ -10,21 +10,28 @@ class TreeholePage extends StatefulWidget {
   State<TreeholePage> createState() => _TreeholePageState();
 }
 
-class _TreeholePageState extends State<TreeholePage> {
+class _TreeholePageState extends State<TreeholePage>
+    with SingleTickerProviderStateMixin {
   List<Map<String, dynamic>> _messages = [];
   bool _loading = true;
   int _page = 1;
   final _msgCtrl = TextEditingController();
+  late AnimationController _refreshCtrl;
 
   @override
   void initState() {
     super.initState();
+    _refreshCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    );
     _load();
   }
 
   @override
   void dispose() {
     _msgCtrl.dispose();
+    _refreshCtrl.dispose();
     super.dispose();
   }
 
@@ -40,6 +47,13 @@ class _TreeholePageState extends State<TreeholePage> {
     } catch (_) {
       if (mounted) setState(() => _loading = false);
     }
+  }
+
+  Future<void> _refresh() async {
+    HapticFeedback.lightImpact();
+    _refreshCtrl.forward(from: 0);
+    _page = 1;
+    await _load();
   }
 
   Future<void> _post() async {
@@ -86,7 +100,6 @@ class _TreeholePageState extends State<TreeholePage> {
       backgroundColor: t.backgroundColor,
       body: SafeArea(
         child: Column(children: [
-          // Header
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
             child: Row(children: [
@@ -99,12 +112,17 @@ class _TreeholePageState extends State<TreeholePage> {
               Text('这里很安全，没有人知道你是谁',
                   style: TextStyle(fontSize: 12, color: t.textSecondary)),
               const Spacer(),
-              IconButton(
-                  icon: Icon(Icons.refresh, color: t.accentColor, size: 22),
-                  onPressed: () { _page = 1; _load(); }),
+              AnimatedBuilder(
+                animation: _refreshCtrl,
+                builder: (_, __) => Transform.rotate(
+                  angle: _refreshCtrl.value * 2 * 3.14159,
+                  child: IconButton(
+                      icon: Icon(Icons.refresh, color: t.accentColor, size: 22),
+                      onPressed: _refresh),
+                ),
+              ),
             ]),
           ),
-          // Messages
           Expanded(
             child: _loading
                 ? const Center(
@@ -128,47 +146,60 @@ class _TreeholePageState extends State<TreeholePage> {
                             itemCount: _messages.length,
                             itemBuilder: (_, i) {
                               final m = _messages[i];
-                              final isOwn =
-                                  m['is_own'] == true;
+                              final isOwn = m['is_own'] == true;
+                              final time = m['created_at']?.toString() ?? '';
+                              final displayTime = time.length >= 16
+                                  ? time.substring(5, 16)
+                                  : time;
+
                               return Container(
                                 margin:
-                                    const EdgeInsets.only(bottom: 10),
+                                    const EdgeInsets.only(bottom: 12),
                                 padding: const EdgeInsets.all(14),
                                 decoration: BoxDecoration(
                                   color: t.cardColor,
                                   borderRadius:
                                       BorderRadius.circular(14),
-                                  border: Border.all(
-                                      color: t.borderColor),
+                                  border: Border(
+                                    left: isOwn
+                                        ? BorderSide(
+                                            color: t.accentColor,
+                                            width: 2)
+                                        : BorderSide(
+                                            color: t.borderColor),
+                                    top: BorderSide(color: t.borderColor),
+                                    right: BorderSide(color: t.borderColor),
+                                    bottom: BorderSide(color: t.borderColor),
+                                  ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: t.isDark
+                                          ? Colors.black.withAlpha(20)
+                                          : const Color(0xFF8B7355).withAlpha(8),
+                                      blurRadius: 8,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
                                 ),
                                 child: Column(
                                     crossAxisAlignment:
-                                        CrossAxisAlignment
-                                            .start,
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Row(children: [
-                                        const Text('🕊️',
-                                            style: TextStyle(
+                                        Text(isOwn ? '✨' : '🕊️',
+                                            style: const TextStyle(
                                                 fontSize: 16)),
-                                        if (isOwn)
-                                          Padding(
-                                            padding: const EdgeInsets
-                                                .only(left: 6),
-                                            child: Container(
-                                                width: 4,
-                                                height: 4,
-                                                decoration: BoxDecoration(
-                                                    shape: BoxShape
-                                                        .circle,
-                                                    color: t
-                                                        .accentColor)),
-                                          ),
+                                        const Spacer(),
+                                        Text(displayTime,
+                                            style: TextStyle(
+                                                fontSize: 10,
+                                                color: t.textSecondary
+                                                    .withAlpha(130))),
                                       ]),
                                       const SizedBox(height: 8),
                                       Text(m['content'] ?? '',
                                           style: TextStyle(
-                                              color:
-                                                  t.textPrimary,
+                                              color: t.textPrimary,
                                               fontSize: 14,
                                               height: 1.5)),
                                       const SizedBox(height: 10),
@@ -191,7 +222,6 @@ class _TreeholePageState extends State<TreeholePage> {
                           ),
                   ),
           ),
-          // Post input
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(

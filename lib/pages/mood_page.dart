@@ -453,11 +453,16 @@ class _MoodPageState extends State<MoodPage> {
                     color: Color(0xFFC4A46C)),
               ),
             const SizedBox(height: 24),
-            // Visualization entry
-            _buildChartPreview(t),
+            // Visualization entries — tap to expand
+            GestureDetector(
+              onTap: () => _showFullChart(t),
+              child: _buildChartPreview(t),
+            ),
             const SizedBox(height: 16),
-            // Mini timeline
-            _buildPieChart(t),
+            GestureDetector(
+              onTap: () => _showFullPie(t),
+              child: _buildPieChart(t),
+            ),
             const SizedBox(height: 16),
             _buildMiniTimeline(t),
             const SizedBox(height: 60),
@@ -551,28 +556,34 @@ class _MoodPageState extends State<MoodPage> {
           ...recent.map((m) {
             final score = m['emotion_type'] as int;
             final color = Color(moodColors[score] ?? 0xFF90A4AE);
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: Row(children: [
-                Container(width: 3, height: 24,
-                    decoration: BoxDecoration(
-                        color: color,
-                        borderRadius: BorderRadius.circular(2))),
-                const SizedBox(width: 10),
-                Text(moodEmojis[score] ?? '',
-                    style: const TextStyle(fontSize: 18)),
-                const SizedBox(width: 8),
-                Text(m['date'] ?? '',
-                    style: TextStyle(
-                        color: t.textSecondary, fontSize: 12)),
-                const Spacer(),
-                Text(m['notes']?.toString() ?? '',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                        color: t.textSecondary.withAlpha(150),
-                        fontSize: 11)),
-              ]),
+            final date = m['date']?.toString() ?? '';
+            return GestureDetector(
+              onTap: () => _editMoodDay(date, score, m['notes']?.toString() ?? ''),
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Row(children: [
+                  Container(width: 3, height: 24,
+                      decoration: BoxDecoration(
+                          color: color,
+                          borderRadius: BorderRadius.circular(2))),
+                  const SizedBox(width: 10),
+                  Text(moodEmojis[score] ?? '',
+                      style: const TextStyle(fontSize: 18)),
+                  const SizedBox(width: 8),
+                  Text(date,
+                      style: TextStyle(
+                          color: t.textSecondary, fontSize: 12)),
+                  const Spacer(),
+                  Text(m['notes']?.toString() ?? '',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                          color: t.textSecondary.withAlpha(150),
+                          fontSize: 11)),
+                  const SizedBox(width: 4),
+                  Icon(Icons.chevron_right, size: 14, color: t.textSecondary.withAlpha(80)),
+                ]),
+              ),
             );
           }),
         ],
@@ -665,5 +676,219 @@ class _MoodPageState extends State<MoodPage> {
       case 8: return '想TA了就说出来吧...';
       default: return '今天发生了什么...';
     }
+  }
+
+  void _showFullChart(ThemeState t) {
+    if (_allMoods.isEmpty) return;
+    final moods = _allMoods.reversed.toList();
+    final spots = <FlSpot>[];
+    final labels = <int, String>{};
+    for (int i = 0; i < moods.length; i++) {
+      final s = moods[i]['emotion_type'] as int;
+      spots.add(FlSpot(i.toDouble(), moodScoreMap[s] ?? 3));
+      labels[i] = moods[i]['date']?.toString().substring(5) ?? '';
+    }
+
+    showDialog(
+      context: context,
+      builder: (ctx) => Dialog(
+        backgroundColor: t.cardColor,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        insetPadding: const EdgeInsets.all(20),
+        child: SizedBox(
+          height: 420,
+          child: Column(children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
+              child: Row(children: [
+                Text('心情曲线',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: t.textPrimary)),
+                const Spacer(),
+                IconButton(
+                  icon: Icon(Icons.close, color: t.textSecondary, size: 20),
+                  onPressed: () => Navigator.pop(ctx),
+                ),
+              ]),
+            ),
+            const SizedBox(height: 8),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(8, 0, 20, 16),
+                child: spots.length < 2
+                    ? Center(child: Text('记录更多天后会显示曲线', style: TextStyle(color: t.textSecondary)))
+                    : LineChart(
+                        LineChartData(
+                          gridData: FlGridData(
+                            show: true,
+                            horizontalInterval: 1,
+                            drawVerticalLine: false,
+                            getDrawingHorizontalLine: (v) => FlLine(
+                                color: t.borderColor, strokeWidth: 0.5),
+                          ),
+                          titlesData: FlTitlesData(
+                            bottomTitles: AxisTitles(
+                              sideTitles: SideTitles(
+                                showTitles: true,
+                                reservedSize: 28,
+                                interval: (moods.length / 5).ceilToDouble().clamp(1, 10),
+                                getTitlesWidget: (v, _) {
+                                  final idx = v.toInt();
+                                  if (idx < 0 || idx >= moods.length) return const SizedBox.shrink();
+                                  return Text(labels[idx] ?? '',
+                                      style: TextStyle(fontSize: 9, color: t.textSecondary));
+                                },
+                              ),
+                            ),
+                            leftTitles: AxisTitles(
+                              sideTitles: SideTitles(
+                                showTitles: true,
+                                reservedSize: 28,
+                                interval: 1,
+                                getTitlesWidget: (v, _) => Text(
+                                    ['', '😄', '😊', '😢', '😠', '😰', '😴', '🥰', '💭'][v.toInt().clamp(1, 8)],
+                                    style: const TextStyle(fontSize: 12)),
+                              ),
+                            ),
+                            topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                            rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                          ),
+                          borderData: FlBorderData(show: false),
+                          lineBarsData: [
+                            LineChartBarData(
+                              spots: spots,
+                              isCurved: true,
+                              color: t.accentColor,
+                              barWidth: 2.5,
+                              dotData: FlDotData(
+                                show: moods.length <= 30,
+                                getDotPainter: (spot, _, __, ___) =>
+                                    FlDotCirclePainter(radius: 3, color: t.accentColor, strokeWidth: 0),
+                              ),
+                              belowBarData: BarAreaData(
+                                show: true,
+                                color: t.accentColor.withAlpha(15),
+                              ),
+                            ),
+                          ],
+                          minY: 0.5,
+                          maxY: 5.5,
+                          lineTouchData: LineTouchData(
+                            touchTooltipData: LineTouchTooltipData(
+                              getTooltipItems: (spots) => spots.map((s) {
+                                final idx = s.spotIndex;
+                                final mood = moods[idx];
+                                return LineTooltipItem(
+                                  '${moodEmojis[mood['emotion_type']]}\n${mood['date']}',
+                                  TextStyle(color: t.textPrimary, fontSize: 12),
+                                );
+                              }).toList(),
+                            ),
+                          ),
+                        ),
+                      ),
+              ),
+            ),
+          ]),
+        ),
+      ),
+    );
+  }
+
+  void _showFullPie(ThemeState t) {
+    if (_allMoods.isEmpty) return;
+    final counts = <int, int>{};
+    for (final m in _allMoods) {
+      final s = m['emotion_type'] as int;
+      counts[s] = (counts[s] ?? 0) + 1;
+    }
+    final total = counts.values.fold(0, (a, b) => a + b);
+
+    showDialog(
+      context: context,
+      builder: (ctx) => Dialog(
+        backgroundColor: t.cardColor,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        insetPadding: const EdgeInsets.all(20),
+        child: SizedBox(
+          height: 440,
+          child: Column(children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
+              child: Row(children: [
+                Text('情绪分布',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: t.textPrimary)),
+                const Spacer(),
+                IconButton(
+                  icon: Icon(Icons.close, color: t.textSecondary, size: 20),
+                  onPressed: () => Navigator.pop(ctx),
+                ),
+              ]),
+            ),
+            const SizedBox(height: 4),
+            SizedBox(
+              height: 180,
+              child: PieChart(
+                PieChartData(
+                  sections: counts.entries.map((e) {
+                    final color = Color(moodColors[e.key] ?? 0xFF90A4AE);
+                    final pct = (e.value / total * 100).toStringAsFixed(1);
+                    return PieChartSectionData(
+                      color: color,
+                      value: e.value.toDouble(),
+                      title: '$pct%',
+                      radius: 60,
+                      titleStyle: const TextStyle(fontSize: 10, color: Colors.white, fontWeight: FontWeight.w600),
+                    );
+                  }).toList(),
+                  centerSpaceRadius: 30,
+                  sectionsSpace: 3,
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            // Detailed legend with counts
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Column(
+                children: counts.entries.map((e) {
+                  final color = Color(moodColors[e.key] ?? 0xFF90A4AE);
+                  final emoji = moodEmojis[e.key] ?? '?';
+                  final pct = (e.value / total * 100).toStringAsFixed(1);
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 6),
+                    child: Row(children: [
+                      Container(width: 12, height: 12,
+                          decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+                      const SizedBox(width: 8),
+                      Text(emoji, style: const TextStyle(fontSize: 16)),
+                      const SizedBox(width: 8),
+                      Expanded(child: Text('${e.value}次', style: TextStyle(color: t.textPrimary, fontSize: 14))),
+                      Text('$pct%', style: TextStyle(color: t.textSecondary, fontSize: 13, fontWeight: FontWeight.w600)),
+                    ]),
+                  );
+                }).toList(),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text('共 $total 条记录', style: TextStyle(color: t.textSecondary, fontSize: 12)),
+          ]),
+        ),
+      ),
+    );
+  }
+
+  void _editMoodDay(String date, int score, String notes) {
+    HapticFeedback.lightImpact();
+    setState(() {
+      _moodScore = score;
+      _emotionNotes[score] = notes;
+      _notesCtrl.text = notes;
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('已加载 $date 的心情，可以修改后重新保存'),
+        duration: const Duration(seconds: 2),
+      ),
+    );
   }
 }

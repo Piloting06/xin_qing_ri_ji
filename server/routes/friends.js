@@ -16,6 +16,14 @@ router.post('/add', auth, (req, res) => {
   } catch (e) { res.status(500).json({ message: '添加失败' }); }
 });
 
+router.get('/search', auth, (req, res) => {
+  const { q } = req.query;
+  if (!q || q.trim().length < 3) return res.json({ users: [] });
+  const users = db.prepare('SELECT id, phone, username FROM users WHERE phone LIKE ? AND is_active = 1 AND id != ? LIMIT 5')
+    .all(`%${q.trim()}%`, req.userId);
+  res.json({ users });
+});
+
 router.get('/requests', auth, (_, res) => {
   const requests = db.prepare(`
     SELECT f.id, f.user_id, f.status, u.username, u.phone FROM friendships f

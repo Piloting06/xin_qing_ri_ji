@@ -1,6 +1,10 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:audioplayers/audioplayers.dart';
 import 'package:provider/provider.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:http/http.dart' as http;
 import '../stores/theme_state.dart';
 
 class WhiteNoisePlayer extends StatefulWidget {
@@ -10,23 +14,86 @@ class WhiteNoisePlayer extends StatefulWidget {
 }
 
 class _WhiteNoisePlayerState extends State<WhiteNoisePlayer> {
+  final _player = AudioPlayer();
   int? _playingIndex;
   double _volume = 0.4;
+  bool _loadingAudio = false;
 
   static const _sounds = [
-    {'icon': '🌧️', 'label': '雨声', 'id': 'rain'},
-    {'icon': '🔥', 'label': '篝火', 'id': 'campfire'},
-    {'icon': '🌊', 'label': '海浪', 'id': 'ocean'},
-    {'icon': '🌲', 'label': '森林鸟鸣', 'id': 'forest'},
-    {'icon': '🎐', 'label': '风铃', 'id': 'chime'},
-    {'icon': '💓', 'label': '心跳', 'id': 'heartbeat'},
+    {'icon': '\u{1F327}\u{FE0F}', 'label': '雨声', 'id': 'rain'},
+    {'icon': '\u{1F525}', 'label': '篝火', 'id': 'campfire'},
+    {'icon': '\u{1F30A}', 'label': '海浪', 'id': 'ocean'},
+    {'icon': '\u{1F332}', 'label': '森林鸟鸣', 'id': 'forest'},
+    {'icon': '\u{1F390}', 'label': '风铃', 'id': 'chime'},
+    {'icon': '\u{1F493}', 'label': '心跳', 'id': 'heartbeat'},
   ];
 
-  void _toggle(int index) {
-    HapticFeedback.lightImpact();
-    setState(() {
-      _playingIndex = _playingIndex == index ? null : index;
+  static const _serverBase = 'http://114.55.138.55:8888/audio';
+
+  @override
+  void initState() {
+    super.initState();
+    _player.setReleaseMode(ReleaseMode.loop);
+    _player.setVolume(_volume);
+    _player.onPlayerComplete.listen((_) {
+      // Loop mode handles this
     });
+  }
+
+  @override
+  void dispose() {
+    _player.dispose();
+    super.dispose();
+  }
+
+  Future<String> _localPath(String id) async {
+    final dir = await getApplicationDocumentsDirectory();
+    return '${dir.path}/noise_$id.wav';
+  }
+
+  Future<void> _downloadIfNeeded(String id) async {
+    final local = await _localPath(id);
+    if (File(local).existsSync()) return;
+
+    try {
+      final res = await http.get(Uri.parse('$_serverBase/$id.wav'));
+      if (res.statusCode == 200) {
+        await File(local).writeAsBytes(res.bodyBytes);
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _toggle(int index) async {
+    HapticFeedback.lightImpact();
+
+    if (_playingIndex == index) {
+      await _player.stop();
+      setState(() => _playingIndex = null);
+      return;
+    }
+
+    setState(() => _loadingAudio = true);
+    final id = _sounds[index]['id']!;
+
+    try {
+      await _downloadIfNeeded(id);
+      final local = await _localPath(id);
+
+      if (File(local).existsSync()) {
+        await _player.play(DeviceFileSource(local));
+        await _player.setVolume(_volume);
+        setState(() => _playingIndex = index);
+      } else {
+        // Try playing directly from server
+        await _player.play(UrlSource('$_serverBase/$id.wav'));
+        await _player.setVolume(_volume);
+        setState(() => _playingIndex = index);
+      }
+    } catch (_) {
+      // Audio files not yet available on server
+    } finally {
+      if (mounted) setState(() => _loadingAudio = false);
+    }
   }
 
   @override
@@ -37,7 +104,11 @@ class _WhiteNoisePlayerState extends State<WhiteNoisePlayer> {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // Grid of 6 sounds
+        if (_loadingAudio)
+          const Padding(
+            padding: EdgeInsets.only(bottom: 8),
+            child: LinearProgressIndicator(color: Color(0xFFC4A46C)),
+          ),
         Wrap(
           spacing: 8,
           runSpacing: 8,
@@ -78,7 +149,6 @@ class _WhiteNoisePlayerState extends State<WhiteNoisePlayer> {
         ),
         if (isPlaying) ...[
           const SizedBox(height: 16),
-          // Volume slider
           Container(
             padding:
                 const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -96,8 +166,10 @@ class _WhiteNoisePlayerState extends State<WhiteNoisePlayer> {
                   min: 0,
                   max: 1,
                   activeColor: theme.accentColor,
-                  onChanged: (v) =>
-                      setState(() => _volume = v),
+                  onChanged: (v) {
+                    setState(() => _volume = v);
+                    _player.setVolume(v);
+                  },
                 ),
               ),
               const Icon(Icons.volume_up,
@@ -107,8 +179,10 @@ class _WhiteNoisePlayerState extends State<WhiteNoisePlayer> {
                 icon: const Icon(Icons.stop,
                     size: 20,
                     color: Color(0xFFD4837A)),
-                onPressed: () =>
-                    setState(() => _playingIndex = null),
+                onPressed: () async {
+                  await _player.stop();
+                  setState(() => _playingIndex = null);
+                },
               ),
             ]),
           ),

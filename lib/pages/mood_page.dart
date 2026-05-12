@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -20,6 +21,7 @@ class MoodPage extends StatefulWidget {
 class _MoodPageState extends State<MoodPage> {
   int _moodScore = 0;
   final _notesCtrl = TextEditingController();
+  final Map<int, String> _emotionNotes = {}; // per-emotion independent text
   List<String> _selectedTags = [];
   List<String> _photos = [];
   bool _saving = false;
@@ -57,14 +59,18 @@ class _MoodPageState extends State<MoodPage> {
     try {
       final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
       final mood = await Api.getMood(today);
+      final prefs = await SharedPreferences.getInstance();
+      final photoStr = prefs.getString('photos_$today') ?? '';
       if (mood != null && mounted) {
         setState(() {
           _moodScore = mood['emotion_type'] ?? 0;
           _notesCtrl.text = mood['notes'] ?? '';
-          _selectedTags =
-              (mood['emotion_tags'] as String?)?.split(',').where((s) => s.isNotEmpty).toList() ?? [];
+          _selectedTags = (mood['emotion_tags'] as String?)?.split(',').where((s) => s.isNotEmpty).toList() ?? [];
           _aiReply = mood['ai_response'];
+          if (photoStr.isNotEmpty) _photos = photoStr.split('||');
         });
+      } else {
+        if (mounted && photoStr.isNotEmpty) setState(() => _photos = photoStr.split('||'));
       }
     } catch (_) {}
   }
@@ -94,15 +100,17 @@ class _MoodPageState extends State<MoodPage> {
     try {
       final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
       await Api.saveMood(today, _moodScore, _notesCtrl.text, _selectedTags, []);
+      // Save photo paths locally
+      if (_photos.isNotEmpty) {
+        final prefs = await SharedPreferences.getInstance();
+        prefs.setString('photos_$today', _photos.join('||'));
+      }
       if (mounted) {
         setState(() { _saving = false; _saved = true; });
         Future.delayed(const Duration(seconds: 2),
             () { if (mounted) setState(() => _saved = false); });
       }
-      // Trigger AI response for negative emotions
-      if (_moodScore >= 3 && _moodScore <= 6) {
-        _fetchAiReply();
-      }
+      _fetchAiReply();
     } catch (e) {
       if (mounted) {
         setState(() => _saving = false);
@@ -203,7 +211,14 @@ class _MoodPageState extends State<MoodPage> {
                 final color = Color(moodColors[s]!);
                 return GestureDetector(
                   onTap: () => setState(() {
-                    _moodScore = active ? 0 : s;
+                    if (!active) {
+                      _emotionNotes[_moodScore] = _notesCtrl.text;
+                      _moodScore = s;
+                      _notesCtrl.text = _emotionNotes[s] ?? '';
+                    } else {
+                      _emotionNotes[_moodScore] = _notesCtrl.text;
+                      _moodScore = 0;
+                    }
                     _selectedTags = [];
                   }),
                   child: Container(

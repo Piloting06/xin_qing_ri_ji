@@ -1,6 +1,8 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:image_picker/image_picker.dart';
@@ -78,13 +80,24 @@ class _MoodPageState extends State<MoodPage> {
   List<Map<String, String>> get _currentTags =>
       emotionTags[_moodScore] ?? [];
 
+  Future<String> _persistPhoto(String tempPath) async {
+    final dir = await getApplicationDocumentsDirectory();
+    final photosDir = Directory(p.join(dir.path, 'photos'));
+    if (!photosDir.existsSync()) photosDir.createSync(recursive: true);
+    final name = 'mood_${DateTime.now().millisecondsSinceEpoch}.jpg';
+    final dest = p.join(photosDir.path, name);
+    await File(tempPath).copy(dest);
+    return dest;
+  }
+
   Future<void> _pickPhoto() async {
     if (_photos.length >= 9) return;
     try {
       final img = await _picker.pickImage(
           source: ImageSource.gallery, maxWidth: 1080, imageQuality: 85);
       if (img != null && mounted) {
-        setState(() => _photos.add(img.path));
+        final persistentPath = await _persistPhoto(img.path);
+        setState(() => _photos.add(persistentPath));
       }
     } catch (_) {}
   }
@@ -98,19 +111,42 @@ class _MoodPageState extends State<MoodPage> {
     setState(() => _saving = true);
     HapticFeedback.mediumImpact();
     try {
+      // Fetch AI reply first
+      String? aiReply;
+      try {
+        final aiRes = await Api.aiRespond(_moodScore, _notesCtrl.text, '');
+        aiReply = aiRes['reply'];
+        if (mounted) setState(() => _aiReply = aiReply);
+      } catch (_) {}
+
       final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
-      await Api.saveMood(today, _moodScore, _notesCtrl.text, _selectedTags, []);
+      final photosStr = _photos.isNotEmpty ? _photos.join('||') : null;
+
+      await Api.saveMood(today, _moodScore, _notesCtrl.text, _selectedTags, [],
+          aiResponse: aiReply, photos: photosStr);
+
       // Save photo paths locally
       if (_photos.isNotEmpty) {
         final prefs = await SharedPreferences.getInstance();
         prefs.setString('photos_$today', _photos.join('||'));
       }
+
       if (mounted) {
         setState(() { _saving = false; _saved = true; });
         Future.delayed(const Duration(seconds: 2),
             () { if (mounted) setState(() => _saved = false); });
       }
-      _fetchAiReply();
+
+      // Fetch poem
+      try {
+        final poem = await Api.matchPoem(_moodScore, '');
+        if (poem != null && mounted) {
+          setState(() {
+            _poemText = poem['quote_line'] ?? poem['content'];
+            _poemAuthor = poem['author'];
+          });
+        }
+      } catch (_) {}
     } catch (e) {
       if (mounted) {
         setState(() => _saving = false);

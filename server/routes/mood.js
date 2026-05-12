@@ -5,15 +5,15 @@ const router = express.Router();
 
 router.post('/', auth, (req, res) => {
   try {
-    const { date, emotion_type, emotion_tags, notes } = req.body;
+    const { date, emotion_type, emotion_tags, notes, ai_response, photos } = req.body;
     const existing = db.prepare('SELECT id FROM moods WHERE user_id = ? AND date = ?').get(req.userId, date);
     if (existing) {
-      db.prepare('UPDATE moods SET emotion_type=?, emotion_tags=?, notes=? WHERE id=?')
-        .run(emotion_type, emotion_tags || '', notes || '', existing.id);
+      db.prepare('UPDATE moods SET emotion_type=?, emotion_tags=?, notes=?, ai_response=?, photos=? WHERE id=?')
+        .run(emotion_type, emotion_tags || '', notes || '', ai_response || '', photos || '', existing.id);
       res.json({ id: existing.id, message: '已更新' });
     } else {
-      const result = db.prepare('INSERT INTO moods (user_id, date, emotion_type, emotion_tags, notes) VALUES (?,?,?,?,?)')
-        .run(req.userId, date, emotion_type, emotion_tags || '', notes || '');
+      const result = db.prepare('INSERT INTO moods (user_id, date, emotion_type, emotion_tags, notes, ai_response, photos) VALUES (?,?,?,?,?,?,?)')
+        .run(req.userId, date, emotion_type, emotion_tags || '', notes || '', ai_response || '', photos || '');
       res.json({ id: result.lastInsertRowid, message: '已保存' });
     }
   } catch (e) { res.status(500).json({ message: '保存失败' }); }

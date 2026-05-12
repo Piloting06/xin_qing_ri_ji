@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:sqflite/sqflite.dart' as sql;
 import '../stores/theme_state.dart';
 
 class MemoryAlbumPage extends StatefulWidget {

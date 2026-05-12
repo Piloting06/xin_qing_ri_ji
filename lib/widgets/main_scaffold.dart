@@ -19,6 +19,7 @@ class MainScaffold extends StatefulWidget {
 
 class _MainScaffoldState extends State<MainScaffold> {
   int _currentIndex = 0;
+  final PageController _pageController = PageController();
   bool _onboardingChecked = false;
   String _activeWallpaper = 'none';
   List<String> _unlocked = ['none'];
@@ -33,6 +34,12 @@ class _MainScaffoldState extends State<MainScaffold> {
         OnboardingFlow.checkAndShow(context);
       }
     });
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadWallpaper() async {
@@ -83,8 +90,12 @@ class _MainScaffoldState extends State<MainScaffold> {
                 ),
               ),
             ),
-          // Content with semi-transparent card overlay
-          IndexedStack(index: _currentIndex, children: _pages),
+          // Content with swipeable pages
+          PageView(
+            controller: _pageController,
+            onPageChanged: (i) => setState(() => _currentIndex = i),
+            children: _pages,
+          ),
           // Dissolve transition overlay
           if (theme.transitioning)
             Positioned.fill(
@@ -125,6 +136,7 @@ class _MainScaffoldState extends State<MainScaffold> {
                   onTap: () {
                     if (_currentIndex != i) {
                       HapticFeedback.lightImpact();
+                      _pageController.animateToPage(i, duration: const Duration(milliseconds: 300), curve: Curves.easeOut);
                       setState(() => _currentIndex = i);
                     }
                   },

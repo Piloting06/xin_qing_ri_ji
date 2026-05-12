@@ -138,7 +138,7 @@ class Api {
   // ── Mood ──
   static Future<Map<String, dynamic>> saveMood(String date, int score,
       String text, List<String> tags, List<String> activities,
-      {String? aiResponse, String? photos}) async {
+      {String? aiResponse}) async {
     final body = <String, dynamic>{
       'date': date,
       'emotion_type': score,
@@ -146,7 +146,6 @@ class Api {
       'notes': text,
     };
     if (aiResponse != null) body['ai_response'] = aiResponse;
-    if (photos != null) body['photos'] = photos;
     final res = await http
         .post(Uri.parse('$baseUrl/mood'),
             headers: await _headers(),

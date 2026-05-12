@@ -110,10 +110,10 @@ router.get('/location', auth, async (req, res) => {
         country: raw.country || '',
       });
     } else {
-      res.json({ lat: 39.9042, lon: 116.4074, city: '北京' });
+      res.json({ error: true, message: 'IP定位失败' });
     }
   } catch (_) {
-    res.json({ lat: 39.9042, lon: 116.4074, city: '北京' });
+    res.json({ error: true, message: '定位服务不可用' });
   }
 });
 

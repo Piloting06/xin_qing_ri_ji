@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../stores/theme_state.dart';
 
 class FeatureTip extends StatefulWidget {
   final String tipKey;
@@ -70,9 +72,21 @@ class _FeatureTipState extends State<FeatureTip>
 
   @override
   Widget build(BuildContext context) {
+    final theme = context.watch<ThemeState>();
+    final isDark = theme.isDark;
+
     return Stack(
       clipBehavior: Clip.none,
       children: [
+        // Semi-transparent overlay to catch taps outside
+        if (_showTip)
+          Positioned.fill(
+            child: GestureDetector(
+              behavior: HitTestBehavior.translucent,
+              onTap: _dismiss,
+              child: Container(color: Colors.transparent),
+            ),
+          ),
         GestureDetector(
           onTap: _showTip ? _dismiss : null,
           child: widget.child,
@@ -94,26 +108,36 @@ class _FeatureTipState extends State<FeatureTip>
                     padding: const EdgeInsets.symmetric(
                         horizontal: 14, vertical: 10),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF1A1A1A),
+                      color: isDark
+                          ? const Color(0xFF2A2824)
+                          : Colors.white,
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                          color: const Color(0xFFC4A46C).withAlpha(80)),
+                          color: theme.accentColor.withAlpha(80)),
                       boxShadow: [
                         BoxShadow(
-                            color: Colors.black.withAlpha(60),
-                            blurRadius: 8,
+                            color: isDark
+                                ? Colors.black.withAlpha(80)
+                                : const Color(0xFF8B7355).withAlpha(15),
+                            blurRadius: 10,
                             offset: const Offset(0, 2))
                       ],
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(Icons.touch_app_rounded,
-                            size: 16, color: Color(0xFFC4A46C)),
+                        Icon(Icons.touch_app_rounded,
+                            size: 16, color: theme.accentColor),
                         const SizedBox(width: 8),
                         Text(widget.text,
-                            style: const TextStyle(
-                                color: Color(0xFFE8E4DC), fontSize: 13)),
+                            style: TextStyle(
+                                color: theme.textPrimary, fontSize: 13)),
+                        const SizedBox(width: 6),
+                        GestureDetector(
+                          onTap: _dismiss,
+                          child: Icon(Icons.close, size: 14,
+                              color: theme.textSecondary.withAlpha(100)),
+                        ),
                       ],
                     ),
                   ),

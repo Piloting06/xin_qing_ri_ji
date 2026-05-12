@@ -124,6 +124,7 @@ class _GlassWeatherSphereState extends State<GlassWeatherSphere>
     return SizedBox(
       height: _sphereR * 2 + 60,
       child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
         onPanStart: _onPanStart,
         onPanUpdate: _onPanUpdate,
         onPanEnd: _onPanEnd,

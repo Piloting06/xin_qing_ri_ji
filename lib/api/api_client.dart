@@ -130,23 +130,27 @@ class Api {
 
   static Future<Map<String, dynamic>> getLocation() async {
     final res = await http
-        .get(Uri.parse('$baseUrl/location'), headers: await _headers())
+        .get(Uri.parse('$baseUrl/weather/location'), headers: await _headers())
         .timeout(timeout);
     return await _handle(res);
   }
 
   // ── Mood ──
   static Future<Map<String, dynamic>> saveMood(String date, int score,
-      String text, List<String> tags, List<String> activities) async {
+      String text, List<String> tags, List<String> activities,
+      {String? aiResponse, String? photos}) async {
+    final body = <String, dynamic>{
+      'date': date,
+      'emotion_type': score,
+      'emotion_tags': tags.join(','),
+      'notes': text,
+    };
+    if (aiResponse != null) body['ai_response'] = aiResponse;
+    if (photos != null) body['photos'] = photos;
     final res = await http
         .post(Uri.parse('$baseUrl/mood'),
             headers: await _headers(),
-            body: json.encode({
-              'date': date,
-              'emotion_type': score,
-              'emotion_tags': tags.join(','),
-              'notes': text,
-            }))
+            body: json.encode(body))
         .timeout(timeout);
     return await _handle(res);
   }

@@ -11,6 +11,8 @@ import 'package:fl_chart/fl_chart.dart';
 import '../api/api_client.dart';
 import '../constants/mood.dart';
 import 'diary_page.dart';
+import '../widgets/mood_calendar.dart';
+import '../widgets/mood_card.dart';
 import '../stores/app_state.dart';
 import '../stores/theme_state.dart';
 
@@ -55,6 +57,31 @@ class _MoodPageState extends State<MoodPage> {
   void dispose() {
     _notesCtrl.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadDate(String date) async {
+    try {
+      final mood = await Api.getMood(date);
+      if (mood != null && mounted) {
+        setState(() {
+          _moodScore = mood['emotion_type'] ?? 0;
+          _notesCtrl.text = mood['notes'] ?? '';
+          _selectedTags = (mood['emotion_tags'] as String?)?.split(',').where((s) => s.isNotEmpty).toList() ?? [];
+          _aiReply = mood['ai_response'];
+          _poemText = null;
+          _poemAuthor = null;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('已加载 $date 的心情'), duration: const Duration(seconds: 1)),
+        );
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('该日期暂无记录'), duration: const Duration(seconds: 1)),
+          );
+        }
+      }
+    } catch (_) {}
   }
 
   Future<void> _loadToday() async {
@@ -152,6 +179,32 @@ class _MoodPageState extends State<MoodPage> {
         setState(() => _saving = false);
         ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('保存失败: $e')));
+      }
+    }
+  }
+
+  Future<void> _shareCard() async {
+    final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
+    final path = await MoodCardShare.generateAndSave(
+      context,
+      date: today,
+      weather: '心情记录',
+      temp: '',
+      moodScore: _moodScore,
+      aiReply: _aiReply ?? '',
+      poemText: _poemText,
+      poemAuthor: _poemAuthor,
+      weatherCode: 0,
+    );
+    if (path != null && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('卡片已保存: $path'), duration: const Duration(seconds: 2)),
+      );
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('卡片生成失败，请重试'), duration: const Duration(seconds: 1)),
+        );
       }
     }
   }
@@ -390,7 +443,21 @@ class _MoodPageState extends State<MoodPage> {
                 ),
               ),
             ]),
-            const SizedBox(height: 16),
+            if (_saved && _aiReply != null) ...[
+              const SizedBox(height: 12),
+              Center(
+                child: TextButton.icon(
+                  onPressed: _shareCard,
+                  icon: const Icon(Icons.share, size: 18),
+                  label: const Text('生成心情卡片'),
+                  style: TextButton.styleFrom(
+                    foregroundColor: t.accentColor,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  ),
+                ),
+              ),
+            ],
+            const SizedBox(height: 8),
             // AI reply + Poem
             if (_aiReply != null) ...[
               Container(
@@ -489,6 +556,9 @@ class _MoodPageState extends State<MoodPage> {
                     color: Color(0xFFC4A46C)),
               ),
             const SizedBox(height: 24),
+            // Mood Calendar
+            MoodCalendar(moods: _allMoods, onDayTap: _loadDate),
+            const SizedBox(height: 20),
             // Visualization entries — tap to expand
             GestureDetector(
               onTap: () => _showFullChart(t),

@@ -9,15 +9,16 @@ class ThemeState extends ChangeNotifier {
   bool get transitioning => _transitioning;
 
   static const Map<String, String> themeNames = {
-    'light': '暖白基础',
-    'green': '护眼柔绿',
-    'dark': '深夜暗金',
+    'light': '亚麻暖白',
+    'green': '抹茶淡绿',
+    'dark': '暮色暖灰',
   };
 
+  // [accent, card, background]
   static const Map<String, List<Color>> themeColors = {
-    'light': [Color(0xFFC4A46C), Color(0xFFF0EDE6), Color(0xFFFAF8F4)],
-    'green': [Color(0xFF6B8F71), Color(0xFFF5F9F3), Color(0xFFE8F0E5)],
-    'dark': [Color(0xFFA08050), Color(0xFF1A1A1A), Color(0xFF0A0A0A)],
+    'light': [Color(0xFF8B7355), Color(0xFFFAF7F2), Color(0xFFF5F0E8)],
+    'green': [Color(0xFF7B8D6E), Color(0xFFF6F8F3), Color(0xFFF0F3EB)],
+    'dark': [Color(0xFFB8956A), Color(0xFF363430), Color(0xFF2A2824)],
   };
 
   String get themeMode => _themeMode;
@@ -47,62 +48,64 @@ class ThemeState extends ChangeNotifier {
   }
 
   bool get isDark => _themeMode == 'dark';
-  bool get isGreen => _themeMode == 'green';
-  bool get isLight => _themeMode == 'light';
+
+  // ── 亚麻暖白 (linen light) ──
+  // ── 抹茶淡绿 (matcha green) ──
+  // ── 暮色暖灰 (dusk dark) ──
 
   Color get backgroundColor {
     switch (_themeMode) {
-      case 'dark': return const Color(0xFF0A0A0A);
-      case 'green': return const Color(0xFFF5F9F3);
-      default: return const Color(0xFFFAF8F4);
+      case 'dark': return const Color(0xFF2A2824);
+      case 'green': return const Color(0xFFF0F3EB);
+      default: return const Color(0xFFF5F0E8);
     }
   }
 
   Color get cardColor {
     switch (_themeMode) {
-      case 'dark': return const Color(0xFF1A1A1A);
-      case 'green': return const Color(0xFFE8F0E5);
-      default: return Colors.white;
+      case 'dark': return const Color(0xFF363430);
+      case 'green': return const Color(0xFFF6F8F3);
+      default: return const Color(0xFFFAF7F2);
     }
   }
 
   Color get accentColor {
     switch (_themeMode) {
-      case 'dark': return const Color(0xFFA08050);
-      case 'green': return const Color(0xFF6B8F71);
-      default: return const Color(0xFFC4A46C);
+      case 'dark': return const Color(0xFFB8956A);
+      case 'green': return const Color(0xFF7B8D6E);
+      default: return const Color(0xFF8B7355);
     }
   }
 
   Color get textPrimary {
     switch (_themeMode) {
-      case 'dark': return const Color(0xFFD0CDC6);
-      case 'green': return const Color(0xFF1C2E1C);
-      default: return const Color(0xFF2A2218);
+      case 'dark': return const Color(0xFFE5DDD3);
+      case 'green': return const Color(0xFF2C3328);
+      default: return const Color(0xFF3D3228);
     }
   }
 
   Color get textSecondary {
     switch (_themeMode) {
-      case 'dark': return const Color(0xFFA09888);
-      case 'green': return const Color(0xFF6B8F71);
+      case 'dark': return const Color(0xFF9B8E80);
+      case 'green': return const Color(0xFF7B8D6E);
       default: return const Color(0xFF8C7E6F);
     }
   }
 
   Color get borderColor {
     switch (_themeMode) {
-      case 'dark': return Colors.white.withAlpha(20);
-      case 'green': return Colors.black.withAlpha(15);
-      default: return Colors.black.withAlpha(15);
+      case 'dark': return Colors.white.withAlpha(25);
+      case 'green': return const Color(0xFF8B9B80).withAlpha(50);
+      default: return const Color(0xFF8B7355).withAlpha(40);
     }
   }
 
   Color get surfaceAlpha {
     switch (_themeMode) {
       case 'dark': return Colors.white.withAlpha(10);
-      case 'green': return Colors.black.withAlpha(8);
-      default: return Colors.black.withAlpha(5);
+      case 'green': return const Color(0xFF7B8D6E).withAlpha(12);
+      default: return const Color(0xFF8B7355).withAlpha(8);
     }
   }
 }

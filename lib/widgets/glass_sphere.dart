@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../stores/theme_state.dart';
@@ -76,27 +77,27 @@ class _GlassWeatherSphereState extends State<GlassWeatherSphere>
     return idx;
   }
 
-  void _onPanStart(DragStartDetails d) {
+  void _onPointerDown(PointerDownEvent e) {
     _inertiaCtrl.stop();
-    _lastPanX = d.localPosition.dx;
+    _lastPanX = e.position.dx;
     _isDragging = true;
   }
 
-  void _onPanUpdate(DragUpdateDetails d) {
+  void _onPointerMove(PointerMoveEvent e) {
+    if (!_isDragging) return;
     final sensitivity = _sphereR * 1.6;
-    final delta = (d.localPosition.dx - _lastPanX) / sensitivity;
+    final delta = (e.position.dx - _lastPanX) / sensitivity;
     _angle -= delta;
     _velocity = -delta;
-    _lastPanX = d.localPosition.dx;
+    _lastPanX = e.position.dx;
     _activeIndex = _nearestIndex(_angle);
     setState(() {});
   }
 
-  void _onPanEnd(DragEndDetails d) {
+  void _onPointerUp(PointerUpEvent e) {
     _isDragging = false;
-    // Apply inertia
-    final inertiaVel = d.velocity.pixelsPerSecond.dx / (_sphereR * 1.6) * 0.3;
-    final totalVel = _velocity * 2 + inertiaVel;
+    // Apply inertia from accumulated velocity
+    final totalVel = _velocity * 2;
 
     // Find target angle (nearest day's angle)
     final targetIdx = _nearestIndex(_angle + totalVel * 1.5);
@@ -104,30 +105,31 @@ class _GlassWeatherSphereState extends State<GlassWeatherSphere>
 
     // Ensure we rotate the shortest path
     var diff = targetAngle - _angle;
-    // Normalize to [-π, π]
     while (diff > pi) diff -= 2 * pi;
     while (diff < -pi) diff += 2 * pi;
     targetAngle = _angle + diff;
 
-    // Add slight inertia overshoot then settle
-    final startAngle = _angle;
-
-    _inertiaCtrl.value = startAngle;
+    _inertiaCtrl.value = _angle;
     _inertiaCtrl.animateTo(targetAngle, duration: const Duration(milliseconds: 500), curve: Curves.easeOutCubic);
 
     HapticFeedback.selectionClick();
     _activeIndex = targetIdx;
   }
 
+  void _onPointerCancel(PointerCancelEvent e) {
+    _isDragging = false;
+  }
+
   @override
   Widget build(BuildContext context) {
     return SizedBox(
       height: _sphereR * 2 + 60,
-      child: GestureDetector(
+      child: Listener(
         behavior: HitTestBehavior.opaque,
-        onPanStart: _onPanStart,
-        onPanUpdate: _onPanUpdate,
-        onPanEnd: _onPanEnd,
+        onPointerDown: _onPointerDown,
+        onPointerMove: _onPointerMove,
+        onPointerUp: _onPointerUp,
+        onPointerCancel: _onPointerCancel,
         child: Stack(
           clipBehavior: Clip.none,
           children: [

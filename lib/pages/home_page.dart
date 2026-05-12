@@ -6,8 +6,9 @@ import '../api/api_client.dart';
 import '../constants/keys.dart';
 import '../stores/app_state.dart';
 import '../stores/theme_state.dart';
-import '../widgets/feature_tip.dart';
+
 import '../widgets/glass_sphere.dart';
+import '../widgets/white_noise_player.dart';
 import '../widgets/weather_animation.dart';
 import '../widgets/ai_dot.dart';
 import 'diary_page.dart';
@@ -78,57 +79,34 @@ class _HomePageState extends State<HomePage> {
   Future<void> _loadWeather({double? lat, double? lon, String? name}) async {
     setState(() => _loading = true);
     try {
-      final prefs = await SharedPreferences.getInstance();
-      lat ??= double.tryParse(prefs.getString(StorageKeys.cityLat) ?? '');
-      lon ??= double.tryParse(prefs.getString(StorageKeys.cityLon) ?? '');
-
-      if (lat == null || lon == null) {
+      // Always re-locate via IP — never cache coordinates
+      if (lat == null && lon == null) {
         try {
           final loc = await Api.getLocation();
-          lat = (loc['lat'] as num).toDouble();
-          lon = (loc['lon'] as num).toDouble();
-          name ??= [loc['city'], loc['region'], loc['country']]
-              .whereType<String>()
-              .where((s) => s.isNotEmpty)
-              .join('，');
-          if (name!.isEmpty) name = '自动定位';
-          prefs.setString(StorageKeys.cityLat, lat.toString());
-          prefs.setString(StorageKeys.cityLon, lon.toString());
-          prefs.setString(StorageKeys.cityName, name!);
-        } catch (_) {}
-      }
-
-      lat ??= 39.9042;
-      lon ??= 116.4074;
-      name ??= prefs.getString(StorageKeys.cityName);
-
-      if (name == '自动定位' || name == null || name!.isEmpty) {
-        name = null;
-        try {
-          final loc = await Api.getLocation();
-          if (loc != null && loc['lat'] != null) {
+          if (loc['error'] != true && loc['lat'] != null) {
             lat = (loc['lat'] as num).toDouble();
             lon = (loc['lon'] as num).toDouble();
             name = [loc['city'], loc['region'], loc['country']]
                 .whereType<String>()
                 .where((s) => s.isNotEmpty)
                 .join('，');
-            if (name!.isEmpty) name = '自动定位';
-            prefs.setString(StorageKeys.cityLat, lat.toString());
-            prefs.setString(StorageKeys.cityLon, lon.toString());
-            prefs.setString(StorageKeys.cityName, name!);
           }
-        } catch (_) {
-          name = '自动定位';
-        }
+        } catch (_) {}
       }
+
+      // If location failed, use default but mark clearly
+      if (lat == null || lon == null) {
+        lat = 39.9042;
+        lon = 116.4074;
+      }
+      if (name == null || name!.isEmpty) name = '搜索城市 ▾';
 
       final data = await Api.getWeather(lat!, lon!);
       if (mounted) {
         setState(() {
           _weather = Map<String, dynamic>.from(data);
           _weatherError = null;
-          _currentCity = name ?? '自动定位';
+          _currentCity = name!;
           _loading = false;
         });
       }
@@ -250,21 +228,15 @@ class _HomePageState extends State<HomePage> {
                         style: const TextStyle(color: Color(0xFFD4837A))))
               else if (_weather != null) ...[
                 if (_currentCity.isNotEmpty)
-                  FeatureTip(
-                    tipKey: 'city_search',
-                    text: '点这里可以搜索切换城市～',
-                    offset: const Offset(60, -44),
-                    child: GestureDetector(
-                      onTap: () => setState(() => _showCitySearch = true),
-                      child: Center(
-                          child: Text('$_currentCity ▾',
-                              style: TextStyle(
-                                  color: theme.textSecondary,
-                                  fontSize: 14))),
-                    ),
+                  GestureDetector(
+                    onTap: () => setState(() => _showCitySearch = true),
+                    child: Center(
+                        child: Text('$_currentCity ▾',
+                            style: TextStyle(
+                                color: theme.textSecondary,
+                                fontSize: 14))),
                   ),
-                const SizedBox(height: 4),
-                const SizedBox(height: 12),
+                const SizedBox(height: 16),
                 // 玻璃球体天气
                 GlassWeatherSphere(
                   days: [
@@ -310,8 +282,8 @@ class _HomePageState extends State<HomePage> {
                   Navigator.push(context,
                       MaterialPageRoute(builder: (_) => const DiaryPage()));
                 },
-                onWhiteNoise: () {},
-                onPoems: () {},
+                onWhiteNoise: _showWhiteNoise,
+                onPoems: _showPoem,
               ),
             ),
           ],
@@ -475,6 +447,58 @@ class _HomePageState extends State<HomePage> {
               onTap: () => _pickCity(c),
             )),
       ]),
+    );
+  }
+
+  void _showPoem() async {
+    try {
+      final poem = await Api.matchPoem(1, '');
+      if (poem.isNotEmpty && mounted) {
+        showDialog(
+          context: context,
+          builder: (ctx) {
+            final theme = context.watch<ThemeState>();
+            return Dialog(
+              backgroundColor: theme.cardColor,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(poem['quote_line'] ?? poem['content'] ?? '',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(fontSize: 20, color: theme.textPrimary, height: 1.8)),
+                    const SizedBox(height: 16),
+                    Text('—— ${poem['poet'] ?? ''} · 《${poem['title'] ?? ''}》',
+                        style: TextStyle(fontSize: 13, color: theme.textSecondary)),
+                    const SizedBox(height: 16),
+                    TextButton(
+                      onPressed: () => Navigator.pop(ctx),
+                      child: Text('关闭', style: TextStyle(color: theme.textSecondary)),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      }
+    } catch (_) {}
+  }
+
+  void _showWhiteNoise() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (_) => Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: context.read<ThemeState>().cardColor,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: const WhiteNoisePlayer(),
+      ),
     );
   }
 }

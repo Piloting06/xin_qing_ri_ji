@@ -123,7 +123,7 @@ class _MoodPageState extends State<MoodPage> {
       final photosStr = _photos.isNotEmpty ? _photos.join('||') : null;
 
       await Api.saveMood(today, _moodScore, _notesCtrl.text, _selectedTags, [],
-          aiResponse: aiReply, photos: photosStr);
+          aiResponse: aiReply);
 
       // Save photo paths locally
       if (_photos.isNotEmpty) {
@@ -143,7 +143,7 @@ class _MoodPageState extends State<MoodPage> {
         if (poem != null && mounted) {
           setState(() {
             _poemText = poem['quote_line'] ?? poem['content'];
-            _poemAuthor = poem['author'];
+            _poemAuthor = '${poem['poet'] ?? ''} · ${poem['dynasty'] ?? ''}';
           });
         }
       } catch (_) {}

@@ -15,7 +15,10 @@ class _FriendsPageState extends State<FriendsPage> {
   List<Map<String, dynamic>> _friends = [];
   List<Map<String, dynamic>> _requests = [];
   bool _loading = true;
-  final _phoneCtrl = TextEditingController();
+  final _searchCtrl = TextEditingController();
+  List<Map<String, dynamic>> _searchResults = [];
+  bool _searching = false;
+  String _searchError = '';
 
   @override
   void initState() {
@@ -25,7 +28,7 @@ class _FriendsPageState extends State<FriendsPage> {
 
   @override
   void dispose() {
-    _phoneCtrl.dispose();
+    _searchCtrl.dispose();
     super.dispose();
   }
 
@@ -46,12 +49,36 @@ class _FriendsPageState extends State<FriendsPage> {
     }
   }
 
-  Future<void> _addFriend() async {
-    final phone = _phoneCtrl.text.trim();
-    if (phone.isEmpty) return;
+  void _onSearch(String q) async {
+    if (q.trim().isEmpty) {
+      setState(() { _searchResults = []; _searchError = ''; });
+      return;
+    }
+    setState(() => _searching = true);
+    try {
+      // Search by phone — backend returns user info if exists
+      final data = await Api.searchUser(q.trim());
+      if (mounted) {
+        setState(() {
+          _searchResults = data['users'] is List
+              ? List<Map<String, dynamic>>.from(data['users'])
+              : [];
+          _searchError = _searchResults.isEmpty ? '未找到该用户' : '';
+          _searching = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() { _searchResults = []; _searchError = '搜索失败'; _searching = false; });
+      }
+    }
+  }
+
+  Future<void> _addFriend(String phone) async {
     try {
       await Api.addFriend(phone);
-      _phoneCtrl.clear();
+      _searchCtrl.clear();
+      setState(() => _searchResults = []);
       HapticFeedback.mediumImpact();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -96,85 +123,119 @@ class _FriendsPageState extends State<FriendsPage> {
                             fontSize: 22,
                             fontWeight: FontWeight.bold,
                             color: t.textPrimary)),
-                    const SizedBox(height: 16),
-                    // Add friend
-                    Row(children: [
-                      Expanded(
-                        child: TextField(
-                          controller: _phoneCtrl,
-                          keyboardType: TextInputType.phone,
-                          style: TextStyle(
-                              color: t.textPrimary, fontSize: 14),
-                          cursorColor: t.accentColor,
-                          decoration: InputDecoration(
-                            hintText: '输入好友手机号...',
-                            hintStyle: TextStyle(
-                                color: t.textSecondary
-                                    .withAlpha(130)),
-                            border: OutlineInputBorder(
-                                borderRadius:
-                                    BorderRadius.circular(
-                                        14)),
-                            contentPadding:
-                                const EdgeInsets.symmetric(
-                                    horizontal: 14,
-                                    vertical: 12),
+                    const SizedBox(height: 14),
+                    // Search bar
+                    Container(
+                      decoration: BoxDecoration(
+                        color: t.cardColor,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: t.borderColor),
+                      ),
+                      child: Row(children: [
+                        const SizedBox(width: 12),
+                        Icon(Icons.search, size: 20, color: t.textSecondary),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: TextField(
+                            controller: _searchCtrl,
+                            onChanged: _onSearch,
+                            style: TextStyle(color: t.textPrimary, fontSize: 14),
+                            cursorColor: t.accentColor,
+                            decoration: InputDecoration(
+                              hintText: '搜索手机号添加好友...',
+                              hintStyle: TextStyle(color: t.textSecondary.withAlpha(130), fontSize: 14),
+                              border: InputBorder.none,
+                            ),
                           ),
                         ),
+                        if (_searchCtrl.text.isNotEmpty)
+                          IconButton(
+                            icon: Icon(Icons.close, size: 18, color: t.textSecondary),
+                            onPressed: () {
+                              _searchCtrl.clear();
+                              setState(() => _searchResults = []);
+                            },
+                          ),
+                      ]),
+                    ),
+                    // Search results
+                    if (_searching)
+                      const Padding(padding: EdgeInsets.all(16), child: LinearProgressIndicator(color: Color(0xFFC4A46C))),
+                    if (_searchError.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8),
+                        child: Text(_searchError, style: TextStyle(color: t.textSecondary, fontSize: 13)),
                       ),
-                      const SizedBox(width: 8),
-                      ElevatedButton(
-                          onPressed: _addFriend,
-                          style: ElevatedButton.styleFrom(
-                              backgroundColor: t.accentColor,
-                              foregroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(
-                                  borderRadius:
-                                      BorderRadius.circular(14))),
-                          child: const Text('添加')),
-                    ]),
+                    ..._searchResults.map((u) => Container(
+                          margin: const EdgeInsets.only(top: 8),
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                          decoration: BoxDecoration(
+                            color: t.cardColor,
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(color: t.borderColor),
+                          ),
+                          child: Row(children: [
+                            Container(
+                                width: 40, height: 40,
+                                decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: t.accentColor.withAlpha(25)),
+                                child: Icon(Icons.person, color: t.accentColor, size: 22)),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                                Text(u['display_name'] ?? u['phone'] ?? '',
+                                    style: TextStyle(color: t.textPrimary, fontWeight: FontWeight.w500)),
+                                Text(u['phone'] ?? '',
+                                    style: TextStyle(color: t.textSecondary, fontSize: 12)),
+                              ]),
+                            ),
+                            GestureDetector(
+                              onTap: () => _addFriend(u['phone'] ?? ''),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                                decoration: BoxDecoration(
+                                  color: t.accentColor,
+                                  borderRadius: BorderRadius.circular(14),
+                                ),
+                                child: const Text('添加', style: TextStyle(color: Colors.white, fontSize: 13)),
+                              ),
+                            ),
+                          ]),
+                        )),
                     const SizedBox(height: 16),
-                    // Requests
+                    // Friend requests
                     if (_requests.isNotEmpty) ...[
                       Text('好友请求',
-                          style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color: t.textSecondary)),
+                          style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: t.textSecondary)),
+                      const SizedBox(height: 6),
                       ..._requests.map((r) => Container(
-                            margin: const EdgeInsets.only(top: 8),
-                            padding: const EdgeInsets.all(12),
+                            margin: const EdgeInsets.only(bottom: 6),
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                             decoration: BoxDecoration(
                                 color: t.cardColor,
-                                borderRadius:
-                                    BorderRadius.circular(14),
-                                border: Border.all(
-                                    color: t.borderColor)),
+                                borderRadius: BorderRadius.circular(14),
+                                border: Border.all(color: t.borderColor)),
                             child: Row(children: [
+                              Container(
+                                  width: 36, height: 36,
+                                  decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: const Color(0xFFC4A46C).withAlpha(25)),
+                                  child: const Icon(Icons.person_add, color: Color(0xFFC4A46C), size: 18)),
+                              const SizedBox(width: 10),
                               Expanded(
-                                  child: Text(
-                                      r['username'] ?? r['phone'] ?? '',
-                                      style: TextStyle(
-                                          color:
-                                              t.textPrimary))),
+                                  child: Text(r['username'] ?? r['phone'] ?? '',
+                                      style: TextStyle(color: t.textPrimary))),
                               TextButton(
-                                  onPressed: () =>
-                                      _respond(r['id'], '1',
-                                          canView: true),
-                                  child: const Text('同意',
-                                      style: TextStyle(
-                                          color: Color(
-                                              0xFF7B9E7B)))),
+                                  onPressed: () => _respond(r['id'], '1', canView: true),
+                                  child: const Text('同意', style: TextStyle(color: Color(0xFF7B9E7B), fontSize: 13))),
                               TextButton(
-                                  onPressed: () =>
-                                      _respond(r['id'], '-1'),
-                                  child: const Text('拒绝',
-                                      style: TextStyle(
-                                          color: Color(
-                                              0xFFD4837A)))),
+                                  onPressed: () => _respond(r['id'], '-1'),
+                                  child: const Text('拒绝', style: TextStyle(color: Color(0xFFD4837A), fontSize: 13))),
                             ]),
                           )),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 12),
                     ],
                     // Friend list
                     if (_friends.isEmpty)
@@ -182,11 +243,14 @@ class _FriendsPageState extends State<FriendsPage> {
                           child: Padding(
                         padding: const EdgeInsets.all(40),
                         child: Text('还没有好友，搜手机号添加吧～',
-                            style: TextStyle(
-                                color: t.textSecondary)),
-                      )),
-                    ..._friends.map((f) => _FriendCard(
-                        friend: f, theme: t)),
+                            style: TextStyle(color: t.textSecondary)),
+                      ))
+                    else ...[
+                      Text('${_friends.length} 位好友',
+                          style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: t.textSecondary)),
+                      const SizedBox(height: 6),
+                      ..._friends.map((f) => _FriendItem(friend: f, theme: t)),
+                    ],
                     const SizedBox(height: 60),
                   ],
                 ),
@@ -196,134 +260,51 @@ class _FriendsPageState extends State<FriendsPage> {
   }
 }
 
-class _FriendCard extends StatefulWidget {
+class _FriendItem extends StatelessWidget {
   final Map<String, dynamic> friend;
   final ThemeState theme;
-  const _FriendCard({required this.friend, required this.theme});
-  @override
-  State<_FriendCard> createState() => _FriendCardState();
-}
-
-class _FriendCardState extends State<_FriendCard> {
-  List<Map<String, dynamic>>? _moods;
-  bool _loadingMoods = false;
-
-  Future<void> _viewMoods() async {
-    setState(() => _loadingMoods = true);
-    try {
-      final data =
-          await Api.getFriendMood(widget.friend['friend_id']);
-      if (mounted) {
-        setState(() {
-          _moods = List<Map<String, dynamic>>.from(data['moods'] ?? []);
-          _loadingMoods = false;
-        });
-      }
-    } on ApiException catch (e) {
-      if (mounted) {
-        setState(() => _loadingMoods = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(e.message)));
-      }
-    } catch (_) {
-      if (mounted) setState(() => _loadingMoods = false);
-    }
-  }
-
-  String _comfortText(int? score) {
-    switch (score) {
-      case 1: return '为这份开心点个赞吧～🎉';
-      case 2: return '这份平静也很珍贵呢～';
-      case 3: return '安慰下你朋友呀～🤍';
-      case 4: return '有人陪着，气就消得快点吧～🌿';
-      case 5: return '也许TA需要一个温暖的回应～💛';
-      case 6: return '你的一句关心，TA会很暖的～🫂';
-      case 7: return '一起期待这份美好吧～✨';
-      case 8: return '给TA送一个云拥抱吧～☁️';
-      default: return '';
-    }
-  }
+  const _FriendItem({required this.friend, required this.theme});
 
   @override
   Widget build(BuildContext context) {
-    final t = widget.theme;
-    final f = widget.friend;
+    final t = theme;
+    final name = friend['username'] ?? friend['phone'] ?? '好友';
+    final mood = friend['latest_mood'] as int?;
+    final moodEmoji = moodEmojis[mood] ?? '';
+
     return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(14),
+      margin: const EdgeInsets.only(bottom: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
         color: t.cardColor,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: t.borderColor),
       ),
-      child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(children: [
-              Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: t.accentColor.withAlpha(30)),
-                  child: Icon(Icons.person,
-                      color: t.accentColor, size: 20)),
-              const SizedBox(width: 10),
-              Text(
-                  f['username'] ?? f['phone'] ?? '好友',
-                  style: TextStyle(
-                      fontWeight: FontWeight.w500,
-                      color: t.textPrimary)),
-              const Spacer(),
-              TextButton(
-                  onPressed: _moods == null ? _viewMoods : null,
-                  child: Text(
-                      _moods != null ? '已加载' : '查看心情',
-                      style: const TextStyle(
-                          color: Color(0xFFC4A46C),
-                          fontSize: 12))),
-            ]),
-            if (_loadingMoods)
-              const LinearProgressIndicator(
-                  color: Color(0xFFC4A46C)),
-            if (_moods != null) ...[
-              const SizedBox(height: 8),
-              ..._moods!.map((m) {
-                final score = m['emotion_type'] as int?;
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 4),
-                  child: Row(children: [
-                    Text(moodEmojis[score] ?? '',
-                        style: const TextStyle(fontSize: 16)),
-                    const SizedBox(width: 6),
-                    Text(m['date'] ?? '',
-                        style: TextStyle(
-                            fontSize: 12,
-                            color: t.textSecondary)),
-                    const SizedBox(width: 8),
-                    Expanded(
-                        child: Text(
-                            m['notes']?.toString() ?? '',
-                            maxLines: 1,
-                            overflow:
-                                TextOverflow.ellipsis,
-                            style: TextStyle(
-                                fontSize: 12,
-                                color: t.textSecondary
-                                    .withAlpha(150)))),
-                  ]),
-                );
-              }),
-              if (_moods!.isNotEmpty)
-                Text(
-                    _comfortText(
-                        _moods!.first['emotion_type'] as int?),
-                    style: const TextStyle(
-                        color: Color(0xFFC4A46C),
-                        fontSize: 12,
-                        fontStyle: FontStyle.italic)),
-            ],
+      child: Row(children: [
+        Container(
+          width: 44,
+          height: 44,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: t.accentColor.withAlpha(25),
+          ),
+          child: Center(
+            child: Text(moodEmoji.isNotEmpty ? moodEmoji : '👤',
+                style: const TextStyle(fontSize: 20)),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(name,
+                style: TextStyle(color: t.textPrimary, fontWeight: FontWeight.w500, fontSize: 15)),
+            if (friend['signature'] != null)
+              Text(friend['signature'] ?? '',
+                  style: TextStyle(color: t.textSecondary, fontSize: 12)),
           ]),
+        ),
+        Icon(Icons.chevron_right, color: t.textSecondary.withAlpha(100), size: 20),
+      ]),
     );
   }
 }

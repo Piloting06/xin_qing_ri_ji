@@ -7,9 +7,9 @@ import '../constants/keys.dart';
 import '../stores/app_state.dart';
 import '../stores/theme_state.dart';
 import '../widgets/feature_tip.dart';
-import '../widgets/weather_carousel.dart';
+import '../widgets/glass_sphere.dart';
 import '../widgets/weather_animation.dart';
-import '../widgets/pixel_fox.dart';
+import '../widgets/ai_dot.dart';
 import 'diary_page.dart';
 
 class HomePage extends StatefulWidget {
@@ -30,20 +30,8 @@ class _HomePageState extends State<HomePage> {
   Map<String, dynamic> _animData = {};
   int _animCode = 0;
   String _animText = '';
-  bool _checkedIn = false;
-  int _consecutive = 0;
   bool _showCard = false;
   Map<String, dynamic>? _todayCard;
-
-  Future<void> _loadCheckin() async {
-    try {
-      final s = await Api.getCheckinStatus();
-      if (mounted) setState(() {
-        _checkedIn = s['checked_in'] == true || s['checked_in'] == 1;
-        _consecutive = s['consecutive_days'] ?? 0;
-      });
-    } catch (_) {}
-  }
 
   Future<void> _checkDailyCard() async {
     final prefs = await SharedPreferences.getInstance();
@@ -74,7 +62,6 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
     _loadAll();
-    _loadCheckin();
     _checkDailyCard();
   }
 
@@ -216,12 +203,15 @@ class _HomePageState extends State<HomePage> {
 
     final isDark = theme.isDark;
     final now = DateTime.now();
+    final screenHeight = MediaQuery.of(context).size.height;
     return Scaffold(
       backgroundColor: theme.backgroundColor,
       body: SafeArea(
-        child: RefreshIndicator(
-          onRefresh: _loadAll,
-          child: ListView(
+        child: Stack(
+          children: [
+            RefreshIndicator(
+              onRefresh: _loadAll,
+              child: ListView(
             padding: const EdgeInsets.all(16),
             children: [
               // Greeting
@@ -274,26 +264,9 @@ class _HomePageState extends State<HomePage> {
                     ),
                   ),
                 const SizedBox(height: 4),
-                // AI Pixel Fox
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: Padding(
-                    padding: const EdgeInsets.only(right: 8),
-                    child: PixelFox(
-                      streak: _consecutive,
-                      totalMoods: 1, // updated after mood loads
-                      todayMood: 0,
-                      onWriteDiary: () {
-                        Navigator.push(context,
-                            MaterialPageRoute(builder: (_) => const DiaryPage()));
-                      },
-                      onViewPoems: () {},
-                    ),
-                  ),
-                ),
                 const SizedBox(height: 12),
-                // 3D弧形天气轮播
-                WeatherCarousel(
+                // 玻璃球体天气
+                GlassWeatherSphere(
                   days: [
                     _weather!['today'] is Map ? Map<String, dynamic>.from(_weather!['today']) : {},
                     _weather!['tomorrow'] is Map ? Map<String, dynamic>.from(_weather!['tomorrow']) : {},
@@ -328,6 +301,20 @@ class _HomePageState extends State<HomePage> {
               const SizedBox(height: 100),
             ],
           ),
+        ),
+            Positioned(
+              right: 0,
+              top: screenHeight * 0.35,
+              child: AiDot(
+                onWriteDiary: () {
+                  Navigator.push(context,
+                      MaterialPageRoute(builder: (_) => const DiaryPage()));
+                },
+                onWhiteNoise: () {},
+                onPoems: () {},
+              ),
+            ),
+          ],
         ),
       ),
     );

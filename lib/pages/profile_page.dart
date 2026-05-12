@@ -1,7 +1,10 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
 import '../api/api_client.dart';
 import '../constants/keys.dart';
 import '../stores/app_state.dart';
@@ -23,6 +26,59 @@ class _ProfilePageState extends State<ProfilePage> {
   final _oldPwCtrl = TextEditingController();
   final _newPwCtrl = TextEditingController();
   bool _saving = false;
+  bool _checkedIn = false;
+  int _consecutive = 0;
+  String? _avatarPath;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCheckin();
+    _loadAvatar();
+  }
+
+  Future<void> _loadCheckin() async {
+    try {
+      final s = await Api.getCheckinStatus();
+      if (mounted) setState(() {
+        _checkedIn = s['checked_in'] == true || s['checked_in'] == 1;
+        _consecutive = s['consecutive_days'] ?? 0;
+      });
+    } catch (_) {}
+  }
+
+  Future<void> _loadAvatar() async {
+    final prefs = await SharedPreferences.getInstance();
+    final p = prefs.getString('avatar_path');
+    if (p != null && File(p).existsSync() && mounted) {
+      setState(() => _avatarPath = p);
+    }
+  }
+
+  Future<void> _pickAvatar() async {
+    try {
+      final img = await ImagePicker().pickImage(source: ImageSource.gallery, maxWidth: 256, imageQuality: 80);
+      if (img != null) {
+        final dir = await getApplicationDocumentsDirectory();
+        final dest = '${dir.path}/avatar.jpg';
+        File(img.path).copySync(dest);
+        final prefs = await SharedPreferences.getInstance();
+        prefs.setString('avatar_path', dest);
+        if (mounted) setState(() => _avatarPath = dest);
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _doCheckin() async {
+    HapticFeedback.heavyImpact();
+    try {
+      final r = await Api.checkin();
+      if (mounted) setState(() {
+        _checkedIn = true;
+        _consecutive = r['consecutive_days'] ?? _consecutive + 1;
+      });
+    } catch (_) {}
+  }
 
   @override
   void dispose() {
@@ -156,32 +212,46 @@ class _ProfilePageState extends State<ProfilePage> {
           padding: const EdgeInsets.all(16),
           children: [
             const SizedBox(height: 8),
-            // Header
+            // Header with avatar
             Center(
               child: Column(children: [
-                Container(
-                  width: 64,
-                  height: 64,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: theme.accentColor.withAlpha(30),
-                    border: Border.all(
-                        color: theme.accentColor.withAlpha(80),
-                        width: 1.5),
+                GestureDetector(
+                  onTap: _pickAvatar,
+                  child: Container(
+                    width: 72, height: 72,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: theme.accentColor.withAlpha(20),
+                      border: Border.all(color: theme.accentColor.withAlpha(80), width: 1.5),
+                    ),
+                    child: _avatarPath != null
+                        ? ClipOval(child: Image.file(File(_avatarPath!), fit: BoxFit.cover))
+                        : Icon(Icons.camera_alt_outlined, size: 28, color: theme.accentColor),
                   ),
-                  child: Icon(Icons.person,
-                      size: 32, color: theme.accentColor),
                 ),
                 const SizedBox(height: 10),
-                Text(
-                    appState.displayName.isNotEmpty
-                        ? appState.displayName
-                        : '用户',
-                    style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w600,
-                        color: theme.textPrimary)),
+                Text(appState.displayName.isNotEmpty ? appState.displayName : '用户',
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: theme.textPrimary)),
               ]),
+            ),
+            const SizedBox(height: 16),
+            // Check-in
+            GestureDetector(
+              onTap: _checkedIn ? null : _doCheckin,
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                decoration: BoxDecoration(
+                  color: theme.accentColor.withAlpha(15),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: theme.accentColor.withAlpha(60)),
+                ),
+                child: Center(
+                  child: Text(
+                    _checkedIn ? '已连续签到 $_consecutive 天' : '今日签到',
+                    style: TextStyle(color: theme.accentColor, fontSize: 16, fontWeight: FontWeight.w500),
+                  ),
+                ),
+              ),
             ),
             const SizedBox(height: 28),
             // Section: 修改名字

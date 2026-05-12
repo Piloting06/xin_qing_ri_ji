@@ -21,8 +21,6 @@ class _RegisterPageState extends State<RegisterPage>
   String? _error;
   bool _obscure = true;
   bool _obscure2 = true;
-  late AnimationController _entryCtrl;
-  late Animation<double> _entryAnim;
   final _phoneFocus = FocusNode();
   final _pwFocus = FocusNode();
 
@@ -48,15 +46,10 @@ class _RegisterPageState extends State<RegisterPage>
   @override
   void initState() {
     super.initState();
-    _entryCtrl = AnimationController(
-        vsync: this, duration: const Duration(milliseconds: 600));
-    _entryAnim = CurvedAnimation(parent: _entryCtrl, curve: Curves.easeOut);
-    _entryCtrl.forward();
   }
 
   @override
   void dispose() {
-    _entryCtrl.dispose();
     _phoneCtrl.dispose();
     _pwCtrl.dispose();
     _pw2Ctrl.dispose();
@@ -131,28 +124,19 @@ class _RegisterPageState extends State<RegisterPage>
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  AnimatedBuilder(
-                    animation: _entryAnim,
-                    builder: (_, __) => Opacity(
-                      opacity: _entryAnim.value.clamp(0.0, 1.0),
-                      child: Transform.scale(
-                        scale: 0.8 + _entryAnim.value * 0.2,
-                        child: Column(children: [
-                          CustomPaint(
-                              size: const Size(64, 64),
-                              painter: _NeonLogoPainter(_entryAnim.value)),
-                          const SizedBox(height: 12),
-                          Text('创建账号',
-                              style: TextStyle(
-                                  fontSize: 22,
-                                  letterSpacing: 3,
-                                  fontWeight: FontWeight.w300,
-                                  color: const Color(0xFFC4A46C)
-                                      .withAlpha(200))),
-                        ]),
-                      ),
-                    ),
-                  ),
+                  Column(children: [
+                    CustomPaint(
+                        size: const Size(64, 64),
+                        painter: _NeonLogoPainter(1.0)),
+                    const SizedBox(height: 12),
+                    Text('创建账号',
+                        style: TextStyle(
+                            fontSize: 22,
+                            letterSpacing: 3,
+                            fontWeight: FontWeight.w300,
+                            color: const Color(0xFFC4A46C)
+                                .withAlpha(200))),
+                  ]),
                   const SizedBox(height: 36),
                   // Phone
                   _NeonInput(
@@ -161,7 +145,7 @@ class _RegisterPageState extends State<RegisterPage>
                       hint: '手机号（也是你的账号）',
                       icon: Icons.phone_iphone_rounded,
                       keyboardType: TextInputType.phone,
-                      entryProgress: _entryAnim.value),
+                      ),
                   const SizedBox(height: 14),
                   // Password
                   _NeonInput(
@@ -170,8 +154,7 @@ class _RegisterPageState extends State<RegisterPage>
                       hint: '设置密码',
                       icon: Icons.lock_outline_rounded,
                       obscure: _obscure,
-                      entryProgress: _entryAnim.value,
-                      suffix: IconButton(
+                                            suffix: IconButton(
                         icon: Icon(
                             _obscure
                                 ? Icons.visibility_off_rounded
@@ -187,8 +170,7 @@ class _RegisterPageState extends State<RegisterPage>
                       hint: '确认密码',
                       icon: Icons.lock_outline_rounded,
                       obscure: _obscure2,
-                      entryProgress: _entryAnim.value,
-                      suffix: IconButton(
+                                            suffix: IconButton(
                         icon: Icon(
                             _obscure2
                                 ? Icons.visibility_off_rounded
@@ -201,7 +183,7 @@ class _RegisterPageState extends State<RegisterPage>
                   const SizedBox(height: 16),
                   // Security question type selector
                   AnimatedOpacity(
-                    opacity: _entryAnim.value.clamp(0.0, 1.0),
+                    opacity: 1.0,
                     duration: const Duration(milliseconds: 400),
                     child: _buildSecurityQuestion(),
                   ),
@@ -221,22 +203,18 @@ class _RegisterPageState extends State<RegisterPage>
                     label: '注 册',
                     loading: _loading,
                     active: _formValid,
-                    entryProgress: _entryAnim.value,
                     onTap: _register,
                   ),
                   const SizedBox(height: 16),
-                  AnimatedBuilder(
-                    animation: _entryAnim,
-                    builder: (_, __) => Opacity(
-                      opacity: _entryAnim.value.clamp(0.0, 1.0),
-                      child: TextButton(
-                        onPressed: () => Navigator.pop(context),
-                        style: TextButton.styleFrom(
-                            minimumSize: const Size(44, 44)),
-                        child: const Text('已有账号？去登录',
-                            style: TextStyle(
-                                color: Color(0xFF8C8C8C), fontSize: 14)),
-                      ),
+                  Opacity(
+                    opacity: 1.0,
+                    child: TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      style: TextButton.styleFrom(
+                          minimumSize: const Size(44, 44)),
+                      child: const Text('已有账号？去登录',
+                          style: TextStyle(
+                              color: Color(0xFF8C8C8C), fontSize: 14)),
                     ),
                   ),
                 ],
@@ -364,7 +342,6 @@ class _NeonInput extends StatefulWidget {
   final IconData icon;
   final bool obscure;
   final TextInputType keyboardType;
-  final double entryProgress;
   final Widget? suffix;
 
   const _NeonInput({
@@ -372,7 +349,6 @@ class _NeonInput extends StatefulWidget {
     this.focusNode,
     required this.hint,
     required this.icon,
-    required this.entryProgress,
     this.obscure = false,
     this.keyboardType = TextInputType.text,
     this.suffix,
@@ -404,58 +380,42 @@ class _NeonInputState extends State<_NeonInput> {
   @override
   Widget build(BuildContext context) {
     final baseAlpha = (180 + (_focused ? 75 : 0)).round().clamp(0, 255);
-
-    return AnimatedOpacity(
-      opacity: widget.entryProgress.clamp(0.0, 1.0),
-      duration: const Duration(milliseconds: 300),
-      child: Transform.translate(
-        offset: Offset(0, (1 - widget.entryProgress) * 20),
-        child: Container(
-          height: 52,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(
-              color: const Color(0xFFC4A46C).withAlpha(baseAlpha),
-              width: _focused ? 1.5 : 1.0,
-            ),
-            boxShadow: _focused
-                ? [
-                    BoxShadow(
-                        color: const Color(0xFFC4A46C).withAlpha(30),
-                        blurRadius: 12,
-                        spreadRadius: 1)
-                  ]
-                : null,
+    final children = <Widget>[
+      const SizedBox(width: 14),
+      Icon(widget.icon, size: 20, color: const Color(0xFFC4A46C).withAlpha(baseAlpha)),
+      const SizedBox(width: 10),
+      Expanded(
+        child: TextField(
+          controller: widget.controller,
+          focusNode: _fn,
+          obscureText: widget.obscure,
+          keyboardType: widget.keyboardType,
+          style: const TextStyle(color: Color(0xFFE8E4DC), fontSize: 16),
+          cursorColor: const Color(0xFFC4A46C),
+          decoration: const InputDecoration(
+            hintText: '',
+            hintStyle: TextStyle(color: Color(0xFF6B6058), fontSize: 16),
+            border: InputBorder.none,
+            contentPadding: EdgeInsets.only(bottom: 4),
           ),
-          child: Row(children: [
-            const SizedBox(width: 14),
-            Icon(widget.icon,
-                size: 20,
-                color: const Color(0xFFC4A46C).withAlpha(baseAlpha)),
-            const SizedBox(width: 10),
-            Expanded(
-              child: TextField(
-                controller: widget.controller,
-                focusNode: _fn,
-                obscureText: widget.obscure,
-                keyboardType: widget.keyboardType,
-                style:
-                    const TextStyle(color: Color(0xFFE8E4DC), fontSize: 16),
-                cursorColor: const Color(0xFFC4A46C),
-                decoration: InputDecoration(
-                  hintText: widget.hint,
-                  hintStyle:
-                      const TextStyle(color: Color(0xFF6B6058), fontSize: 16),
-                  border: InputBorder.none,
-                  contentPadding: const EdgeInsets.only(bottom: 4),
-                ),
-              ),
-            ),
-            if (widget.suffix != null) widget.suffix!,
-            const SizedBox(width: 4),
-          ]),
         ),
       ),
+      const SizedBox(width: 4),
+    ];
+
+    return Container(
+      height: 52,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: const Color(0xFFC4A46C).withAlpha(baseAlpha),
+          width: _focused ? 1.5 : 1.0,
+        ),
+        boxShadow: _focused
+            ? [BoxShadow(color: const Color(0xFFC4A46C).withAlpha(30), blurRadius: 12, spreadRadius: 1)]
+            : null,
+      ),
+      child: Row(children: children),
     );
   }
 }
@@ -465,14 +425,12 @@ class _NeonButton extends StatefulWidget {
   final String label;
   final bool loading;
   final bool active;
-  final double entryProgress;
   final VoidCallback onTap;
 
   const _NeonButton({
     required this.label,
     required this.loading,
     required this.active,
-    required this.entryProgress,
     required this.onTap,
   });
 
@@ -480,83 +438,35 @@ class _NeonButton extends StatefulWidget {
   State<_NeonButton> createState() => _NeonButtonState();
 }
 
-class _NeonButtonState extends State<_NeonButton>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _pulseCtrl;
-
-  @override
-  void initState() {
-    super.initState();
-    _pulseCtrl = AnimationController(
-        vsync: this, duration: const Duration(milliseconds: 1200));
-  }
-
-  @override
-  void didUpdateWidget(_NeonButton old) {
-    super.didUpdateWidget(old);
-    if (widget.active && !_pulseCtrl.isAnimating) {
-      _pulseCtrl.repeat(reverse: true);
-    } else if (!widget.active && _pulseCtrl.isAnimating) {
-      _pulseCtrl.stop();
-      _pulseCtrl.reset();
-    }
-  }
-
-  @override
-  void dispose() {
-    _pulseCtrl.dispose();
-    super.dispose();
-  }
-
+class _NeonButtonState extends State<_NeonButton> {
   @override
   Widget build(BuildContext context) {
     final alpha = widget.active ? 255 : 100;
-    return AnimatedOpacity(
-      opacity: widget.entryProgress.clamp(0.0, 1.0),
-      duration: const Duration(milliseconds: 400),
-      child: Transform.translate(
-        offset: Offset(0, (1 - widget.entryProgress) * 30),
-        child: AnimatedBuilder(
-          animation: _pulseCtrl,
-          builder: (_, __) {
-            final pulseAlpha =
-                widget.active ? (30 + _pulseCtrl.value * 30).round() : 0;
-            return GestureDetector(
-              onTap: widget.active && !widget.loading ? widget.onTap : null,
-              child: Container(
-                width: double.infinity,
-                height: 52,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(
-                    color: const Color(0xFFC4A46C).withAlpha(alpha),
-                    width: 1.5,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                        color: const Color(0xFFC4A46C).withAlpha(pulseAlpha),
-                        blurRadius: 20,
-                        spreadRadius: 1)
-                  ],
-                ),
-                child: Center(
-                  child: widget.loading
-                      ? const SizedBox(
-                          width: 22,
-                          height: 22,
-                          child: CircularProgressIndicator(
-                              strokeWidth: 2, color: Color(0xFFC4A46C)))
-                      : Text(widget.label,
-                          style: TextStyle(
-                              color: const Color(0xFFC4A46C)
-                                  .withAlpha(alpha),
-                              fontSize: 17,
-                              fontWeight: FontWeight.w400,
-                              letterSpacing: 4)),
-                ),
-              ),
-            );
-          },
+    return GestureDetector(
+      onTap: widget.active && !widget.loading ? widget.onTap : null,
+      child: Container(
+        width: double.infinity,
+        height: 52,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: const Color(0xFFC4A46C).withAlpha(alpha),
+            width: 1.5,
+          ),
+        ),
+        child: Center(
+          child: widget.loading
+              ? const SizedBox(
+                  width: 22,
+                  height: 22,
+                  child: CircularProgressIndicator(
+                      strokeWidth: 2, color: Color(0xFFC4A46C)))
+              : Text(widget.label,
+                  style: TextStyle(
+                      color: const Color(0xFFC4A46C).withAlpha(alpha),
+                      fontSize: 17,
+                      fontWeight: FontWeight.w400,
+                      letterSpacing: 4)),
         ),
       ),
     );

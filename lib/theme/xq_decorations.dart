@@ -1,0 +1,95 @@
+import 'package:flutter/material.dart';
+import 'xq_colors.dart';
+
+/// 心晴日记 — 装饰常量：圆角、阴影、边框、卡片样式
+class XqDecorations {
+  XqDecorations._();
+
+  // ── 圆角 ──
+  static const radiusSmall = 8.0;
+  static const radiusMedium = 14.0;
+  static const radiusLarge = 20.0;
+  static const radiusXL = 24.0;
+
+  // ── 阴影（浅色模式）──
+  static List<BoxShadow> shadowSubtle({bool dark = false}) => [
+    BoxShadow(
+      color: (dark ? Colors.black : XqColors.lightInk).withAlpha(dark ? 4 : 8),
+      blurRadius: 8, offset: const Offset(0, 2),
+    ),
+  ];
+  static List<BoxShadow> shadowMedium({bool dark = false}) => [
+    BoxShadow(
+      color: (dark ? Colors.black : XqColors.lightInk).withAlpha(dark ? 8 : 15),
+      blurRadius: 16, offset: const Offset(0, 4),
+    ),
+  ];
+  static List<BoxShadow> shadowStrong({bool dark = false}) => [
+    BoxShadow(
+      color: (dark ? Colors.black : XqColors.lightInk).withAlpha(dark ? 12 : 25),
+      blurRadius: 24, offset: const Offset(0, 6),
+    ),
+  ];
+  static List<BoxShadow> shadowGlow(Color accent) => [
+    BoxShadow(
+      color: accent.withAlpha(20),
+      blurRadius: 16, spreadRadius: 2,
+    ),
+  ];
+
+  // ── 边框 ──
+  static Border borderThin(Color border) =>
+      Border.all(color: border, width: 0.5);
+  static Border borderMedium(Color border) =>
+      Border.all(color: border, width: 1.0);
+  static Border borderFocus(Color borderFocus) =>
+      Border.all(color: borderFocus, width: 1.5);
+  static Border borderAccent(Color accent) =>
+      Border.all(color: accent.withAlpha(60), width: 1.0);
+
+  // ═══════════════════════════════════════
+  //  5 种卡片模式
+  // ═══════════════════════════════════════
+
+  /// 标准内容卡片
+  static BoxDecoration paperCard(Color card, Color border, {bool dark = false}) =>
+      BoxDecoration(
+        color: card,
+        borderRadius: BorderRadius.circular(radiusMedium),
+        border: borderThin(border),
+        boxShadow: shadowSubtle(dark: dark),
+      );
+
+  /// 高级卡片（天气、语录）
+  static BoxDecoration elevatedCard(Color cardElevated, Color accent, {bool dark = false}) =>
+      BoxDecoration(
+        color: cardElevated,
+        borderRadius: BorderRadius.circular(radiusLarge),
+        border: borderAccent(accent),
+        boxShadow: [...shadowMedium(dark: dark), ...shadowGlow(accent)],
+      );
+
+  /// 浮动面板（毛玻璃效果需配合 BackdropFilter）
+  static BoxDecoration glassCard(Color card, Color border) =>
+      BoxDecoration(
+        color: card.withAlpha(200),
+        borderRadius: BorderRadius.circular(radiusMedium),
+        border: borderThin(border),
+      );
+
+  /// 便利贴（树洞留言）
+  static BoxDecoration postItCard(Color washi, {double rotation = 0}) =>
+      BoxDecoration(
+        color: washi,
+        borderRadius: BorderRadius.circular(radiusSmall),
+        boxShadow: shadowSubtle(),
+      );
+
+  /// 拍立得（好友卡片）
+  static BoxDecoration polaroidCard(Color cardElevated, {bool dark = false}) =>
+      BoxDecoration(
+        color: cardElevated,
+        borderRadius: BorderRadius.circular(radiusMedium),
+        boxShadow: shadowMedium(dark: dark),
+      );
+}

@@ -1,27 +1,29 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../constants/keys.dart';
+import '../theme/xq_colors.dart';
 
 class ThemeState extends ChangeNotifier {
-  String _themeMode = 'light';
+  String _themeMode = 'warm';
   bool _transitioning = false;
 
   bool get transitioning => _transitioning;
+  String get themeMode => _themeMode;
+  bool get isDark => _themeMode == 'dark';
 
   static const Map<String, String> themeNames = {
-    'light': '亚麻暖白',
-    'green': '抹茶淡绿',
-    'dark': '暮色暖灰',
+    'warm': '晴日暖白',
+    'dark': '静夜深蓝',
+    'mint': '雾感薄荷',
+    'blush': '豆沙柔粉',
   };
 
-  // [accent, card, background]
   static const Map<String, List<Color>> themeColors = {
-    'light': [Color(0xFF8B7355), Color(0xFFFAF7F2), Color(0xFFF5F0E8)],
-    'green': [Color(0xFF7B8D6E), Color(0xFFF6F8F3), Color(0xFFF0F3EB)],
-    'dark': [Color(0xFFB8956A), Color(0xFF363430), Color(0xFF2A2824)],
+    'warm': [XqColors.lightAccent, XqColors.lightCard, XqColors.lightBackground],
+    'dark': [XqColors.darkAccent, XqColors.darkCard, XqColors.darkBackground],
+    'mint': [XqColors.mintAccent, XqColors.mintCard, XqColors.mintBackground],
+    'blush': [XqColors.blushAccent, XqColors.blushCard, XqColors.blushBackground],
   };
-
-  String get themeMode => _themeMode;
 
   ThemeState() {
     _load();
@@ -29,83 +31,169 @@ class ThemeState extends ChangeNotifier {
 
   Future<void> _load() async {
     final prefs = await SharedPreferences.getInstance();
-    _themeMode = prefs.getString(StorageKeys.themeMode) ?? 'light';
+    final stored = prefs.getString(StorageKeys.themeMode) ?? 'warm';
+    // Migrate old 'light' → 'warm'
+    final normalized = stored == 'light' ? 'warm' : stored;
+    _themeMode = themeNames.containsKey(normalized) ? normalized : 'warm';
+    if (_themeMode != stored) {
+      await prefs.setString(StorageKeys.themeMode, _themeMode);
+    }
     notifyListeners();
   }
 
   Future<void> setTheme(String mode) async {
-    if (_themeMode == mode) return;
+    final next = themeNames.containsKey(mode) ? mode : 'warm';
+    if (_themeMode == next) return;
     _transitioning = true;
     notifyListeners();
-    await Future.delayed(const Duration(milliseconds: 200));
-    _themeMode = mode;
+    await Future.delayed(const Duration(milliseconds: 180));
+    _themeMode = next;
     final prefs = await SharedPreferences.getInstance();
-    prefs.setString(StorageKeys.themeMode, mode);
+    await prefs.setString(StorageKeys.themeMode, next);
     notifyListeners();
-    await Future.delayed(const Duration(milliseconds: 400));
+    await Future.delayed(const Duration(milliseconds: 240));
     _transitioning = false;
     notifyListeners();
   }
 
-  bool get isDark => _themeMode == 'dark';
+  // ── Color getters indexed by theme ──
 
-  // ── 亚麻暖白 (linen light) ──
-  // ── 抹茶淡绿 (matcha green) ──
-  // ── 暮色暖灰 (dusk dark) ──
+  Color get backgroundColor => switch (_themeMode) {
+    'dark' => XqColors.darkBackground,
+    'mint' => XqColors.mintBackground,
+    'blush' => XqColors.blushBackground,
+    _ => XqColors.lightBackground,
+  };
 
-  Color get backgroundColor {
-    switch (_themeMode) {
-      case 'dark': return const Color(0xFF2A2824);
-      case 'green': return const Color(0xFFF0F3EB);
-      default: return const Color(0xFFF5F0E8);
-    }
-  }
+  Color get cardColor => switch (_themeMode) {
+    'dark' => XqColors.darkCard,
+    'mint' => XqColors.mintCard,
+    'blush' => XqColors.blushCard,
+    _ => XqColors.lightCard,
+  };
 
-  Color get cardColor {
-    switch (_themeMode) {
-      case 'dark': return const Color(0xFF363430);
-      case 'green': return const Color(0xFFF6F8F3);
-      default: return const Color(0xFFFAF7F2);
-    }
-  }
+  Color get cardElevated => switch (_themeMode) {
+    'dark' => XqColors.darkCardElevated,
+    'mint' => XqColors.mintCardElevated,
+    'blush' => XqColors.blushCardElevated,
+    _ => XqColors.lightCardElevated,
+  };
 
-  Color get accentColor {
-    switch (_themeMode) {
-      case 'dark': return const Color(0xFFB8956A);
-      case 'green': return const Color(0xFF7B8D6E);
-      default: return const Color(0xFF8B7355);
-    }
-  }
+  Color get accentColor => switch (_themeMode) {
+    'dark' => XqColors.darkAccent,
+    'mint' => XqColors.mintAccent,
+    'blush' => XqColors.blushAccent,
+    _ => XqColors.lightAccent,
+  };
 
-  Color get textPrimary {
-    switch (_themeMode) {
-      case 'dark': return const Color(0xFFE5DDD3);
-      case 'green': return const Color(0xFF2C3328);
-      default: return const Color(0xFF3D3228);
-    }
-  }
+  Color get accentLight => switch (_themeMode) {
+    'dark' => XqColors.darkAccentLight,
+    'mint' => XqColors.mintAccentLight,
+    'blush' => XqColors.blushAccentLight,
+    _ => XqColors.lightAccentLight,
+  };
 
-  Color get textSecondary {
-    switch (_themeMode) {
-      case 'dark': return const Color(0xFF9B8E80);
-      case 'green': return const Color(0xFF7B8D6E);
-      default: return const Color(0xFF8C7E6F);
-    }
-  }
+  Color get accentMuted => switch (_themeMode) {
+    'dark' => XqColors.darkAccentMuted,
+    'mint' => XqColors.mintAccentMuted,
+    'blush' => XqColors.blushAccentMuted,
+    _ => XqColors.lightAccentMuted,
+  };
 
-  Color get borderColor {
-    switch (_themeMode) {
-      case 'dark': return Colors.white.withAlpha(25);
-      case 'green': return const Color(0xFF8B9B80).withAlpha(50);
-      default: return const Color(0xFF8B7355).withAlpha(40);
-    }
-  }
+  Color get textPrimary => switch (_themeMode) {
+    'dark' => XqColors.darkTextPrimary,
+    'mint' => XqColors.mintTextPrimary,
+    'blush' => XqColors.blushTextPrimary,
+    _ => XqColors.lightTextPrimary,
+  };
 
-  Color get surfaceAlpha {
-    switch (_themeMode) {
-      case 'dark': return Colors.white.withAlpha(10);
-      case 'green': return const Color(0xFF7B8D6E).withAlpha(12);
-      default: return const Color(0xFF8B7355).withAlpha(8);
-    }
-  }
+  Color get textSecondary => switch (_themeMode) {
+    'dark' => XqColors.darkTextSecondary,
+    'mint' => XqColors.mintTextSecondary,
+    'blush' => XqColors.blushTextSecondary,
+    _ => XqColors.lightTextSecondary,
+  };
+
+  Color get textTertiary => switch (_themeMode) {
+    'dark' => XqColors.darkTextTertiary,
+    'mint' => XqColors.mintTextTertiary,
+    'blush' => XqColors.blushTextTertiary,
+    _ => XqColors.lightTextTertiary,
+  };
+
+  Color get textOnAccent => switch (_themeMode) {
+    'dark' => XqColors.darkTextOnAccent,
+    _ => XqColors.lightTextOnAccent, // all light themes use white text on accent
+  };
+
+  Color get borderColor => switch (_themeMode) {
+    'dark' => XqColors.darkBorder,
+    'mint' => XqColors.mintBorder,
+    'blush' => XqColors.blushBorder,
+    _ => XqColors.lightBorder,
+  };
+
+  Color get borderFocus => switch (_themeMode) {
+    'dark' => XqColors.darkBorderFocus,
+    'mint' => XqColors.mintBorderFocus,
+    'blush' => XqColors.blushBorderFocus,
+    _ => XqColors.lightBorderFocus,
+  };
+
+  Color get errorColor => switch (_themeMode) {
+    'dark' => XqColors.darkError,
+    _ => XqColors.lightError,
+  };
+
+  Color get successColor => switch (_themeMode) {
+    'dark' => XqColors.darkSuccess,
+    _ => XqColors.lightSuccess,
+  };
+
+  Color get warningColor => switch (_themeMode) {
+    'dark' => XqColors.darkWarning,
+    _ => XqColors.lightWarning,
+  };
+
+  Color get ink => switch (_themeMode) {
+    'dark' => XqColors.darkInk,
+    'mint' => XqColors.mintInk,
+    'blush' => XqColors.blushInk,
+    _ => XqColors.lightInk,
+  };
+
+  Color get inkLight => switch (_themeMode) {
+    'dark' => XqColors.darkInkLight,
+    'mint' => XqColors.mintInkLight,
+    'blush' => XqColors.blushInkLight,
+    _ => XqColors.lightInkLight,
+  };
+
+  Color get gold => switch (_themeMode) {
+    'dark' => XqColors.darkGold,
+    'mint' => XqColors.mintGold,
+    'blush' => XqColors.blushGold,
+    _ => XqColors.lightGold,
+  };
+
+  Color get paperLine => switch (_themeMode) {
+    'dark' => XqColors.darkPaperLine,
+    'mint' => XqColors.mintPaperLine,
+    'blush' => XqColors.blushPaperLine,
+    _ => XqColors.lightPaperLine,
+  };
+
+  Color get surfaceAlpha => switch (_themeMode) {
+    'dark' => Colors.white.withAlpha(12),
+    'mint' => XqColors.mintAccent.withAlpha(20),
+    'blush' => XqColors.blushAccent.withAlpha(20),
+    _ => XqColors.lightAccent.withAlpha(20),
+  };
+
+  List<Color> get washiColors => switch (_themeMode) {
+    'dark' => [XqColors.darkWashi1, XqColors.darkWashi2, XqColors.darkWashi3, XqColors.darkWashi4],
+    'mint' => [XqColors.mintWashi1, XqColors.mintWashi2, XqColors.mintWashi3, XqColors.mintWashi4],
+    'blush' => [XqColors.blushWashi1, XqColors.blushWashi2, XqColors.blushWashi3, XqColors.blushWashi4],
+    _ => [XqColors.lightWashi1, XqColors.lightWashi2, XqColors.lightWashi3, XqColors.lightWashi4],
+  };
 }

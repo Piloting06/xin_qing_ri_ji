@@ -1,17 +1,18 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../api/api_client.dart';
-import '../constants/keys.dart';
 import '../stores/app_state.dart';
 import '../stores/theme_state.dart';
-
-import '../widgets/glass_sphere.dart';
-import '../widgets/white_noise_player.dart';
-import '../widgets/weather_animation.dart';
-import '../widgets/ai_dot.dart';
+import '../utils/weather_utils.dart';
+import '../widgets/weather_summary_card.dart';
+import 'capsule_page.dart';
 import 'diary_page.dart';
+import 'mood_page.dart';
+import 'profile_page.dart';
+import 'treehole_page.dart';
+import 'weather_detail_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -20,50 +21,25 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  static const _weatherLatKey = 'weather_lat';
+  static const _weatherLonKey = 'weather_lon';
+  static const _weatherCityKey = 'weather_city';
+  static const _weatherUpdatedAtKey = 'weather_updated_at';
+
   Map<String, dynamic>? _weather;
   String? _weatherError;
   String _currentCity = '';
+  String _locationStatus = '正在定位';
+  DateTime? _weatherUpdatedAt;
   bool _showCitySearch = false;
   final _citySearchCtrl = TextEditingController();
   List<Map<String, dynamic>> _cityResults = [];
   bool _loading = true;
-  bool _showAnim = false;
-  Map<String, dynamic> _animData = {};
-  int _animCode = 0;
-  String _animText = '';
-  bool _showCard = false;
-  Map<String, dynamic>? _todayCard;
-
-  Future<void> _checkDailyCard() async {
-    final prefs = await SharedPreferences.getInstance();
-    final today = DateTime.now().toIso8601String().substring(0, 10);
-    final last = prefs.getString('last_card_date') ?? '';
-    if (last != today) {
-      try {
-        final card = await Api.getTodayCard();
-        if (mounted && card.isNotEmpty) {
-          setState(() { _todayCard = card; _showCard = true; });
-          prefs.setString('last_card_date', today);
-        }
-      } catch (_) {}
-    }
-  }
-
-  void _openAnim(Map<String, dynamic> day) {
-    if (day.isEmpty) return;
-    setState(() {
-      _animData = day;
-      _animCode = day['weather_code'] ?? 0;
-      _animText = day['weather'] ?? '';
-      _showAnim = true;
-    });
-  }
 
   @override
   void initState() {
     super.initState();
-    _loadAll();
-    _checkDailyCard();
+    _loadWeather();
   }
 
   @override
@@ -72,52 +48,218 @@ class _HomePageState extends State<HomePage> {
     super.dispose();
   }
 
-  Future<void> _loadAll() async {
-    await _loadWeather();
-  }
+  Future<void> _loadWeather({
+    double? lat,
+    double? lon,
+    String? name,
+    String? source,
+  }) async {
+    if (mounted) {
+      setState(() {
+        _loading = true;
+        _weatherError = null;
+        _locationStatus = source ?? '正在定位';
+      });
+    }
 
-  Future<void> _loadWeather({double? lat, double? lon, String? name}) async {
-    setState(() => _loading = true);
-    try {
-      // Always re-locate via IP — never cache coordinates
-      if (lat == null && lon == null) {
-        try {
-          final loc = await Api.getLocation();
-          if (loc['error'] != true && loc['lat'] != null) {
-            lat = (loc['lat'] as num).toDouble();
-            lon = (loc['lon'] as num).toDouble();
-            name = [loc['city'], loc['region'], loc['country']]
-                .whereType<String>()
-                .where((s) => s.isNotEmpty)
-                .join('，');
-          }
-        } catch (_) {}
-      }
+    if (lat != null && lon != null) {
+      await _fetchWeatherFor(
+        _WeatherLocation(
+          lat: lat,
+          lon: lon,
+          city: name?.trim().isNotEmpty == true ? name!.trim() : '手动城市',
+          status: source ?? '手动城市',
+          cacheable: true,
+        ),
+      );
+      return;
+    }
 
-      // If location failed, use default but mark clearly
-      if (lat == null || lon == null) {
-        lat = 39.9042;
-        lon = 116.4074;
-      }
-      if (name == null || name!.isEmpty) name = '搜索城市 ▾';
-
-      final data = await Api.getWeather(lat!, lon!);
-      if (mounted) {
-        setState(() {
-          _weather = Map<String, dynamic>.from(data);
-          _weatherError = null;
-          _currentCity = name!;
-          _loading = false;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _weatherError = '获取天气失败';
-          _loading = false;
-        });
+    final failures = <String>[];
+    for (final resolver in [_systemLocation, _cachedLocation, _ipLocation]) {
+      try {
+        final location = await resolver();
+        if (location == null) continue;
+        await _fetchWeatherFor(location);
+        return;
+      } on ApiException catch (e) {
+        if (e.statusCode == 401) return;
+        failures.add(e.message);
+      } catch (e) {
+        final msg = e.toString().replaceFirst('Exception: ', '');
+        if (msg.trim().isNotEmpty) failures.add(msg);
       }
     }
+
+    if (!mounted) return;
+    setState(() {
+      _loading = false;
+      _weather = null;
+      _currentCity = '';
+      _locationStatus = '定位失败';
+      _weatherUpdatedAt = null;
+      _weatherError = failures.isEmpty ? '定位失败，请手动选择城市' : failures.last;
+    });
+  }
+
+  Future<void> _fetchWeatherFor(_WeatherLocation location) async {
+    final data = await Api.getWeather(location.lat, location.lon);
+    final updatedAt = DateTime.now();
+    if (location.cacheable) {
+      await _cacheLocation(location, updatedAt);
+    }
+    if (!mounted) return;
+    setState(() {
+      _weather = Map<String, dynamic>.from(data);
+      _weatherError = null;
+      _currentCity = location.city;
+      _locationStatus = location.status;
+      _weatherUpdatedAt = updatedAt;
+      _loading = false;
+    });
+  }
+
+  Future<String> _resolveCity(
+    double lat,
+    double lon, {
+    required String fallback,
+  }) async {
+    try {
+      final loc = await Api.reverseWeatherLocation(lat, lon);
+      final label = _locationLabel(loc);
+      if (label.isNotEmpty) return label;
+    } catch (_) {}
+
+    try {
+      final loc = await Api.getLocation();
+      final label = _locationLabel(loc);
+      if (loc['error'] != true && label.isNotEmpty) return label;
+    } catch (_) {}
+
+    return fallback;
+  }
+
+  String _locationLabel(Map<String, dynamic> loc) {
+    final parts = <String>[];
+    for (final value in [loc['city'], loc['region'], loc['country']]) {
+      if (value is! String) continue;
+      final text = value.trim();
+      if (text.isEmpty || parts.contains(text)) continue;
+      parts.add(text);
+    }
+    return parts.join('，');
+  }
+
+  bool _isGenericCity(String city) {
+    final text = city.trim();
+    return text.isEmpty || text == '当前位置' || text == '上次位置' || text == '定位城市';
+  }
+
+  Future<_WeatherLocation?> _systemLocation() async {
+    final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) throw Exception('系统定位未开启');
+
+    var permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      if (!mounted) return null;
+      final ok = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('允许定位天气'),
+          content: const Text('用于显示你所在城市天气，不会用于好友或公开展示。'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('暂不允许'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('继续'),
+            ),
+          ],
+        ),
+      );
+      if (!mounted || ok != true) throw Exception('未开启定位权限');
+      permission = await Geolocator.requestPermission();
+    }
+
+    if (permission == LocationPermission.denied) throw Exception('未开启定位权限');
+    if (permission == LocationPermission.deniedForever) {
+      throw Exception('定位权限已被系统拒绝，请在设置中开启或手动选择城市');
+    }
+
+    final position = await Geolocator.getCurrentPosition(
+      locationSettings: const LocationSettings(
+        accuracy: LocationAccuracy.low,
+        timeLimit: Duration(seconds: 8),
+      ),
+    );
+    final city = await _resolveCity(
+      position.latitude,
+      position.longitude,
+      fallback: '定位城市',
+    );
+    return _WeatherLocation(
+      lat: position.latitude,
+      lon: position.longitude,
+      city: city,
+      status: _isGenericCity(city) ? 'GPS定位 · 城市待确认' : 'GPS定位',
+      cacheable: true,
+    );
+  }
+
+  Future<_WeatherLocation?> _cachedLocation() async {
+    final prefs = await SharedPreferences.getInstance();
+    final lat = prefs.getDouble(_weatherLatKey);
+    final lon = prefs.getDouble(_weatherLonKey);
+    if (lat == null || lon == null) return null;
+    var city = prefs.getString(_weatherCityKey) ?? '';
+    final updatedAt = DateTime.tryParse(
+      prefs.getString(_weatherUpdatedAtKey) ?? '',
+    );
+    if (_isGenericCity(city)) {
+      city = await _resolveCity(lat, lon, fallback: '上次位置');
+    }
+    if (mounted) {
+      setState(() => _weatherUpdatedAt = updatedAt);
+    }
+    return _WeatherLocation(
+      lat: lat,
+      lon: lon,
+      city: city,
+      status: _isGenericCity(city) ? '使用上次位置 · 城市待确认' : '使用上次位置',
+      cacheable: false,
+    );
+  }
+
+  Future<_WeatherLocation?> _ipLocation() async {
+    final loc = await Api.getLocation();
+    if (loc['error'] == true || loc['lat'] == null || loc['lon'] == null) {
+      throw Exception(loc['message']?.toString() ?? 'IP 定位失败');
+    }
+    final city = _locationLabel(loc);
+    return _WeatherLocation(
+      lat: (loc['lat'] as num).toDouble(),
+      lon: (loc['lon'] as num).toDouble(),
+      city: city.isEmpty ? 'IP 定位城市' : city,
+      status: 'IP 定位',
+      cacheable: true,
+    );
+  }
+
+  Future<void> _cacheLocation(
+    _WeatherLocation location,
+    DateTime updatedAt,
+  ) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setDouble(_weatherLatKey, location.lat);
+    await prefs.setDouble(_weatherLonKey, location.lon);
+    if (_isGenericCity(location.city)) {
+      await prefs.remove(_weatherCityKey);
+    } else {
+      await prefs.setString(_weatherCityKey, location.city);
+    }
+    await prefs.setString(_weatherUpdatedAtKey, updatedAt.toIso8601String());
   }
 
   void _onCitySearch(String q) async {
@@ -128,162 +270,366 @@ class _HomePageState extends State<HomePage> {
     try {
       final data = await Api.searchWeather(q);
       final cities = data['cities'];
-      if (mounted)
-        setState(() => _cityResults = cities is List
-            ? List<Map<String, dynamic>>.from(cities)
-            : []);
+      if (mounted) {
+        setState(() {
+          _cityResults = cities is List
+              ? List<Map<String, dynamic>>.from(cities)
+              : [];
+        });
+      }
     } catch (_) {
       if (mounted) setState(() => _cityResults = []);
     }
   }
 
   void _pickCity(Map<String, dynamic> c) {
-    final label = [c['name'], c['admin1'], c['country']]
-        .whereType<String>()
-        .where((s) => s.isNotEmpty)
-        .join('，');
+    final label = [
+      c['name'],
+      c['admin1'],
+      c['country'],
+    ].whereType<String>().where((s) => s.isNotEmpty).join('，');
     setState(() {
       _showCitySearch = false;
       _citySearchCtrl.clear();
       _cityResults = [];
     });
     _loadWeather(
-        lat: (c['latitude'] as num).toDouble(),
-        lon: (c['longitude'] as num).toDouble(),
-        name: label);
+      lat: (c['latitude'] as num).toDouble(),
+      lon: (c['longitude'] as num).toDouble(),
+      name: label,
+      source: '手动城市',
+    );
   }
 
-  @override
+  void _openCitySearch() {
+    setState(() => _showCitySearch = true);
+  }
+
+  Future<void> _openWeatherDetail() async {
+    if (_weather == null) return;
+    final action = await Navigator.push<WeatherDetailAction>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => WeatherDetailPage(
+          weather: _weather!,
+          cityName: _currentCity,
+          locationStatus: _locationStatus,
+          updatedAt: _weatherUpdatedAt,
+        ),
+      ),
+    );
+    if (!mounted) return;
+    if (action == WeatherDetailAction.relocate) {
+      _loadWeather();
+    } else if (action == WeatherDetailAction.chooseCity) {
+      _openCitySearch();
+    }
+  }
+
+  void _openDiary() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const DiaryPage()),
+    );
+  }
+
+  void _openMood() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const MoodPage()),
+    );
+  }
+
+  void _openTreehole() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const TreeholePage()),
+    );
+  }
+
+  void _openProfile() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const ProfilePage()),
+    );
+  }
+
+  void _openCapsule() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const CapsulePage()),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = context.watch<ThemeState>();
     final appState = context.watch<AppState>();
     final weekdays = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
-
-    if (_showAnim) {
-      return WeatherAnimation(
-        weatherCode: _animCode,
-        weatherText: _animText,
-        data: _animData,
-        onClose: () => setState(() => _showAnim = false),
-      );
-    }
-
-    // Show daily weather card on first open
-    if (_showCard && _todayCard != null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted && _showCard) {
-          _showWeatherCard(context, theme);
-          setState(() => _showCard = false);
-        }
-      });
-    }
-
-    final isDark = theme.isDark;
     final now = DateTime.now();
-    final screenHeight = MediaQuery.of(context).size.height;
+
     return Scaffold(
       backgroundColor: theme.backgroundColor,
       body: SafeArea(
-        child: Stack(
-          children: [
-            RefreshIndicator(
-              onRefresh: _loadAll,
-              child: ListView(
-            padding: const EdgeInsets.all(16),
+        child: RefreshIndicator(
+          onRefresh: _loadWeather,
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
             children: [
-              // Greeting
-              Row(children: [
-                Expanded(
-                  child: Column(
+              Row(
+                children: [
+                  Expanded(
+                    child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                            appState.displayName.isNotEmpty
-                                ? appState.displayName
-                                : '朋友',
-                            style: TextStyle(
-                                fontSize: 24,
-                                fontWeight: FontWeight.bold,
-                                color: theme.textPrimary)),
+                          appState.displayName.isNotEmpty
+                              ? appState.displayName
+                              : '朋友',
+                          style: TextStyle(
+                            fontSize: 26,
+                            fontWeight: FontWeight.bold,
+                            color: theme.textPrimary,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
                         Text(
-                            '${now.year}年${now.month}月${now.day}日 ${weekdays[now.weekday == 7 ? 0 : now.weekday]}',
-                            style: TextStyle(
-                                fontSize: 13, color: theme.textSecondary)),
-                      ]),
-                ),
-              ]),
-              const SizedBox(height: 20),
-              // Weather section
-              if (_loading)
-                const Center(
-                    child: Padding(
-                  padding: EdgeInsets.all(40),
-                  child: CircularProgressIndicator(
-                      strokeWidth: 2, color: Color(0xFFC4A46C)),
-                ))
-              else if (_weatherError != null)
-                Center(
-                    child: Text(_weatherError!,
-                        style: const TextStyle(color: Color(0xFFD4837A))))
-              else if (_weather != null) ...[
-                if (_currentCity.isNotEmpty)
-                  GestureDetector(
-                    onTap: () => setState(() => _showCitySearch = true),
-                    child: Center(
-                        child: Text('$_currentCity ▾',
-                            style: TextStyle(
-                                color: theme.textSecondary,
-                                fontSize: 14))),
-                  ),
-                const SizedBox(height: 16),
-                // 玻璃球体天气
-                GlassWeatherSphere(
-                  days: [
-                    _weather!['today'] is Map ? Map<String, dynamic>.from(_weather!['today']) : {},
-                    _weather!['tomorrow'] is Map ? Map<String, dynamic>.from(_weather!['tomorrow']) : {},
-                    _weather!['day_after'] is Map ? Map<String, dynamic>.from(_weather!['day_after']) : {},
-                  ],
-                  theme: theme,
-                  onTap: _openAnim,
-                ),
-              ],
-              // City search
-              if (_showCitySearch) _buildCitySearch(theme),
-              // 日记快捷入口
-              const SizedBox(height: 24),
-              Center(
-                child: GestureDetector(
-                  onTap: () {
-                    Navigator.push(context,
-                        MaterialPageRoute(builder: (_) => const DiaryPage()));
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(24),
-                      color: const Color(0xFFC4A46C).withAlpha(20),
-                      border: Border.all(color: const Color(0xFFC4A46C).withAlpha(80)),
+                          '${now.year}年${now.month}月${now.day}日 ${weekdays[now.weekday == 7 ? 0 : now.weekday]}',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: theme.textSecondary,
+                          ),
+                        ),
+                      ],
                     ),
-                    child: const Text('📔 写日记',
-                        style: TextStyle(color: Color(0xFF8B7355), fontSize: 16, letterSpacing: 2)),
                   ),
-                ),
+                ],
               ),
-              const SizedBox(height: 100),
+              const SizedBox(height: 18),
+              WeatherSummaryCard(
+                loading: _loading,
+                weather: _weather,
+                cityName: _currentCity,
+                locationStatus: _locationStatus,
+                updatedAt: _weatherUpdatedAt,
+                error: _weatherError,
+                onRetry: _loadWeather,
+                onChooseCity: _openCitySearch,
+                onOpenDetail: _openWeatherDetail,
+              ),
+              if (_showCitySearch) _buildCitySearch(theme),
+              const SizedBox(height: 18),
+              _buildTodayDashboard(theme),
             ],
           ),
         ),
-            Positioned(
-              right: 0,
-              top: screenHeight * 0.35,
-              child: AiDot(
-                onWriteDiary: () {
-                  Navigator.push(context,
-                      MaterialPageRoute(builder: (_) => const DiaryPage()));
-                },
-                onWhiteNoise: _showWhiteNoise,
-                onPoems: _showPoem,
+      ),
+    );
+  }
+
+  Widget _buildTodayDashboard(ThemeState theme) {
+    final prompt = dashboardPrompt(_weather);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          '今天可以继续做什么',
+          style: TextStyle(
+            color: theme.textPrimary,
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        const SizedBox(height: 10),
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: theme.cardColor,
+            borderRadius: BorderRadius.circular(22),
+            border: Border.all(color: theme.borderColor),
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(Icons.auto_awesome_outlined, color: theme.gold, size: 18),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  prompt,
+                  style: TextStyle(
+                    color: theme.textPrimary,
+                    fontSize: 13,
+                    height: 1.55,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: _actionCard(
+                theme,
+                icon: Icons.favorite_outline,
+                title: '记录心情',
+                subtitle: '看看今天的自己',
+                onTap: () => _openMood(),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: _actionCard(
+                theme,
+                icon: Icons.edit_note_outlined,
+                title: '继续写日记',
+                subtitle: '把今天留住一点',
+                onTap: _openDiary,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
+        Row(
+          children: [
+            Expanded(
+              child: _actionCard(
+                theme,
+                icon: Icons.forest_outlined,
+                title: '写一句树洞',
+                subtitle: '轻一点放下',
+                onTap: () => _openTreehole(),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: _actionCard(
+                theme,
+                icon: Icons.local_fire_department_outlined,
+                title: '今日签到',
+                subtitle: '去留下一次记录',
+                onTap: () => _openProfile(),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
+        InkWell(
+          borderRadius: BorderRadius.circular(22),
+          onTap: _openCapsule,
+          child: Container(
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  theme.cardElevated,
+                  theme.cardColor,
+                ],
+              ),
+              borderRadius: BorderRadius.circular(22),
+              border: Border.all(color: theme.borderColor),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 46,
+                  height: 46,
+                  decoration: BoxDecoration(
+                    color: theme.gold.withAlpha(22),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Icon(
+                    Icons.hourglass_top_rounded,
+                    color: theme.gold,
+                    size: 22,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '时光胶囊',
+                        style: TextStyle(
+                          color: theme.textPrimary,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '写给几天后的自己，到了那天会回来提醒你。',
+                        style: TextStyle(
+                          color: theme.textSecondary,
+                          fontSize: 13,
+                          height: 1.45,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(
+                  Icons.chevron_right_rounded,
+                  color: theme.textSecondary,
+                  size: 22,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _actionCard(
+    ThemeState theme, {
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(20),
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: theme.cardColor,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: theme.borderColor),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 38,
+              height: 38,
+              decoration: BoxDecoration(
+                color: theme.accentColor.withAlpha(16),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Icon(icon, color: theme.accentColor, size: 20),
+            ),
+            const SizedBox(height: 14),
+            Text(
+              title,
+              style: TextStyle(
+                color: theme.textPrimary,
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              subtitle,
+              style: TextStyle(
+                color: theme.textSecondary,
+                fontSize: 12,
+                height: 1.45,
               ),
             ),
           ],
@@ -292,213 +638,91 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  void _showWeatherCard(BuildContext context, ThemeState theme) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (ctx) {
-        final t = theme;
-        final card = _todayCard ?? {};
-        return Container(
-          height: MediaQuery.of(ctx).size.height * 0.55,
-          margin: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: t.isDark
-                  ? [const Color(0xFF1A1A1A), const Color(0xFF2A2218)]
-                  : [Colors.white, const Color(0xFFFFF8EC)],
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-            ),
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: const Color(0xFFC4A46C).withAlpha(80)),
-            boxShadow: [
-              BoxShadow(
-                  color: const Color(0xFFC4A46C).withAlpha(20),
-                  blurRadius: 30,
-                  spreadRadius: 2)
-            ],
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              // Date
-              Text(
-                  DateTime.now()
-                      .toIso8601String()
-                      .substring(0, 10),
-                  style: TextStyle(
-                      color: t.textSecondary, fontSize: 14)),
-              const SizedBox(height: 16),
-              // Weather info
-              Text(_weather?['today']?['weather'] ?? '',
-                  style: TextStyle(
-                      color: t.accentColor,
-                      fontSize: 18,
-                      fontWeight: FontWeight.w500)),
-              const SizedBox(height: 8),
-              Text(
-                  '${_weather?['today']?['temp_max'] ?? '--'}° / ${_weather?['today']?['temp_min'] ?? '--'}°',
-                  style: TextStyle(
-                      color: t.textPrimary,
-                      fontSize: 40,
-                      fontWeight: FontWeight.w200)),
-              const SizedBox(height: 20),
-              // Quote
-              Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 32),
-                child: Text(
-                    card['quote'] ?? '今天也要好好照顾自己 🌤️',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                        color: t.textSecondary,
-                        fontSize: 15,
-                        height: 1.6,
-                        fontStyle: FontStyle.italic)),
-              ),
-              const SizedBox(height: 32),
-              // Actions
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  TextButton.icon(
-                    onPressed: () => Navigator.pop(ctx),
-                    icon: const Icon(Icons.close, size: 18,
-                        color: Color(0xFFA09888)),
-                    label: const Text('关闭',
-                        style: TextStyle(
-                            color: Color(0xFFA09888))),
-                  ),
-                  const SizedBox(width: 20),
-                  ElevatedButton.icon(
-                    onPressed: () {
-                      HapticFeedback.mediumImpact();
-                      Navigator.pop(ctx);
-                      ScaffoldMessenger.of(context)
-                          .showSnackBar(const SnackBar(
-                              content: Text('已保存到相册',
-                                  textAlign:
-                                      TextAlign.center),
-                              duration: Duration(seconds: 1)));
-                    },
-                    icon: const Icon(Icons.save_alt, size: 18),
-                    label: const Text('保存'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor:
-                          const Color(0xFFC4A46C),
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                          borderRadius:
-                              BorderRadius.circular(14)),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
   Widget _buildCitySearch(ThemeState theme) {
     return Container(
       margin: const EdgeInsets.only(top: 12),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: theme.isDark ? const Color(0xFF1A1A1A) : Colors.white,
+        color: theme.cardColor,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: theme.borderColor),
       ),
-      child: Column(children: [
-        Row(children: [
-          Expanded(
-            child: TextField(
-              controller: _citySearchCtrl,
-              autofocus: true,
-              onChanged: _onCitySearch,
-              style: TextStyle(color: theme.textPrimary),
-              decoration: InputDecoration(
-                hintText: '搜索城市...',
-                hintStyle:
-                    TextStyle(color: theme.textSecondary.withAlpha(150)),
-                border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12)),
-                prefixIcon: Icon(Icons.search, size: 20, color: theme.accentColor),
-                contentPadding: const EdgeInsets.symmetric(vertical: 10),
-              ),
-            ),
-          ),
-          IconButton(
-            onPressed: () =>
-                setState(() => _showCitySearch = false),
-            icon: Icon(Icons.close, color: theme.textSecondary),
-          ),
-        ]),
-        ..._cityResults.map((c) => ListTile(
-              title: Text(c['name'] ?? '',
-                  style: TextStyle(color: theme.textPrimary)),
-              subtitle: Text('${c['admin1'] ?? ''} ${c['country'] ?? ''}',
-                  style: TextStyle(color: theme.textSecondary, fontSize: 12)),
-              trailing: const Text('切换 →',
-                  style: TextStyle(color: Color(0xFFC4A46C), fontSize: 13)),
-              onTap: () => _pickCity(c),
-            )),
-      ]),
-    );
-  }
-
-  void _showPoem() async {
-    try {
-      final poem = await Api.matchPoem(1, '');
-      if (poem.isNotEmpty && mounted) {
-        showDialog(
-          context: context,
-          builder: (ctx) {
-            final theme = context.watch<ThemeState>();
-            return Dialog(
-              backgroundColor: theme.cardColor,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(poem['quote_line'] ?? poem['content'] ?? '',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(fontSize: 20, color: theme.textPrimary, height: 1.8)),
-                    const SizedBox(height: 16),
-                    Text('—— ${poem['poet'] ?? ''} · 《${poem['title'] ?? ''}》',
-                        style: TextStyle(fontSize: 13, color: theme.textSecondary)),
-                    const SizedBox(height: 16),
-                    TextButton(
-                      onPressed: () => Navigator.pop(ctx),
-                      child: Text('关闭', style: TextStyle(color: theme.textSecondary)),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _citySearchCtrl,
+                  autofocus: true,
+                  onChanged: _onCitySearch,
+                  style: TextStyle(color: theme.textPrimary),
+                  decoration: InputDecoration(
+                    hintText: '搜索城市...',
+                    hintStyle: TextStyle(
+                      color: theme.textSecondary.withAlpha(150),
                     ),
-                  ],
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    prefixIcon: Icon(
+                      Icons.search,
+                      size: 20,
+                      color: theme.accentColor,
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(vertical: 10),
+                  ),
                 ),
               ),
-            );
-          },
-        );
-      }
-    } catch (_) {}
-  }
-
-  void _showWhiteNoise() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (_) => Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: context.read<ThemeState>().cardColor,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        child: const WhiteNoisePlayer(),
+              IconButton(
+                onPressed: () => setState(() => _showCitySearch = false),
+                icon: Icon(Icons.close, color: theme.textSecondary),
+              ),
+            ],
+          ),
+          if (_citySearchCtrl.text.isNotEmpty && _cityResults.isEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 12),
+              child: Text(
+                '暂无结果，换个城市名试试',
+                style: TextStyle(color: theme.textSecondary, fontSize: 13),
+              ),
+            ),
+          ..._cityResults.map(
+            (c) => ListTile(
+              title: Text(
+                c['name'] ?? '',
+                style: TextStyle(color: theme.textPrimary),
+              ),
+              subtitle: Text(
+                '${c['admin1'] ?? ''} ${c['country'] ?? ''}',
+                style: TextStyle(color: theme.textSecondary, fontSize: 12),
+              ),
+              trailing: Text(
+                '切换',
+                style: TextStyle(color: theme.gold, fontSize: 13),
+              ),
+              onTap: () => _pickCity(c),
+            ),
+          ),
+        ],
       ),
     );
   }
+}
+
+class _WeatherLocation {
+  final double lat;
+  final double lon;
+  final String city;
+  final String status;
+  final bool cacheable;
+
+  const _WeatherLocation({
+    required this.lat,
+    required this.lon,
+    required this.city,
+    required this.status,
+    required this.cacheable,
+  });
 }

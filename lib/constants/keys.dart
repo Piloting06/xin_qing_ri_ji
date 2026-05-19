@@ -15,4 +15,5 @@ class StorageKeys {
   static const String nightNotify = 'nightNotify';
   static const String capsuleNotify = 'capsuleNotify';
   static const String friendNotify = 'friendNotify';
+  static const String pendingCapsuleLaunch = 'pendingCapsuleLaunch';
 }

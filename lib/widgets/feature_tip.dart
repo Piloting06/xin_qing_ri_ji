@@ -118,7 +118,7 @@ class _FeatureTipState extends State<FeatureTip>
                         BoxShadow(
                             color: isDark
                                 ? Colors.black.withAlpha(80)
-                                : const Color(0xFF8B7355).withAlpha(15),
+                                : theme.accentColor.withAlpha(15),
                             blurRadius: 10,
                             offset: const Offset(0, 2))
                       ],

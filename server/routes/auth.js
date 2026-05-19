@@ -7,16 +7,21 @@ const router = express.Router();
 
 router.post('/register', (req, res) => {
   try {
-    const { phone, password, security_question_type, security_question, security_answer } = req.body;
-    if (!phone || !password || phone.length < 11) {
+    const { password, security_question_type, security_question, security_answer } = req.body;
+    const phone = String(req.body.phone || '').trim();
+    if (!/^1\d{10}$/.test(phone) || !password) {
       return res.status(400).json({ message: '请输入正确的手机号' });
     }
     if (password.length < 6) {
       return res.status(400).json({ message: '密码至少6位' });
     }
-    const existing = db.prepare('SELECT id FROM users WHERE phone = ?').get(phone);
-    if (existing) {
+    const existing = db.prepare('SELECT id, is_active FROM users WHERE phone = ?').get(phone);
+    if (existing && Number(existing.is_active) === 1) {
       return res.status(409).json({ message: '该手机号已注册' });
+    }
+    if (existing) {
+      db.prepare('UPDATE users SET phone = ?, is_active = 0, deleted_at = COALESCE(deleted_at, datetime(\'now\')) WHERE id = ?')
+        .run(`deleted_${existing.id}_${Date.now()}_${phone}`, existing.id);
     }
     const hash = bcrypt.hashSync(password, 10);
     let answerHash = null;
@@ -36,8 +41,9 @@ router.post('/register', (req, res) => {
 
 router.post('/login', (req, res) => {
   try {
-    const { phone, password } = req.body;
-    const user = db.prepare('SELECT * FROM users WHERE phone = ? AND is_active = 1').get(phone);
+    const phone = String(req.body.phone || '').trim();
+    const { password } = req.body;
+    const user = db.prepare('SELECT * FROM users WHERE phone = ? AND is_active = 1 AND deleted_at IS NULL').get(phone);
     if (!user) return res.status(401).json({ message: '账号不存在' });
     if (!bcrypt.compareSync(password, user.password_hash)) {
       return res.status(401).json({ message: '密码错误' });
@@ -80,7 +86,14 @@ router.post('/change-username', auth, (req, res) => {
 
 router.post('/delete-account', auth, (req, res) => {
   try {
-    db.prepare('UPDATE users SET is_active = 0 WHERE id = ?').run(req.userId);
+    const user = db.prepare('SELECT id, phone FROM users WHERE id = ? AND is_active = 1').get(req.userId);
+    if (!user) return res.status(404).json({ message: '账号不存在或已注销' });
+
+    const releasedPhone = `deleted_${user.id}_${Date.now()}_${user.phone}`;
+    db.prepare('UPDATE users SET phone = ?, is_active = 0, deleted_at = datetime(\'now\') WHERE id = ?')
+      .run(releasedPhone, req.userId);
+    db.prepare('DELETE FROM friendships WHERE (user_id = ? OR friend_id = ?) AND status IN (0, 1)')
+      .run(req.userId, req.userId);
     res.json({ message: '账号已注销' });
   } catch (e) {
     res.status(500).json({ message: '注销失败' });

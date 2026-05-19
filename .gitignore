@@ -6,5 +6,10 @@ build/
 *.freezed.dart
 *.db
 *.db-journal
+*.db-wal
 .env
+server/.env
+CLAUDE.md
+开发日志/
+docs/
 node_modules/

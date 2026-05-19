@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../stores/theme_state.dart';
+import '../widgets/ink_writing_loader.dart';
 
 class MemoryAlbumPage extends StatefulWidget {
   const MemoryAlbumPage({super.key});
@@ -59,8 +60,8 @@ class _MemoryAlbumPageState extends State<MemoryAlbumPage> {
       ),
       body: SafeArea(
         child: _loading
-            ? const Center(
-                child: CircularProgressIndicator(color: Color(0xFFC4A46C)))
+            ? Center(
+                child: InkWritingLoader(inkColor: theme.gold, size: 40))
             : _photos.isEmpty
                 ? Center(
                     child: Column(

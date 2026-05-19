@@ -18,7 +18,6 @@ async function start() {
   const registerLimiter = rateLimit({ windowMs: 60000, max: 3, message: { message: '注册太频繁，请稍后再试' } });
   const loginLimiter = rateLimit({ windowMs: 60000, max: 10, message: { message: '登录太频繁，请稍后再试' } });
 
-  app.use('/audio', express.static('public/audio'));
 
   app.use('/api/auth/register', registerLimiter);
   app.use('/api/auth/login', loginLimiter);
@@ -30,8 +29,11 @@ async function start() {
   app.use('/api/friends', require('./routes/friends'));
   app.use('/api/treehole', require('./routes/treehole'));
   app.use('/api/capsule', require('./routes/capsule'));
-  app.use('/api/poems', require('./routes/poems'));
-  app.use('/api/wallpapers', (_, res) => res.json({ wallpapers: [] }));
+app.use('/api/admin', require('./routes/admin'));
+
+// Admin panel static files
+app.use('/admin', express.static(require('path').join(__dirname, 'admin')));
+app.get('/admin', (_req, res) => res.sendFile(require('path').join(__dirname, 'admin', 'index.html')));
 
   app.get('/api/health', (_, res) => res.json({ status: 'ok', time: new Date().toISOString() }));
 

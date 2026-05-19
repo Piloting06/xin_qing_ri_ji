@@ -1,10 +1,10 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../stores/theme_state.dart';
+import '../theme/xq_decorations.dart';
 import '../pages/home_page.dart';
-import 'wallpaper_manager.dart';
 import '../pages/mood_page.dart';
 import '../pages/treehole_page.dart';
 import '../pages/friends_page.dart';
@@ -12,22 +12,29 @@ import '../pages/profile_page.dart';
 import 'onboarding_flow.dart';
 
 class MainScaffold extends StatefulWidget {
-  const MainScaffold({super.key});
+  final int initialIndex;
+
+  const MainScaffold({super.key, this.initialIndex = 0});
+
+  static void switchToTab(BuildContext context, int index) {
+    final state = context.findAncestorStateOfType<_MainScaffoldState>();
+    state?.goToTab(index);
+  }
+
   @override
   State<MainScaffold> createState() => _MainScaffoldState();
 }
 
 class _MainScaffoldState extends State<MainScaffold> {
-  int _currentIndex = 0;
-  final PageController _pageController = PageController();
+  late int _currentIndex;
+  late final PageController _pageController;
   bool _onboardingChecked = false;
-  String _activeWallpaper = 'none';
-  List<String> _unlocked = ['none'];
 
   @override
   void initState() {
     super.initState();
-    _loadWallpaper();
+    _currentIndex = widget.initialIndex.clamp(0, 4);
+    _pageController = PageController(initialPage: _currentIndex);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!_onboardingChecked && mounted) {
         _onboardingChecked = true;
@@ -42,59 +49,43 @@ class _MainScaffoldState extends State<MainScaffold> {
     super.dispose();
   }
 
-  Future<void> _loadWallpaper() async {
-    final p = await SharedPreferences.getInstance();
-    if (mounted) setState(() {
-      _activeWallpaper = p.getString('active_wallpaper') ?? 'none';
-      _unlocked = p.getStringList('unlocked_wallpapers') ?? ['none'];
-    });
+  void goToTab(int i) {
+    if (_currentIndex == i) return;
+    HapticFeedback.lightImpact();
+    _pageController.animateToPage(
+      i,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeOut,
+    );
+    setState(() => _currentIndex = i);
   }
 
-
-  static const _tabs = [
-    _TabData('天气', Icons.wb_sunny_outlined, Icons.wb_sunny),
-    _TabData('心情', Icons.favorite_border, Icons.favorite),
-    _TabData('树洞', Icons.forest_outlined, Icons.forest),
-    _TabData('友人', Icons.people_outline, Icons.people),
-    _TabData('我的', Icons.person_outline, Icons.person),
-  ];
-
-  final _pages = const [
-    HomePage(),
-    MoodPage(),
-    TreeholePage(),
-    FriendsPage(),
-    ProfilePage(),
-  ];
+  void _onTabTap(int i) {
+    goToTab(i);
+  }
 
   @override
   Widget build(BuildContext context) {
     final theme = context.watch<ThemeState>();
-    final isDark = theme.isDark;
 
     return Scaffold(
       backgroundColor: theme.backgroundColor,
       body: Stack(
         children: [
-          // Wallpaper layer
-          if (_activeWallpaper != 'none')
-            Positioned.fill(
-              child: Opacity(
-                opacity: 0.25,
-                child: CustomPaint(
-                  size: Size.infinite,
-                  painter: WallpaperPainter(
-                    wallpapers.firstWhere((w) => w.id == _activeWallpaper),
-                    theme,
-                  ),
-                ),
-              ),
+          // Content pages — 底部 padding 防止胶囊遮挡
+          Padding(
+            padding: const EdgeInsets.only(bottom: 90),
+            child: PageView(
+              controller: _pageController,
+              onPageChanged: (i) => setState(() => _currentIndex = i),
+              children: const [
+                HomePage(),
+                MoodPage(),
+                TreeholePage(),
+                FriendsPage(),
+                ProfilePage(),
+              ],
             ),
-          // Content with swipeable pages
-          PageView(
-            controller: _pageController,
-            onPageChanged: (i) => setState(() => _currentIndex = i),
-            children: _pages,
           ),
           // Dissolve transition overlay
           if (theme.transitioning)
@@ -103,46 +94,80 @@ class _MainScaffoldState extends State<MainScaffold> {
                 tween: Tween(begin: 0.3, end: 0.0),
                 duration: const Duration(milliseconds: 600),
                 curve: Curves.easeOut,
-                builder: (_, v, __) => Opacity(
-                  opacity: v,
-                  child: Container(color: theme.accentColor.withAlpha((v * 120).round())),
+                builder: (context, value, child) => Opacity(
+                  opacity: value,
+                  child: Container(
+                    color: theme.accentColor.withAlpha((value * 120).round()),
+                  ),
                 ),
               ),
             ),
+          // 毛玻璃悬浮胶囊
+          Positioned(
+            bottom: 6,
+            left: 0,
+            right: 0,
+            child: Center(
+              child: _FrostedCapsule(
+                currentIndex: _currentIndex,
+                theme: theme,
+                onTap: _onTabTap,
+              ),
+            ),
+          ),
         ],
       ),
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          color: isDark
-              ? const Color(0xFF0A0A0A).withAlpha(240)
-              : const Color(0xFFFAF8F4).withAlpha(240),
-          border: Border(
-              top: BorderSide(
-                  color: isDark
-                      ? Colors.white.withAlpha(12)
-                      : Colors.black.withAlpha(10))),
-        ),
-        child: SafeArea(
-          child: SizedBox(
-            height: 60,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: List.generate(_tabs.length, (i) {
-                final active = _currentIndex == i;
-                return _TabItem(
-                  tab: _tabs[i],
-                  active: active,
-                  theme: theme,
-                  onTap: () {
-                    if (_currentIndex != i) {
-                      HapticFeedback.lightImpact();
-                      _pageController.animateToPage(i, duration: const Duration(milliseconds: 300), curve: Curves.easeOut);
-                      setState(() => _currentIndex = i);
-                    }
-                  },
-                );
-              }),
-            ),
+    );
+  }
+}
+
+/// 毛玻璃悬浮胶囊导航栏
+class _FrostedCapsule extends StatelessWidget {
+  final int currentIndex;
+  final ThemeState theme;
+  final Function(int) onTap;
+
+  const _FrostedCapsule({
+    required this.currentIndex,
+    required this.theme,
+    required this.onTap,
+  });
+
+  static const _icons = [
+    _TabIcon(Icons.wb_sunny_outlined, Icons.wb_sunny),
+    _TabIcon(Icons.favorite_border, Icons.favorite),
+    _TabIcon(Icons.forest_outlined, Icons.forest),
+    _TabIcon(Icons.people_outline, Icons.people),
+    _TabIcon(Icons.person_outline, Icons.person),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(28),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+        child: Container(
+          height: 56,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          decoration: BoxDecoration(
+            color: theme.cardColor.withAlpha(200),
+            borderRadius: BorderRadius.circular(28),
+            border: Border.all(color: theme.borderColor, width: 0.5),
+            boxShadow: XqDecorations.shadowMedium(dark: theme.isDark),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: List.generate(_icons.length, (i) {
+              final active = currentIndex == i;
+              return _CapsuleTabItem(
+                icon: _icons[i],
+                active: active,
+                accentColor: theme.accentColor,
+                inactiveColor: theme.textSecondary,
+                onTap: () => onTap(i),
+              );
+            }),
           ),
         ),
       ),
@@ -150,62 +175,69 @@ class _MainScaffoldState extends State<MainScaffold> {
   }
 }
 
-class _TabData {
-  final String label;
-  final IconData iconOutlined;
-  final IconData iconFilled;
-
-  const _TabData(this.label, this.iconOutlined, this.iconFilled);
+class _TabIcon {
+  final IconData outlined;
+  final IconData filled;
+  const _TabIcon(this.outlined, this.filled);
 }
 
-class _TabItem extends StatelessWidget {
-  final _TabData tab;
+class _CapsuleTabItem extends StatelessWidget {
+  final _TabIcon icon;
   final bool active;
-  final ThemeState theme;
+  final Color accentColor;
+  final Color inactiveColor;
   final VoidCallback onTap;
 
-  const _TabItem({
-    required this.tab,
+  const _CapsuleTabItem({
+    required this.icon,
     required this.active,
-    required this.theme,
+    required this.accentColor,
+    required this.inactiveColor,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    final color = active ? theme.accentColor : theme.textSecondary;
+    final color = active ? accentColor : inactiveColor;
     return GestureDetector(
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
       child: SizedBox(
-        width: 64,
+        width: 48,
         child: Column(
           mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const SizedBox(height: 8),
-            AnimatedSwitcher(
+            AnimatedScale(
+              scale: active ? 1.15 : 1.0,
               duration: const Duration(milliseconds: 200),
-              transitionBuilder: (child, anim) => FadeTransition(
-                  opacity: anim, child: child),
-              child: Icon(
-                active ? tab.iconFilled : tab.iconOutlined,
-                key: ValueKey(active),
-                size: 24,
-                color: color,
+              curve: Curves.easeOutBack,
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 200),
+                transitionBuilder: (child, anim) =>
+                    FadeTransition(opacity: anim, child: child),
+                child: Icon(
+                  active ? icon.filled : icon.outlined,
+                  key: ValueKey(active),
+                  size: 22,
+                  color: color,
+                ),
               ),
             ),
-            const SizedBox(height: 2),
-            TweenAnimationBuilder<double>(
-              tween:
-                  Tween(begin: active ? 0.8 : 1.0, end: active ? 1.0 : 0.8),
+            const SizedBox(height: 4),
+            // 墨点指示器
+            AnimatedOpacity(
+              opacity: active ? 1.0 : 0.0,
               duration: const Duration(milliseconds: 200),
-              builder: (_, v, __) => Transform.scale(
-                scale: v,
-                child: Text(tab.label,
-                    style: TextStyle(fontSize: 10, color: color)),
+              child: Container(
+                width: 5,
+                height: 5,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: accentColor,
+                ),
               ),
             ),
-            const Spacer(),
           ],
         ),
       ),

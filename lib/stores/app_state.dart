@@ -26,6 +26,13 @@ class AppState extends ChangeNotifier {
     }
   }
 
+  void clearUser() {
+    _selectedDate = DateFormat('yyyy-MM-dd').format(DateTime.now());
+    _displayName = '';
+    _animActive = false;
+    notifyListeners();
+  }
+
   void setWindowWidth(int w) {
     _windowWidth = w;
   }

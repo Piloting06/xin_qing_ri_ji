@@ -4,8 +4,9 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../api/api_client.dart';
-import '../stores/app_state.dart';
 import '../stores/theme_state.dart';
+import '../theme/xq_typography.dart';
+import '../theme/xq_paper_textures.dart';
 
 class DiaryPage extends StatefulWidget {
   final String? initialDate;
@@ -20,12 +21,12 @@ class _DiaryPageState extends State<DiaryPage> {
   String _date = '';
   bool _saving = false;
   bool _saved = false;
-  int? _diaryId;
 
   @override
   void initState() {
     super.initState();
-    _date = widget.initialDate ?? DateFormat('yyyy-MM-dd').format(DateTime.now());
+    _date =
+        widget.initialDate ?? DateFormat('yyyy-MM-dd').format(DateTime.now());
     _load();
     _titleCtrl.addListener(_onChange);
     _contentCtrl.addListener(_onChange);
@@ -38,9 +39,16 @@ class _DiaryPageState extends State<DiaryPage> {
   }
 
   Future<void> _autoSave() async {
-    if (_titleCtrl.text.trim().isEmpty && _contentCtrl.text.trim().isEmpty) return;
+    if (_titleCtrl.text.trim().isEmpty && _contentCtrl.text.trim().isEmpty) {
+      return;
+    }
     try {
-      await Api.saveDiary(_date, _titleCtrl.text.trim(), _contentCtrl.text.trim(), null);
+      await Api.saveDiary(
+        _date,
+        _titleCtrl.text.trim(),
+        _contentCtrl.text.trim(),
+        null,
+      );
     } catch (_) {}
   }
 
@@ -59,11 +67,13 @@ class _DiaryPageState extends State<DiaryPage> {
         setState(() {
           _titleCtrl.text = diary['title'] ?? '';
           _contentCtrl.text = diary['content'] ?? '';
-          _diaryId = diary['id'];
         });
       } else {
         if (mounted) {
-          setState(() { _titleCtrl.clear(); _contentCtrl.clear(); _diaryId = null; });
+          setState(() {
+            _titleCtrl.clear();
+            _contentCtrl.clear();
+          });
         }
       }
     } catch (_) {}
@@ -73,11 +83,22 @@ class _DiaryPageState extends State<DiaryPage> {
     setState(() => _saving = true);
     HapticFeedback.mediumImpact();
     try {
-      await Api.saveDiary(_date, _titleCtrl.text.trim(), _contentCtrl.text.trim(), null);
-      if (mounted) setState(() { _saving = false; _saved = true; });
-      Future.delayed(const Duration(seconds: 2),
-          () { if (mounted) setState(() => _saved = false); });
-    } catch (e) {
+      await Api.saveDiary(
+        _date,
+        _titleCtrl.text.trim(),
+        _contentCtrl.text.trim(),
+        null,
+      );
+      if (mounted) {
+        setState(() {
+          _saving = false;
+          _saved = true;
+        });
+      }
+      Future.delayed(const Duration(seconds: 2), () {
+        if (mounted) setState(() => _saved = false);
+      });
+    } catch (_) {
       if (mounted) setState(() => _saving = false);
     }
   }
@@ -85,21 +106,46 @@ class _DiaryPageState extends State<DiaryPage> {
   @override
   Widget build(BuildContext context) {
     final theme = context.watch<ThemeState>();
-    final appState = context.watch<AppState>();
     final t = theme;
 
     return Scaffold(
-      backgroundColor: t.backgroundColor,
+      // 笔记本纸页背景
+      backgroundColor: t.cardColor,
       appBar: AppBar(
-        backgroundColor: t.backgroundColor,
+        backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios_new, color: t.accentColor),
+          icon: Icon(Icons.arrow_back_ios_new, size: 20, color: t.accentColor),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Text('日记',
-            style: TextStyle(color: t.textPrimary, fontSize: 18)),
+        title: Text(
+          '日记',
+          style: XqTypography.headlineMedium.copyWith(color: t.textPrimary),
+        ),
         actions: [
+          if (_saved)
+            Padding(
+              padding: const EdgeInsets.only(right: 16),
+              child: Center(
+                child: Text(
+                  '已保存',
+                  style: TextStyle(fontSize: 12, color: t.successColor),
+                ),
+              ),
+            ),
+          IconButton(
+            icon: _saving
+                ? SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: t.accentColor,
+                    ),
+                  )
+                : Icon(Icons.save_outlined, color: t.accentColor),
+            onPressed: _saving ? null : _manualSave,
+          ),
           IconButton(
             icon: Icon(Icons.search, color: t.textSecondary),
             onPressed: () => _showSearch(context, t),
@@ -107,84 +153,130 @@ class _DiaryPageState extends State<DiaryPage> {
         ],
       ),
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Date
-              Row(children: [
-                IconButton(
-                    icon: Icon(Icons.chevron_left, color: t.accentColor, size: 22),
-                    onPressed: () {
-                      final d = DateTime.parse(_date).subtract(const Duration(days: 1));
-                      _changeDate(DateFormat('yyyy-MM-dd').format(d));
-                    }),
-                GestureDetector(
-                  onTap: () async {
-                    final d = await showDatePicker(
-                        context: context,
-                        initialDate: DateTime.tryParse(_date) ?? DateTime.now(),
-                        firstDate: DateTime(2020),
-                        lastDate: DateTime.now());
-                    if (d != null) _changeDate(DateFormat('yyyy-MM-dd').format(d));
-                  },
-                  child: Text(_date,
-                      style: TextStyle(
-                          color: t.textPrimary,
-                          fontSize: 16,
-                          decoration: TextDecoration.underline)),
-                ),
-                IconButton(
-                    icon: Icon(Icons.chevron_right, color: t.accentColor, size: 22),
-                    onPressed: () {
-                      final d = DateTime.parse(_date).add(const Duration(days: 1));
-                      if (!d.isAfter(DateTime.now())) {
-                        _changeDate(DateFormat('yyyy-MM-dd').format(d));
-                      }
-                    }),
-                const Spacer(),
-                if (_saved) const Text('✅ 已保存', style: TextStyle(fontSize: 12, color: Color(0xFF7B9E7B))),
-              ]),
-              const SizedBox(height: 12),
-              // Title
-              TextField(
-                controller: _titleCtrl,
-                style: TextStyle(
-                    color: t.textPrimary,
-                    fontSize: 20,
-                    fontWeight: FontWeight.w600),
-                cursorColor: t.accentColor,
-                decoration: InputDecoration(
-                  hintText: '标题...',
-                  hintStyle: TextStyle(
-                      color: t.textSecondary.withAlpha(130)),
-                  border: InputBorder.none,
+        child: Stack(
+          children: [
+            // 横线纸背景
+            Positioned.fill(
+              child: CustomPaint(
+                painter: LinedPaperPainter(
+                  lineColor: t.paperLine,
+                  lineSpacing: 28,
+                  marginLeft: 40,
+                  showMarginLine: false,
                 ),
               ),
-              const SizedBox(height: 8),
-              // Content
-              Expanded(
-                child: TextField(
-                  controller: _contentCtrl,
-                  maxLines: null,
-                  expands: true,
-                  textAlignVertical: TextAlignVertical.top,
-                  style: TextStyle(
-                      color: t.textPrimary,
-                      fontSize: 15,
-                      height: 1.8),
-                  cursorColor: t.accentColor,
-                  decoration: InputDecoration(
-                    hintText: '今天想写点什么...',
-                    hintStyle: TextStyle(
-                        color: t.textSecondary.withAlpha(100)),
-                    border: InputBorder.none,
+            ),
+            // 内容
+            Padding(
+              padding: const EdgeInsets.only(
+                left: 20,
+                right: 16,
+                top: 8,
+                bottom: 16,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Date — 手写体
+                  Row(
+                    children: [
+                      GestureDetector(
+                        onTap: () {
+                          final d = DateTime.parse(
+                            _date,
+                          ).subtract(const Duration(days: 1));
+                          _changeDate(DateFormat('yyyy-MM-dd').format(d));
+                        },
+                        child: Icon(
+                          Icons.chevron_left,
+                          color: t.accentColor,
+                          size: 22,
+                        ),
+                      ),
+                      GestureDetector(
+                        onTap: () async {
+                          final d = await showDatePicker(
+                            context: context,
+                            initialDate:
+                                DateTime.tryParse(_date) ?? DateTime.now(),
+                            firstDate: DateTime(2020),
+                            lastDate: DateTime.now(),
+                          );
+                          if (d != null) {
+                            _changeDate(DateFormat('yyyy-MM-dd').format(d));
+                          }
+                        },
+                        child: Text(
+                          _date,
+                          style: XqTypography.headlineSmall.copyWith(
+                            color: t.textPrimary,
+                            decoration: TextDecoration.underline,
+                            decorationColor: t.accentColor.withAlpha(60),
+                          ),
+                        ),
+                      ),
+                      GestureDetector(
+                        onTap: () {
+                          final d = DateTime.parse(
+                            _date,
+                          ).add(const Duration(days: 1));
+                          if (!d.isAfter(DateTime.now())) {
+                            _changeDate(DateFormat('yyyy-MM-dd').format(d));
+                          }
+                        },
+                        child: Icon(
+                          Icons.chevron_right,
+                          color: t.accentColor,
+                          size: 22,
+                        ),
+                      ),
+                    ],
                   ),
-                ),
+                  const SizedBox(height: 12),
+                  // Title — 手写体
+                  TextField(
+                    controller: _titleCtrl,
+                    style: XqTypography.diaryTitle.copyWith(
+                      color: t.textPrimary,
+                    ),
+                    cursorColor: t.accentColor,
+                    cursorWidth: 2.0,
+                    decoration: InputDecoration(
+                      hintText: '标题...',
+                      hintStyle: XqTypography.diaryTitle.copyWith(
+                        color: t.textSecondary.withAlpha(100),
+                      ),
+                      border: InputBorder.none,
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 4),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  // Content — 手写体，行高对齐 28px 横线
+                  Expanded(
+                    child: TextField(
+                      controller: _contentCtrl,
+                      maxLines: null,
+                      expands: true,
+                      textAlignVertical: TextAlignVertical.top,
+                      style: XqTypography.diaryBody.copyWith(
+                        color: t.textPrimary,
+                      ),
+                      cursorColor: t.accentColor,
+                      cursorWidth: 2.0,
+                      decoration: InputDecoration(
+                        hintText: '今天想写点什么...',
+                        hintStyle: XqTypography.diaryBody.copyWith(
+                          color: t.textSecondary.withAlpha(80),
+                        ),
+                        border: InputBorder.none,
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 4),
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -203,7 +295,8 @@ class _DiaryPageState extends State<DiaryPage> {
       context: context,
       backgroundColor: t.cardColor,
       shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
       builder: (ctx) {
         return Padding(
           padding: const EdgeInsets.all(20),
@@ -216,10 +309,10 @@ class _DiaryPageState extends State<DiaryPage> {
                 style: TextStyle(color: t.textPrimary),
                 decoration: InputDecoration(
                   hintText: '搜索日记...',
-                  prefixIcon:
-                      Icon(Icons.search, color: t.accentColor),
+                  prefixIcon: Icon(Icons.search, color: t.accentColor),
                   border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12)),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
                 onSubmitted: (q) async {
                   Navigator.pop(ctx);
@@ -239,30 +332,33 @@ class _DiaryPageState extends State<DiaryPage> {
     );
   }
 
-  void _showSearchResult(
-      BuildContext context, List diaries, ThemeState t) {
+  void _showSearchResult(BuildContext context, List diaries, ThemeState t) {
     showModalBottomSheet(
       context: context,
       backgroundColor: t.cardColor,
       shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
       builder: (ctx) => SizedBox(
         height: 300,
         child: diaries.isEmpty
             ? Center(
-                child: Text('没有找到日记',
-                    style: TextStyle(color: t.textSecondary)))
+                child: Text('没有找到日记', style: TextStyle(color: t.textSecondary)),
+              )
             : ListView.builder(
                 padding: const EdgeInsets.all(16),
                 itemCount: diaries.length,
                 itemBuilder: (_, i) {
                   final d = diaries[i] as Map<String, dynamic>;
                   return ListTile(
-                    title: Text(d['title'] ?? '无标题',
-                        style: TextStyle(color: t.textPrimary)),
-                    subtitle: Text(d['date'] ?? '',
-                        style: TextStyle(
-                            color: t.textSecondary, fontSize: 12)),
+                    title: Text(
+                      d['title'] ?? '无标题',
+                      style: TextStyle(color: t.textPrimary),
+                    ),
+                    subtitle: Text(
+                      d['date'] ?? '',
+                      style: TextStyle(color: t.textSecondary, fontSize: 12),
+                    ),
                     onTap: () {
                       Navigator.pop(context);
                       _changeDate(d['date']);

@@ -1,8 +1,8 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import '../constants/mood.dart';
+import 'package:provider/provider.dart';
+import '../stores/theme_state.dart';
 
 class PixelFox extends StatefulWidget {
   final int streak;
@@ -10,7 +10,6 @@ class PixelFox extends StatefulWidget {
   final int todayMood;
   final VoidCallback? onWriteDiary;
   final VoidCallback? onListenWhiteNoise;
-  final VoidCallback? onViewPoems;
 
   const PixelFox({
     super.key,
@@ -19,7 +18,6 @@ class PixelFox extends StatefulWidget {
     this.todayMood = 0,
     this.onWriteDiary,
     this.onListenWhiteNoise,
-    this.onViewPoems,
   });
 
   @override
@@ -30,14 +28,14 @@ class _PixelFoxState extends State<PixelFox>
     with SingleTickerProviderStateMixin {
   late AnimationController _ctrl;
   bool _showBubble = false;
-  final Random _rng = Random();
 
   @override
   void initState() {
     super.initState();
     _ctrl = AnimationController(
-        vsync: this, duration: const Duration(milliseconds: 1800))
-      ..repeat(reverse: true);
+      vsync: this,
+      duration: const Duration(milliseconds: 1800),
+    )..repeat(reverse: true);
   }
 
   @override
@@ -73,7 +71,7 @@ class _PixelFoxState extends State<PixelFox>
               left: 0,
               child: AnimatedBuilder(
                 animation: _ctrl,
-                builder: (_, __) => CustomPaint(
+                builder: (context, child) => CustomPaint(
                   size: const Size(72, 72),
                   painter: _FoxPainter(
                     stage: _stage,
@@ -99,10 +97,6 @@ class _PixelFoxState extends State<PixelFox>
                     setState(() => _showBubble = false);
                     widget.onListenWhiteNoise?.call();
                   },
-                  onPoems: () {
-                    setState(() => _showBubble = false);
-                    widget.onViewPoems?.call();
-                  },
                   onDismiss: () => setState(() => _showBubble = false),
                 ),
               ),
@@ -118,11 +112,7 @@ class _FoxPainter extends CustomPainter {
   final int mood;
   final double breath;
 
-  _FoxPainter({
-    required this.stage,
-    required this.mood,
-    required this.breath,
-  });
+  _FoxPainter({required this.stage, required this.mood, required this.breath});
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -139,22 +129,27 @@ class _FoxPainter extends CustomPainter {
   }
 
   void _drawOrb(Canvas canvas, double cx, double cy, double s) {
-    canvas.drawCircle(Offset(cx, cy), 14 * s,
-        Paint()
-          ..shader = RadialGradient(colors: [
+    canvas.drawCircle(
+      Offset(cx, cy),
+      14 * s,
+      Paint()
+        ..shader = RadialGradient(
+          colors: [
             const Color(0xFFFFD54F).withAlpha(200),
             const Color(0xFFFF8F00).withAlpha(50),
             Colors.transparent,
-          ]).createShader(Rect.fromCircle(
-              center: Offset(cx, cy), radius: 18)));
+          ],
+        ).createShader(Rect.fromCircle(center: Offset(cx, cy), radius: 18)),
+    );
     // Sparkles
     for (int i = 0; i < 4; i++) {
       final angle = (i / 4) * pi * 2 + DateTime.now().millisecond * 0.003;
       final dist = 16 * s + sin(DateTime.now().millisecond * 0.005 + i) * 4;
       canvas.drawCircle(
-          Offset(cx + cos(angle) * dist, cy + sin(angle) * dist),
-          1.8,
-          Paint()..color = const Color(0xFFFFFDE7).withAlpha(150));
+        Offset(cx + cos(angle) * dist, cy + sin(angle) * dist),
+        1.8,
+        Paint()..color = const Color(0xFFFFFDE7).withAlpha(150),
+      );
     }
   }
 
@@ -163,24 +158,39 @@ class _FoxPainter extends CustomPainter {
     // Round body
     canvas.drawCircle(Offset(cx, cy), 16 * s, bodyPaint);
     // Eyes
-    canvas.drawCircle(Offset(cx - 5, cy - 3), 2.5,
-        Paint()..color = const Color(0xFF3E2723));
-    canvas.drawCircle(Offset(cx + 5, cy - 3), 2.5,
-        Paint()..color = const Color(0xFF3E2723));
+    canvas.drawCircle(
+      Offset(cx - 5, cy - 3),
+      2.5,
+      Paint()..color = const Color(0xFF3E2723),
+    );
+    canvas.drawCircle(
+      Offset(cx + 5, cy - 3),
+      2.5,
+      Paint()..color = const Color(0xFF3E2723),
+    );
     // Smile
     final path = Path()
       ..moveTo(cx - 4, cy + 4)
       ..quadraticBezierTo(cx, cy + 8, cx + 4, cy + 4);
     canvas.drawPath(
-        path, Paint()..color = const Color(0xFF3E2723)..style = PaintingStyle.stroke..strokeWidth = 1.5);
+      path,
+      Paint()
+        ..color = const Color(0xFF3E2723)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.5,
+    );
     // Star points
     for (int i = 0; i < 5; i++) {
       final angle = (i / 5) * pi * 2 - pi / 2;
       final dist = 20 * s;
       canvas.drawLine(
-          Offset(cx + cos(angle) * (14 * s), cy + sin(angle) * (14 * s)),
-          Offset(cx + cos(angle) * dist, cy + sin(angle) * dist),
-          Paint()..color = const Color(0xFFFFC107).withAlpha(100)..strokeWidth = 2.5..strokeCap = StrokeCap.round);
+        Offset(cx + cos(angle) * (14 * s), cy + sin(angle) * (14 * s)),
+        Offset(cx + cos(angle) * dist, cy + sin(angle) * dist),
+        Paint()
+          ..color = const Color(0xFFFFC107).withAlpha(100)
+          ..strokeWidth = 2.5
+          ..strokeCap = StrokeCap.round,
+      );
     }
   }
 
@@ -190,104 +200,134 @@ class _FoxPainter extends CustomPainter {
       ..moveTo(cx - 22, cy + 14)
       ..quadraticBezierTo(cx - 34, cy - 2, cx - 28, cy - 14)
       ..quadraticBezierTo(cx - 20, cy - 24, cx - 14, cy - 18);
-    canvas.drawPath(tailPath,
-        Paint()..color = const Color(0xFFD4A85C));
-    canvas.drawCircle(Offset(cx - 26, cy - 16), 4,
-        Paint()..color = Colors.white.withAlpha(180));
+    canvas.drawPath(tailPath, Paint()..color = const Color(0xFFD4A85C));
+    canvas.drawCircle(
+      Offset(cx - 26, cy - 16),
+      4,
+      Paint()..color = Colors.white.withAlpha(180),
+    );
 
     // Body
     canvas.drawOval(
-        Rect.fromCenter(
-            center: Offset(cx, cy + 8), width: 28 * s, height: 22 * s),
-        Paint()..color = const Color(0xFFD4A85C));
+      Rect.fromCenter(
+        center: Offset(cx, cy + 8),
+        width: 28 * s,
+        height: 22 * s,
+      ),
+      Paint()..color = const Color(0xFFD4A85C),
+    );
     // Belly
     canvas.drawOval(
-        Rect.fromCenter(
-            center: Offset(cx, cy + 10),
-            width: 16 * s,
-            height: 14 * s),
-        Paint()..color = const Color(0xFFFFF8E1));
+      Rect.fromCenter(
+        center: Offset(cx, cy + 10),
+        width: 16 * s,
+        height: 14 * s,
+      ),
+      Paint()..color = const Color(0xFFFFF8E1),
+    );
 
     // Ears
     final earPaint = Paint()..color = const Color(0xFFD4A85C);
     final earInPaint = Paint()..color = const Color(0xFF8B6914);
     // Left ear
     canvas.drawPath(
-        Path()
-          ..moveTo(cx - 10, cy - 14)
-          ..lineTo(cx - 16, cy - 30)
-          ..lineTo(cx - 4, cy - 16),
-        earPaint);
+      Path()
+        ..moveTo(cx - 10, cy - 14)
+        ..lineTo(cx - 16, cy - 30)
+        ..lineTo(cx - 4, cy - 16),
+      earPaint,
+    );
     canvas.drawPath(
-        Path()
-          ..moveTo(cx - 8, cy - 15)
-          ..lineTo(cx - 13, cy - 26)
-          ..lineTo(cx - 5, cy - 16),
-        earInPaint);
+      Path()
+        ..moveTo(cx - 8, cy - 15)
+        ..lineTo(cx - 13, cy - 26)
+        ..lineTo(cx - 5, cy - 16),
+      earInPaint,
+    );
     // Right ear
     canvas.drawPath(
-        Path()
-          ..moveTo(cx + 10, cy - 14)
-          ..lineTo(cx + 16, cy - 30)
-          ..lineTo(cx + 4, cy - 16),
-        earPaint);
+      Path()
+        ..moveTo(cx + 10, cy - 14)
+        ..lineTo(cx + 16, cy - 30)
+        ..lineTo(cx + 4, cy - 16),
+      earPaint,
+    );
     canvas.drawPath(
-        Path()
-          ..moveTo(cx + 8, cy - 15)
-          ..lineTo(cx + 13, cy - 26)
-          ..lineTo(cx + 5, cy - 16),
-        earInPaint);
+      Path()
+        ..moveTo(cx + 8, cy - 15)
+        ..lineTo(cx + 13, cy - 26)
+        ..lineTo(cx + 5, cy - 16),
+      earInPaint,
+    );
 
     // Head
-    canvas.drawCircle(Offset(cx, cy - 4), 14 * s,
-        Paint()..color = const Color(0xFFD4A85C));
+    canvas.drawCircle(
+      Offset(cx, cy - 4),
+      14 * s,
+      Paint()..color = const Color(0xFFD4A85C),
+    );
     // Cheeks
-    canvas.drawCircle(Offset(cx - 8, cy), 5,
-        Paint()..color = const Color(0xFFFFF8E1).withAlpha(150));
-    canvas.drawCircle(Offset(cx + 8, cy), 5,
-        Paint()..color = const Color(0xFFFFF8E1).withAlpha(150));
+    canvas.drawCircle(
+      Offset(cx - 8, cy),
+      5,
+      Paint()..color = const Color(0xFFFFF8E1).withAlpha(150),
+    );
+    canvas.drawCircle(
+      Offset(cx + 8, cy),
+      5,
+      Paint()..color = const Color(0xFFFFF8E1).withAlpha(150),
+    );
 
     // Eyes
     final eyePaint = Paint()..color = const Color(0xFF3E2723);
     canvas.drawCircle(Offset(cx - 5, cy - 6), 3, eyePaint);
     canvas.drawCircle(Offset(cx + 5, cy - 6), 3, eyePaint);
     // Eye highlights
-    canvas.drawCircle(Offset(cx - 4, cy - 7), 1,
-        Paint()..color = Colors.white);
-    canvas.drawCircle(Offset(cx + 6, cy - 7), 1,
-        Paint()..color = Colors.white);
+    canvas.drawCircle(Offset(cx - 4, cy - 7), 1, Paint()..color = Colors.white);
+    canvas.drawCircle(Offset(cx + 6, cy - 7), 1, Paint()..color = Colors.white);
 
     // Nose
-    canvas.drawCircle(Offset(cx, cy - 1), 2,
-        Paint()..color = const Color(0xFF3E2723));
+    canvas.drawCircle(
+      Offset(cx, cy - 1),
+      2,
+      Paint()..color = const Color(0xFF3E2723),
+    );
 
     // Scarf (stage 4+)
     if (stage >= 4) {
       canvas.drawRRect(
-          RRect.fromRectAndRadius(
-              Rect.fromCenter(
-                  center: Offset(cx, cy - 10),
-                  width: 22,
-                  height: 8),
-              const Radius.circular(3)),
-          Paint()..color = const Color(0xFFC44A4A));
+        RRect.fromRectAndRadius(
+          Rect.fromCenter(center: Offset(cx, cy - 10), width: 22, height: 8),
+          const Radius.circular(3),
+        ),
+        Paint()..color = const Color(0xFFC44A4A),
+      );
       // Scarf tail
       canvas.drawRRect(
-          RRect.fromRectAndRadius(
-              Rect.fromCenter(
-                  center: Offset(cx + 12, cy - 4),
-                  width: 6,
-                  height: 14),
-              const Radius.circular(3)),
-          Paint()..color = const Color(0xFFC44A4A));
+        RRect.fromRectAndRadius(
+          Rect.fromCenter(
+            center: Offset(cx + 12, cy - 4),
+            width: 6,
+            height: 14,
+          ),
+          const Radius.circular(3),
+        ),
+        Paint()..color = const Color(0xFFC44A4A),
+      );
     }
 
     // Badge pendant (stage 5)
     if (stage >= 5) {
-      canvas.drawCircle(Offset(cx + 14, cy - 8), 4,
-          Paint()..color = const Color(0xFFFFD54F));
-      canvas.drawCircle(Offset(cx + 14, cy - 8), 2,
-          Paint()..color = const Color(0xFFFF8F00));
+      canvas.drawCircle(
+        Offset(cx + 14, cy - 8),
+        4,
+        Paint()..color = const Color(0xFFFFD54F),
+      );
+      canvas.drawCircle(
+        Offset(cx + 14, cy - 8),
+        2,
+        Paint()..color = const Color(0xFFFF8F00),
+      );
     }
 
     // Emotion expressions
@@ -347,7 +387,6 @@ class _BubbleMenu extends StatelessWidget {
   final int mood;
   final VoidCallback onWriteDiary;
   final VoidCallback onWhiteNoise;
-  final VoidCallback onPoems;
   final VoidCallback onDismiss;
 
   const _BubbleMenu({
@@ -355,57 +394,52 @@ class _BubbleMenu extends StatelessWidget {
     required this.mood,
     required this.onWriteDiary,
     required this.onWhiteNoise,
-    required this.onPoems,
     required this.onDismiss,
   });
 
   @override
   Widget build(BuildContext context) {
+    final theme = context.watch<ThemeState>();
     final greeting = stage >= 4
         ? '今天的你需要什么？'
         : stage >= 2
-            ? '我在陪着你哦～'
-            : '...';
+        ? '我在陪着你哦～'
+        : '...';
 
     return GestureDetector(
       onTap: onDismiss,
       child: Container(
         padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
-          color: const Color(0xFF1A1A1A),
+          color: theme.cardColor,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-              color: const Color(0xFFC4A46C).withAlpha(80)),
+          border: Border.all(color: theme.accentColor.withAlpha(80)),
           boxShadow: [
-            BoxShadow(
-                color: Colors.black.withAlpha(40),
-                blurRadius: 8)
+            BoxShadow(color: Colors.black.withAlpha(40), blurRadius: 8),
           ],
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(greeting,
-                style: const TextStyle(
-                    color: Color(0xFFE8E4DC), fontSize: 13)),
+            Text(
+              greeting,
+              style: TextStyle(color: theme.textPrimary, fontSize: 13),
+            ),
             const SizedBox(height: 6),
-            _bubbleBtn('📝 写日记', onWriteDiary),
-            _bubbleBtn('🎧 听白噪音', onWhiteNoise),
-            _bubbleBtn('📜 看看古诗', onPoems),
+            _bubbleBtn('📝 写日记', onWriteDiary, theme.accentColor),
+            _bubbleBtn('🎧 听白噪音', onWhiteNoise, theme.accentColor),
           ],
         ),
       ),
     );
   }
 
-  Widget _bubbleBtn(String text, VoidCallback onTap) {
+  Widget _bubbleBtn(String text, VoidCallback onTap, Color accentColor) {
     return GestureDetector(
       onTap: onTap,
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 4),
-        child: Text(text,
-            style: const TextStyle(
-                color: Color(0xFFC4A46C), fontSize: 12)),
+        child: Text(text, style: TextStyle(color: accentColor, fontSize: 12)),
       ),
     );
   }

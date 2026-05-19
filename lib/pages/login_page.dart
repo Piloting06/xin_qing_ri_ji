@@ -3,12 +3,16 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../api/api_client.dart';
 import '../stores/app_state.dart';
+import '../stores/theme_state.dart';
+import '../theme/xq_typography.dart';
 import '../widgets/main_scaffold.dart';
-import '../widgets/handdrawn_bg.dart';
+import '../services/notification_service.dart';
+import '../main.dart';
 import 'register_page.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
+
   @override
   State<LoginPage> createState() => _LoginPageState();
 }
@@ -17,39 +21,72 @@ class _LoginPageState extends State<LoginPage> {
   final _phoneCtrl = TextEditingController();
   final _pwCtrl = TextEditingController();
   bool _loading = false;
-  String? _error;
   bool _obscure = true;
-  final _phoneFocus = FocusNode();
-  final _pwFocus = FocusNode();
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _phoneCtrl.addListener(_onInputChanged);
+    _pwCtrl.addListener(_onInputChanged);
+  }
 
   @override
   void dispose() {
+    _phoneCtrl.removeListener(_onInputChanged);
+    _pwCtrl.removeListener(_onInputChanged);
     _phoneCtrl.dispose();
     _pwCtrl.dispose();
-    _phoneFocus.dispose();
-    _pwFocus.dispose();
     super.dispose();
   }
 
-  bool get _formValid =>
-      _phoneCtrl.text.trim().length >= 11 && _pwCtrl.text.isNotEmpty;
+  void _onInputChanged() {
+    if (!mounted || _error == null) return;
+    setState(() => _error = null);
+  }
+
+  bool get _formValid {
+    return RegExp(r'^1\d{10}$').hasMatch(_phoneCtrl.text.trim()) &&
+        _pwCtrl.text.isNotEmpty;
+  }
 
   Future<void> _login() async {
-    if (!_formValid) return;
-    setState(() { _loading = true; _error = null; });
+    if (_loading) return;
+    if (!_formValid) {
+      setState(() => _error = '请输入完整手机号和密码');
+      return;
+    }
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
     HapticFeedback.mediumImpact();
     try {
       final data = await Api.login(_phoneCtrl.text.trim(), _pwCtrl.text);
       final dn = data['display_name']?.toString() ?? '';
-      if (mounted) {
-        context.read<AppState>().setDisplayName(dn);
-        Navigator.pushReplacement(
-            context, MaterialPageRoute(builder: (_) => const MainScaffold()));
-      }
+      if (!mounted) return;
+      context.read<AppState>().setDisplayName(dn);
+      Navigator.pushReplacement(
+        context,
+        PageRouteBuilder<void>(
+          transitionDuration: const Duration(milliseconds: 240),
+          pageBuilder: (context, animation, secondaryAnimation) =>
+              const MainScaffold(),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) =>
+              FadeTransition(
+                opacity: CurvedAnimation(
+                  parent: animation,
+                  curve: Curves.easeOutCubic,
+                ),
+                child: child,
+              ),
+        ),
+      );
+      NotificationService.openPendingCapsuleIfAny(appNavigatorKey);
     } on ApiException catch (e) {
-      setState(() => _error = e.message);
-    } catch (e) {
-      setState(() => _error = '网络错误: ${e.toString().substring(0, e.toString().length.clamp(0, 60))}');
+      if (mounted) setState(() => _error = e.message);
+    } catch (_) {
+      if (mounted) setState(() => _error = '网络连接失败，请稍后重试');
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -57,86 +94,126 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = context.watch<ThemeState>();
     return Scaffold(
-      backgroundColor: const Color(0xFFFFF8F0),
+      backgroundColor: theme.backgroundColor,
       body: SafeArea(
         child: GestureDetector(
           onTap: () => FocusScope.of(context).unfocus(),
           child: Stack(
             children: [
-              const HandDrawnBackground(),
+              _AuthBackdrop(theme: theme),
               Center(
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(horizontal: 36),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const SizedBox(height: 32),
-                      const WarmLogo(size: 40),
-                      const SizedBox(height: 14),
-                      const Text('心晴日记',
-                          style: TextStyle(
-                              fontSize: 26,
-                              letterSpacing: 4,
-                              fontWeight: FontWeight.w300,
-                              color: Color(0xFF8B7355))),
-                      const SizedBox(height: 48),
-                      _WarmInput(
-                        controller: _phoneCtrl,
-                        focusNode: _phoneFocus,
-                        hint: '手机号',
-                        icon: Icons.phone_iphone_rounded,
-                        keyboardType: TextInputType.phone,
-                      ),
-                      const SizedBox(height: 14),
-                      _WarmInput(
-                        controller: _pwCtrl,
-                        focusNode: _pwFocus,
-                        hint: '密码',
-                        icon: Icons.lock_outline_rounded,
-                        obscure: _obscure,
-                        suffix: IconButton(
-                          icon: Icon(
-                            _obscure ? Icons.visibility_off_rounded : Icons.visibility_rounded,
-                            color: const Color(0xFF8C7E6F),
-                            size: 20,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 22,
+                    vertical: 24,
+                  ),
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 420),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        _AuthHero(theme: theme, title: '心晴日记'),
+                        const SizedBox(height: 22),
+                        _AuthCard(
+                          theme: theme,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              Text(
+                                '欢迎回来',
+                                style: XqTypography.headlineMedium.copyWith(
+                                  color: theme.textPrimary,
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                '记录今天的天气，也记录今天的你。',
+                                style: TextStyle(
+                                  color: theme.textSecondary,
+                                  fontSize: 13,
+                                ),
+                              ),
+                              const SizedBox(height: 22),
+                              _AuthInput(
+                                controller: _phoneCtrl,
+                                label: '手机号',
+                                hint: '请输入 11 位手机号',
+                                icon: Icons.phone_iphone_rounded,
+                                keyboardType: TextInputType.phone,
+                                inputFormatters: [
+                                  FilteringTextInputFormatter.digitsOnly,
+                                ],
+                              ),
+                              const SizedBox(height: 14),
+                              _AuthInput(
+                                controller: _pwCtrl,
+                                label: '密码',
+                                hint: '请输入密码',
+                                icon: Icons.lock_outline_rounded,
+                                obscure: _obscure,
+                                suffix: IconButton(
+                                  onPressed: () =>
+                                      setState(() => _obscure = !_obscure),
+                                  icon: Icon(
+                                    _obscure
+                                        ? Icons.visibility_off_rounded
+                                        : Icons.visibility_rounded,
+                                    color: theme.textSecondary,
+                                  ),
+                                ),
+                                onSubmitted: (_) => _login(),
+                              ),
+                              AnimatedSwitcher(
+                                duration: const Duration(milliseconds: 180),
+                                child: _error == null
+                                    ? const SizedBox(height: 18)
+                                    : Padding(
+                                        padding: const EdgeInsets.only(top: 12),
+                                        child: Text(
+                                          _error!,
+                                          key: ValueKey(_error),
+                                          style: TextStyle(
+                                            color: theme.errorColor,
+                                            fontSize: 13,
+                                          ),
+                                        ),
+                                      ),
+                              ),
+                              const SizedBox(height: 10),
+                              _AuthButton(
+                                label: '登录',
+                                loading: _loading,
+                                active: _formValid,
+                                onTap: _login,
+                              ),
+                            ],
                           ),
-                          onPressed: () => setState(() => _obscure = !_obscure),
                         ),
-                        onSubmitted: (_) => _login(),
-                      ),
-                      AnimatedOpacity(
-                        opacity: _error != null ? 1.0 : 0.0,
-                        duration: const Duration(milliseconds: 200),
-                        child: Padding(
-                          padding: const EdgeInsets.only(top: 12),
-                          child: Text(_error ?? '',
-                              style: const TextStyle(
-                                  color: Color(0xFFD4837A), fontSize: 13)),
-                        ),
-                      ),
-                      const SizedBox(height: 28),
-                      _WarmButton(
-                        label: '登 录',
-                        loading: _loading,
-                        active: _formValid,
-                        onTap: _login,
-                      ),
-                      const SizedBox(height: 18),
-                      TextButton(
-                        onPressed: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (_) => const RegisterPage())),
-                        style: TextButton.styleFrom(
-                          minimumSize: const Size(44, 44),
-                        ),
-                        child: const Text('还没有账号？立即注册',
+                        const SizedBox(height: 16),
+                        TextButton(
+                          onPressed: _loading
+                              ? null
+                              : () => Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => const RegisterPage(),
+                                  ),
+                                ),
+                          style: TextButton.styleFrom(
+                            minimumSize: const Size(44, 44),
+                          ),
+                          child: Text(
+                            '还没有账号？创建一个',
                             style: TextStyle(
-                                color: Color(0xFF8C7E6F), fontSize: 14)),
-                      ),
-                      const SizedBox(height: 32),
-                    ],
+                              color: theme.accentColor,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -148,96 +225,193 @@ class _LoginPageState extends State<LoginPage> {
   }
 }
 
-// ── Warm Input ──
-class _WarmInput extends StatefulWidget {
+class _AuthBackdrop extends StatelessWidget {
+  final ThemeState theme;
+
+  const _AuthBackdrop({required this.theme});
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        Positioned(
+          top: -80,
+          right: -70,
+          child: _Glow(
+            size: 220,
+            color: theme.accentColor.withAlpha(theme.isDark ? 42 : 30),
+          ),
+        ),
+        Positioned(
+          left: -80,
+          bottom: 80,
+          child: _Glow(
+            size: 180,
+            color: theme.gold.withAlpha(theme.isDark ? 30 : 24),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _Glow extends StatelessWidget {
+  final double size;
+  final Color color;
+
+  const _Glow({required this.size, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        gradient: RadialGradient(colors: [color, Colors.transparent]),
+      ),
+    );
+  }
+}
+
+class _AuthHero extends StatelessWidget {
+  final ThemeState theme;
+  final String title;
+
+  const _AuthHero({required this.theme, required this.title});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Container(
+          width: 64,
+          height: 64,
+          decoration: BoxDecoration(
+            color: theme.cardColor.withAlpha(220),
+            borderRadius: BorderRadius.circular(22),
+            border: Border.all(color: theme.borderColor),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withAlpha(theme.isDark ? 40 : 12),
+                blurRadius: 18,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: Icon(
+            theme.isDark ? Icons.nightlight_round : Icons.wb_sunny_outlined,
+            color: theme.gold,
+            size: 31,
+          ),
+        ),
+        const SizedBox(height: 13),
+        Text(
+          title,
+          style: XqTypography.headlineLarge.copyWith(
+            color: theme.textPrimary,
+            letterSpacing: 2,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _AuthCard extends StatelessWidget {
+  final ThemeState theme;
+  final Widget child;
+
+  const _AuthCard({required this.theme, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: theme.cardColor.withAlpha(theme.isDark ? 238 : 245),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: theme.borderColor),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withAlpha(theme.isDark ? 48 : 14),
+            blurRadius: 24,
+            offset: const Offset(0, 12),
+          ),
+        ],
+      ),
+      child: child,
+    );
+  }
+}
+
+class _AuthInput extends StatelessWidget {
   final TextEditingController controller;
-  final FocusNode focusNode;
+  final String label;
   final String hint;
   final IconData icon;
   final bool obscure;
   final TextInputType keyboardType;
+  final List<TextInputFormatter>? inputFormatters;
   final Widget? suffix;
   final void Function(String)? onSubmitted;
 
-  const _WarmInput({
+  const _AuthInput({
     required this.controller,
-    required this.focusNode,
+    required this.label,
     required this.hint,
     required this.icon,
     this.obscure = false,
     this.keyboardType = TextInputType.text,
+    this.inputFormatters,
     this.suffix,
     this.onSubmitted,
   });
 
   @override
-  State<_WarmInput> createState() => _WarmInputState();
-}
-
-class _WarmInputState extends State<_WarmInput> {
-  bool _focused = false;
-
-  @override
-  void initState() {
-    super.initState();
-    widget.focusNode.addListener(() {
-      if (mounted) setState(() => _focused = widget.focusNode.hasFocus);
-    });
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final borderColor = _focused
-        ? const Color(0xFFB8956A)
-        : const Color(0xFFD4C8B8);
-    final borderWidth = _focused ? 1.5 : 0.5;
-
-    return Container(
-      height: 52,
-      decoration: BoxDecoration(
-        color: Colors.white.withAlpha(180),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: borderColor, width: borderWidth),
-        boxShadow: _focused
-            ? [BoxShadow(color: const Color(0xFFC4A46C).withAlpha(20), blurRadius: 8)]
-            : null,
-      ),
-      child: Row(children: [
-        const SizedBox(width: 14),
-        Icon(widget.icon, size: 20, color: borderColor),
-        const SizedBox(width: 10),
-        Expanded(
-          child: TextField(
-            controller: widget.controller,
-            focusNode: widget.focusNode,
-            obscureText: widget.obscure,
-            keyboardType: widget.keyboardType,
-            onSubmitted: widget.onSubmitted,
-            style: const TextStyle(color: Color(0xFF3D3228), fontSize: 15),
-            cursorColor: const Color(0xFFB8956A),
-            decoration: InputDecoration(
-              hintText: widget.hint,
-              hintStyle: const TextStyle(color: Color(0xFFB8A898), fontSize: 15),
-              border: InputBorder.none,
-              contentPadding: const EdgeInsets.only(bottom: 2),
-            ),
+    final theme = context.watch<ThemeState>();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            color: theme.textSecondary,
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
           ),
         ),
-        if (widget.suffix != null) widget.suffix!,
-        const SizedBox(width: 4),
-      ]),
+        const SizedBox(height: 7),
+        TextField(
+          controller: controller,
+          obscureText: obscure,
+          keyboardType: keyboardType,
+          inputFormatters: inputFormatters,
+          maxLength: keyboardType == TextInputType.phone ? 11 : null,
+          onSubmitted: onSubmitted,
+          style: TextStyle(color: theme.textPrimary, fontSize: 15),
+          cursorColor: theme.accentColor,
+          decoration: InputDecoration(
+            counterText: '',
+            prefixIcon: Icon(icon, color: theme.accentColor, size: 20),
+            suffixIcon: suffix,
+            hintText: hint,
+          ),
+        ),
+      ],
     );
   }
 }
 
-// ── Warm Button (solid fill) ──
-class _WarmButton extends StatelessWidget {
+class _AuthButton extends StatelessWidget {
   final String label;
   final bool loading;
   final bool active;
   final VoidCallback onTap;
 
-  const _WarmButton({
+  const _AuthButton({
     required this.label,
     required this.loading,
     required this.active,
@@ -246,31 +420,35 @@ class _WarmButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bgColor = active
-        ? const Color(0xFFB8956A)
-        : const Color(0xFFD4C8B8);
-    return GestureDetector(
-      onTap: active && !loading ? onTap : null,
-      child: Container(
-        width: double.infinity,
-        height: 50,
-        decoration: BoxDecoration(
-          color: bgColor,
-          borderRadius: BorderRadius.circular(14),
+    final theme = context.watch<ThemeState>();
+    return SizedBox(
+      height: 50,
+      child: FilledButton(
+        onPressed: active && !loading ? onTap : null,
+        style: FilledButton.styleFrom(
+          backgroundColor: theme.accentColor,
+          foregroundColor: theme.textOnAccent,
+          disabledBackgroundColor: theme.borderColor,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
         ),
-        child: Center(
-          child: loading
-              ? const SizedBox(
-                  width: 22, height: 22,
-                  child: CircularProgressIndicator(
-                      strokeWidth: 2, color: Colors.white))
-              : Text(label,
-                  style: TextStyle(
-                      color: active ? Colors.white : const Color(0xFFC8BFAE),
-                      fontSize: 16,
-                      fontWeight: FontWeight.w400,
-                      letterSpacing: 4)),
-        ),
+        child: loading
+            ? SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: theme.textOnAccent,
+                ),
+              )
+            : Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
       ),
     );
   }

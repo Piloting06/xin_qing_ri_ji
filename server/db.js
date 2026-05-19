@@ -71,7 +71,8 @@ async function init() {
       security_question TEXT,
       security_answer_hash TEXT,
       created_at TEXT DEFAULT (datetime('now')),
-      is_active INTEGER DEFAULT 1
+      is_active INTEGER DEFAULT 1,
+      deleted_at TEXT
     )`,
     `CREATE TABLE IF NOT EXISTS moods (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -87,6 +88,16 @@ async function init() {
       ai_response TEXT,
       poem_id INTEGER,
       created_at TEXT DEFAULT (datetime('now')),
+      FOREIGN KEY (user_id) REFERENCES users(id)
+    )`,
+    `CREATE TABLE IF NOT EXISTS mood_comments (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      mood_id INTEGER NOT NULL,
+      user_id INTEGER NOT NULL,
+      content TEXT NOT NULL,
+      created_at TEXT DEFAULT (datetime('now')),
+      deleted_at TEXT,
+      FOREIGN KEY (mood_id) REFERENCES moods(id),
       FOREIGN KEY (user_id) REFERENCES users(id)
     )`,
     `CREATE TABLE IF NOT EXISTS diaries (
@@ -117,6 +128,15 @@ async function init() {
       created_at TEXT DEFAULT (datetime('now')),
       FOREIGN KEY (user_id) REFERENCES users(id),
       FOREIGN KEY (friend_id) REFERENCES users(id)
+    )`,
+    `CREATE TABLE IF NOT EXISTS friend_notes (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      sender_id INTEGER NOT NULL,
+      receiver_id INTEGER NOT NULL,
+      content TEXT NOT NULL,
+      created_at TEXT DEFAULT (datetime('now')),
+      FOREIGN KEY (sender_id) REFERENCES users(id),
+      FOREIGN KEY (receiver_id) REFERENCES users(id)
     )`,
     `CREATE TABLE IF NOT EXISTS treehole_messages (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -163,11 +183,52 @@ async function init() {
       generated_at TEXT,
       is_sent INTEGER DEFAULT 0
     )`,
+    `CREATE TABLE IF NOT EXISTS treehole_comments (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      message_id INTEGER NOT NULL,
+      user_id INTEGER NOT NULL,
+      content TEXT NOT NULL,
+      is_visible INTEGER DEFAULT 1,
+      created_at TEXT DEFAULT (datetime('now')),
+      FOREIGN KEY (message_id) REFERENCES treehole_messages(id),
+      FOREIGN KEY (user_id) REFERENCES users(id)
+    )`,
+    `CREATE TABLE IF NOT EXISTS sensitive_words (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      word TEXT UNIQUE NOT NULL,
+      created_at TEXT DEFAULT (datetime('now'))
+    )`,
+    `CREATE TABLE IF NOT EXISTS admin_users (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      username TEXT UNIQUE NOT NULL,
+      password_hash TEXT NOT NULL,
+      created_at TEXT DEFAULT (datetime('now'))
+    )`,
+    `CREATE TABLE IF NOT EXISTS admin_token_blacklist (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      token_hash TEXT UNIQUE NOT NULL,
+      expired_at TEXT NOT NULL
+    )`,
+    `CREATE TABLE IF NOT EXISTS admin_logs (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      admin_id INTEGER NOT NULL,
+      action TEXT NOT NULL,
+      target_type TEXT,
+      target_id INTEGER,
+      detail TEXT,
+      created_at TEXT DEFAULT (datetime('now'))
+    )`,
   ];
 
   for (const sql of tables) {
     db.run(sql);
   }
+
+  const userColumns = db.exec('PRAGMA table_info(users)')[0]?.values?.map((row) => row[1]) || [];
+  if (!userColumns.includes('deleted_at')) {
+    db.run('ALTER TABLE users ADD COLUMN deleted_at TEXT');
+  }
+
   saveDb();
   console.log('Database initialized');
 }

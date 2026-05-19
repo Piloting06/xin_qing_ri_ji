@@ -49,16 +49,16 @@ class OnboardingFlow {
               color: theme.isDark ? const Color(0xFF1A1A1A) : Colors.white,
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
-                  color: const Color(0xFFC4A46C).withAlpha(60)),
+                  color: theme.gold.withAlpha(60)),
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Text('欢迎来到心晴日记',
+                Text('欢迎来到心晴日记',
                     style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.w600,
-                        color: Color(0xFFC4A46C))),
+                        color: theme.gold)),
                 const SizedBox(height: 8),
                 Text('先给自己起一个名字吧～',
                     style: TextStyle(
@@ -70,7 +70,7 @@ class OnboardingFlow {
                   autofocus: true,
                   style: TextStyle(color: theme.textPrimary, fontSize: 18),
                   textAlign: TextAlign.center,
-                  cursorColor: const Color(0xFFC4A46C),
+                  cursorColor: theme.gold,
                   decoration: InputDecoration(
                     hintText: '你的名字',
                     hintStyle:
@@ -79,8 +79,8 @@ class OnboardingFlow {
                         borderRadius: BorderRadius.circular(14)),
                     focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(14),
-                        borderSide: const BorderSide(
-                            color: Color(0xFFC4A46C), width: 1.5)),
+                        borderSide: BorderSide(
+                            color: theme.gold, width: 1.5)),
                   ),
                 ),
                 const SizedBox(height: 20),
@@ -94,7 +94,7 @@ class OnboardingFlow {
                       Navigator.pop(ctx, name);
                     },
                     style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFC4A46C),
+                        backgroundColor: theme.gold,
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(14))),
                     child: const Text('确定',
@@ -151,18 +151,18 @@ class OnboardingFlow {
               color: theme.isDark ? const Color(0xFF1A1A1A) : Colors.white,
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
-                  color: const Color(0xFFC4A46C).withAlpha(60)),
+                  color: theme.gold.withAlpha(60)),
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Center(
+                Center(
                   child: Text('我们需要以下权限',
                       style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.w600,
-                          color: Color(0xFFC4A46C))),
+                          color: theme.gold)),
                 ),
                 const SizedBox(height: 6),
                 Center(
@@ -179,7 +179,7 @@ class OnboardingFlow {
                             Icon(
                                 p['icon'] as IconData,
                                 size: 22,
-                                color: const Color(0xFFC4A46C)),
+                                color: theme.gold),
                             const SizedBox(width: 12),
                             Expanded(
                                 child: Column(
@@ -209,7 +209,7 @@ class OnboardingFlow {
                       Navigator.pop(ctx, true);
                     },
                     style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFC4A46C),
+                        backgroundColor: theme.gold,
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(14))),
                     child: const Text('我知道了',

@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'stores/app_state.dart';
 import 'stores/theme_state.dart';
+import 'stores/map_state.dart';
 import 'theme/xq_theme.dart';
 import 'widgets/splash_screen.dart';
 import 'pages/login_page.dart';
@@ -53,6 +54,7 @@ class XinQingRiJiApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(create: (_) => AppState()),
         ChangeNotifierProvider(create: (_) => ThemeState()),
+        ChangeNotifierProvider(create: (_) => MapState()),
       ],
       child: Consumer<ThemeState>(
         builder: (context, theme, _) {

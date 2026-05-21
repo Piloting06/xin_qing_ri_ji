@@ -13,3 +13,7 @@ CLAUDE.md
 开发日志/
 docs/
 node_modules/
+server_update_*.tar.gz
+server_fix.tar.gz
+android/.kotlin/
+*.apk

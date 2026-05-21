@@ -30,6 +30,7 @@ async function start() {
   app.use('/api/treehole', require('./routes/treehole'));
   app.use('/api/capsule', require('./routes/capsule'));
 app.use('/api/admin', require('./routes/admin'));
+app.use('/api/city', require('./routes/city'));
 
 // Admin panel static files
 app.use('/admin', express.static(require('path').join(__dirname, 'admin')));

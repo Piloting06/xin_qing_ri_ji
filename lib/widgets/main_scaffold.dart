@@ -9,6 +9,7 @@ import '../pages/mood_page.dart';
 import '../pages/treehole_page.dart';
 import '../pages/friends_page.dart';
 import '../pages/profile_page.dart';
+import '../pages/city_map_page.dart';
 import 'onboarding_flow.dart';
 
 class MainScaffold extends StatefulWidget {
@@ -33,7 +34,7 @@ class _MainScaffoldState extends State<MainScaffold> {
   @override
   void initState() {
     super.initState();
-    _currentIndex = widget.initialIndex.clamp(0, 4);
+    _currentIndex = widget.initialIndex.clamp(0, 5);
     _pageController = PageController(initialPage: _currentIndex);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!_onboardingChecked && mounted) {
@@ -81,6 +82,7 @@ class _MainScaffoldState extends State<MainScaffold> {
               children: const [
                 HomePage(),
                 MoodPage(),
+                CityMapPage(),
                 TreeholePage(),
                 FriendsPage(),
                 ProfilePage(),
@@ -136,6 +138,7 @@ class _FrostedCapsule extends StatelessWidget {
   static const _icons = [
     _TabIcon(Icons.wb_sunny_outlined, Icons.wb_sunny),
     _TabIcon(Icons.favorite_border, Icons.favorite),
+    _TabIcon(Icons.explore_outlined, Icons.explore),
     _TabIcon(Icons.forest_outlined, Icons.forest),
     _TabIcon(Icons.people_outline, Icons.people),
     _TabIcon(Icons.person_outline, Icons.person),

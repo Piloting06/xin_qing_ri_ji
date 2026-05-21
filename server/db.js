@@ -218,6 +218,32 @@ async function init() {
       detail TEXT,
       created_at TEXT DEFAULT (datetime('now'))
     )`,
+    `CREATE TABLE IF NOT EXISTS city_comments (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      city_code TEXT NOT NULL,
+      user_id INTEGER NOT NULL,
+      content TEXT NOT NULL,
+      likes INTEGER DEFAULT 0,
+      is_visible INTEGER DEFAULT 1,
+      created_at TEXT DEFAULT (datetime('now')),
+      FOREIGN KEY (user_id) REFERENCES users(id)
+    )`,
+    `CREATE TABLE IF NOT EXISTS city_comment_likes (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      comment_id INTEGER NOT NULL,
+      user_id INTEGER NOT NULL,
+      created_at TEXT DEFAULT (datetime('now')),
+      UNIQUE(comment_id, user_id)
+    )`,
+    `CREATE TABLE IF NOT EXISTS city_comment_replies (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      comment_id INTEGER NOT NULL,
+      user_id INTEGER NOT NULL,
+      content TEXT NOT NULL,
+      is_visible INTEGER DEFAULT 1,
+      created_at TEXT DEFAULT (datetime('now')),
+      FOREIGN KEY (comment_id) REFERENCES city_comments(id)
+    )`,
   ];
 
   for (const sql of tables) {

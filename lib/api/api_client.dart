@@ -494,6 +494,67 @@ class Api {
         .timeout(timeout);
     return await _handle(res);
   }
+
+  // ── City Map ──
+  static Future<Map<String, dynamic>> getCityStats() async {
+    final res = await http
+        .get(Uri.parse('$baseUrl/city/stats'), headers: await _headers())
+        .timeout(timeout);
+    return await _handle(res);
+  }
+
+  static Future<Map<String, dynamic>> getCityComments(String cityCode, {int page = 1}) async {
+    final res = await http
+        .get(Uri.parse('$baseUrl/city/comments?city=$cityCode&page=$page'), headers: await _headers())
+        .timeout(timeout);
+    return await _handle(res);
+  }
+
+  static Future<Map<String, dynamic>> postCityComment(String cityCode, String content) async {
+    final res = await http
+        .post(
+          Uri.parse('$baseUrl/city/comments'),
+          headers: await _headers(),
+          body: json.encode({'city_code': cityCode, 'content': content}),
+        )
+        .timeout(timeout);
+    return await _handle(res);
+  }
+
+  static Future<Map<String, dynamic>> likeCityComment(int commentId) async {
+    final res = await http
+        .post(
+          Uri.parse('$baseUrl/city/comments/$commentId/like'),
+          headers: await _headers(),
+        )
+        .timeout(timeout);
+    return await _handle(res);
+  }
+
+  static Future<Map<String, dynamic>> deleteCityComment(int commentId) async {
+    final res = await http
+        .delete(Uri.parse('$baseUrl/city/comments/$commentId'), headers: await _headers())
+        .timeout(timeout);
+    return await _handle(res);
+  }
+
+  static Future<Map<String, dynamic>> getCityReplies(int commentId) async {
+    final res = await http
+        .get(Uri.parse('$baseUrl/city/comments/$commentId/replies'), headers: await _headers())
+        .timeout(timeout);
+    return await _handle(res);
+  }
+
+  static Future<Map<String, dynamic>> postCityReply(int commentId, String content) async {
+    final res = await http
+        .post(
+          Uri.parse('$baseUrl/city/comments/$commentId/replies'),
+          headers: await _headers(),
+          body: json.encode({'content': content}),
+        )
+        .timeout(timeout);
+    return await _handle(res);
+  }
 }
 
 class ApiException implements Exception {

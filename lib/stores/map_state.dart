@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:geolocator/geolocator.dart';
 import '../api/api_client.dart';
+import '../utils/geo_utils.dart';
 
 /// 城市数据（精简）
 class CityData {
@@ -161,26 +162,56 @@ class MapState extends ChangeNotifier {
     await _locate();
   }
 
-  /// GPS 定位
+  /// GPS 定位（多级回退：首页缓存 → GPS+内置列表 → IP定位）
   Future<void> _locate() async {
     _locating = true;
     notifyListeners();
 
     try {
       final prefs = await SharedPreferences.getInstance();
-      final lat = prefs.getDouble('cityLat');
-      final lng = prefs.getDouble('cityLon');
+
+      // 1. 先读首页写入的位置缓存
+      var lat = prefs.getDouble('weather_lat');
+      var lng = prefs.getDouble('weather_lon');
       if (lat != null && lng != null) {
-        final city = _findNearest(lat, lng, 50);
+        final city = _cityFromGeo(geoFindNearest(lat, lng, maxKm: 100));
         if (city != null) { _myCity = city; _locating = false; _locationError = null; notifyListeners(); return; }
       }
 
+      // 2. 再读城迹自己的缓存
+      lat = prefs.getDouble('cityLat');
+      lng = prefs.getDouble('cityLon');
+      if (lat != null && lng != null) {
+        final city = _cityFromGeo(geoFindNearest(lat, lng, maxKm: 100));
+        if (city != null) { _myCity = city; _locating = false; _locationError = null; notifyListeners(); return; }
+      }
+
+      // 3. GPS
       try {
         final pos = await Geolocator.getCurrentPosition(
-          locationSettings: const LocationSettings(accuracy: LocationAccuracy.low, timeLimit: Duration(seconds: 5)),
+          locationSettings: const LocationSettings(accuracy: LocationAccuracy.low, timeLimit: Duration(seconds: 8)),
         );
-        final city = _findNearest(pos.latitude, pos.longitude, 50);
-        if (city != null) { _myCity = city; _locating = false; _locationError = null; notifyListeners(); return; }
+        final city = _cityFromGeo(geoFindNearest(pos.latitude, pos.longitude, maxKm: 100));
+        if (city != null) {
+          _myCity = city;
+          _locating = false;
+          _locationError = null;
+          await prefs.setDouble('cityLat', pos.latitude);
+          await prefs.setDouble('cityLon', pos.longitude);
+          notifyListeners();
+          return;
+        }
+      } catch (_) {}
+
+      // 4. IP 定位兜底
+      try {
+        final loc = await Api.getLocation();
+        if (loc['lat'] != null && loc['lon'] != null) {
+          final ipLat = (loc['lat'] as num).toDouble();
+          final ipLng = (loc['lon'] as num).toDouble();
+          final city = _cityFromGeo(geoFindNearest(ipLat, ipLng, maxKm: 200));
+          if (city != null) { _myCity = city; _locating = false; _locationError = null; notifyListeners(); return; }
+        }
       } catch (_) {}
 
       _locationError = '无法定位，可搜索城市';
@@ -189,6 +220,11 @@ class MapState extends ChangeNotifier {
     }
     _locating = false;
     notifyListeners();
+  }
+
+  CityData? _cityFromGeo(City? c) {
+    if (c == null) return null;
+    return CityData(code: c.code, name: c.name, province: c.province, lat: c.lat, lng: c.lng, level: c.level);
   }
 
   CityData? _findNearest(double lat, double lng, double maxKm) {

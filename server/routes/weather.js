@@ -124,8 +124,8 @@ function formatDay(daily, i) {
 // IP 定位（仅用 ip-api.com，不依赖任何 key）
 router.get('/location', async (req, res) => {
   try {
-    const https = require('https');
-    https.get('http://ip-api.com/json/?fields=status,lat,lon,city,regionName,country', (resp) => {
+    const http = require('http');
+    http.get('http://ip-api.com/json/?fields=status,lat,lon,city,regionName,country', (resp) => {
       let d = ''; resp.on('data', c => d += c); resp.on('end', () => {
         try {
           const j = JSON.parse(d);

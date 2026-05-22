@@ -20,6 +20,13 @@ class CityData {
     required this.code, required this.name, required this.province,
     required this.lat, required this.lng, required this.level,
   });
+
+  @override
+  bool operator ==(Object other) =>
+      other is CityData && other.code == code;
+
+  @override
+  int get hashCode => code.hashCode;
 }
 
 class MapState extends ChangeNotifier {

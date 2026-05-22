@@ -92,7 +92,7 @@ class _CityMapPageState extends State<CityMapPage>
                 child: Padding(
                   padding: const EdgeInsets.symmetric(vertical: 20),
                   child: Text(
-                    '34 座城市 · 更多城市陆续开放中',
+                    '64 座城市 · 更多城市陆续开放中',
                     textAlign: TextAlign.center,
                     style: TextStyle(color: theme.textTertiary, fontSize: 11),
                   ),

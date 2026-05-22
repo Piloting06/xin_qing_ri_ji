@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:geolocator/geolocator.dart';
 import '../api/api_client.dart';
 import '../utils/geo_utils.dart';
+import '../models/city.dart';
 
 /// 城市数据（精简）
 class CityData {
@@ -174,7 +175,7 @@ class MapState extends ChangeNotifier {
       var lat = prefs.getDouble('weather_lat');
       var lng = prefs.getDouble('weather_lon');
       if (lat != null && lng != null) {
-        final city = _cityFromGeo(geoFindNearest(lat, lng, maxKm: 100));
+        final city = _cityFromGeo(findNearestCity(lat, lng, maxKm: 100));
         if (city != null) { _myCity = city; _locating = false; _locationError = null; notifyListeners(); return; }
       }
 
@@ -182,7 +183,7 @@ class MapState extends ChangeNotifier {
       lat = prefs.getDouble('cityLat');
       lng = prefs.getDouble('cityLon');
       if (lat != null && lng != null) {
-        final city = _cityFromGeo(geoFindNearest(lat, lng, maxKm: 100));
+        final city = _cityFromGeo(findNearestCity(lat, lng, maxKm: 100));
         if (city != null) { _myCity = city; _locating = false; _locationError = null; notifyListeners(); return; }
       }
 
@@ -191,7 +192,7 @@ class MapState extends ChangeNotifier {
         final pos = await Geolocator.getCurrentPosition(
           locationSettings: const LocationSettings(accuracy: LocationAccuracy.low, timeLimit: Duration(seconds: 8)),
         );
-        final city = _cityFromGeo(geoFindNearest(pos.latitude, pos.longitude, maxKm: 100));
+        final city = _cityFromGeo(findNearestCity(pos.latitude, pos.longitude, maxKm: 100));
         if (city != null) {
           _myCity = city;
           _locating = false;
@@ -209,7 +210,7 @@ class MapState extends ChangeNotifier {
         if (loc['lat'] != null && loc['lon'] != null) {
           final ipLat = (loc['lat'] as num).toDouble();
           final ipLng = (loc['lon'] as num).toDouble();
-          final city = _cityFromGeo(geoFindNearest(ipLat, ipLng, maxKm: 200));
+          final city = _cityFromGeo(findNearestCity(ipLat, ipLng, maxKm: 200));
           if (city != null) { _myCity = city; _locating = false; _locationError = null; notifyListeners(); return; }
         }
       } catch (_) {}

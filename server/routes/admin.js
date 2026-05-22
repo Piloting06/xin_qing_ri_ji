@@ -128,11 +128,14 @@ router.post('/users/:id/ban', adminAuth, (req, res) => {
     if (!user) return res.status(404).json({ message: '用户不存在' });
 
     const newStatus = user.is_active ? 0 : 1;
-    db.prepare('UPDATE users SET is_active = ?, deleted_at = ? WHERE id = ?').run(
-      newStatus,
-      newStatus ? null : new Date().toISOString(),
-      user.id
-    );
+    if (newStatus === 0) {
+      const garbledPhone = `banned_${user.id}_${Date.now()}`;
+      db.prepare('UPDATE users SET phone = ?, is_active = 0, deleted_at = ? WHERE id = ?').run(
+        garbledPhone, new Date().toISOString(), user.id
+      );
+    } else {
+      db.prepare('UPDATE users SET is_active = ?, deleted_at = ? WHERE id = ?').run(newStatus, null, user.id);
+    }
     logAction(req.adminId, newStatus ? 'unban_user' : 'ban_user', 'user', user.id, `Set is_active=${newStatus}`);
     res.json({ message: newStatus ? '已解封' : '已封禁', is_active: newStatus });
   } catch (e) { res.status(500).json({ message: '操作失败' }); }

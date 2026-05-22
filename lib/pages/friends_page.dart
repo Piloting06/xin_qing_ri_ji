@@ -427,6 +427,7 @@ class _FriendsPageState extends State<FriendsPage> {
                           fontSize: 14,
                         ),
                         cursorColor: theme.accentColor,
+                        onChanged: (_) => setSheetState(() {}),
                         decoration: InputDecoration(
                           counterText: '',
                           hintText: '比如：今天辛苦啦，希望你今晚能睡个好觉。',

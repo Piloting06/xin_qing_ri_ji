@@ -2,7 +2,8 @@ const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const { db } = require('../db');
 
-const JWT_SECRET = process.env.ADMIN_JWT_SECRET || process.env.JWT_SECRET || 'xinqingriji-admin-secret';
+const JWT_SECRET = process.env.ADMIN_JWT_SECRET || process.env.JWT_SECRET;
+if (!JWT_SECRET) throw new Error('JWT_SECRET or ADMIN_JWT_SECRET must be set in environment');
 const TOKEN_EXPIRY = '12h';
 
 function adminAuth(req, res, next) {

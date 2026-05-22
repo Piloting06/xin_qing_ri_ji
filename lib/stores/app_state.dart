@@ -6,11 +6,13 @@ class AppState extends ChangeNotifier {
   String _displayName = '';
   int _windowWidth = 0;
   bool _animActive = false;
+  bool _lockedOut = false;
 
   String get selectedDate => _selectedDate;
   String get displayName => _displayName;
   int get windowWidth => _windowWidth;
   bool get animActive => _animActive;
+  bool get isLockedOut => _lockedOut;
 
   void setSelectedDate(String d) {
     if (_selectedDate != d) {
@@ -31,6 +33,13 @@ class AppState extends ChangeNotifier {
     _displayName = '';
     _animActive = false;
     notifyListeners();
+  }
+
+  void setLockedOut(bool v) {
+    if (_lockedOut != v) {
+      _lockedOut = v;
+      notifyListeners();
+    }
   }
 
   void setWindowWidth(int w) {

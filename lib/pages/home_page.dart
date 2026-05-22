@@ -6,6 +6,7 @@ import '../api/api_client.dart';
 import '../stores/app_state.dart';
 import '../stores/theme_state.dart';
 import '../utils/weather_utils.dart';
+import '../utils/geo_utils.dart';
 import '../widgets/weather_summary_card.dart';
 import 'capsule_page.dart';
 import 'diary_page.dart';
@@ -124,11 +125,8 @@ class _HomePageState extends State<HomePage> {
     double lon, {
     required String fallback,
   }) async {
-    try {
-      final loc = await Api.reverseWeatherLocation(lat, lon);
-      final label = _locationLabel(loc);
-      if (label.isNotEmpty) return label;
-    } catch (_) {}
+    final nearest = findNearestCity(lat, lon, maxKm: 100);
+    if (nearest != null) return '${nearest.name}，${nearest.province}，中国';
 
     try {
       final loc = await Api.getLocation();
@@ -152,7 +150,9 @@ class _HomePageState extends State<HomePage> {
 
   bool _isGenericCity(String city) {
     final text = city.trim();
-    return text.isEmpty || text == '当前位置' || text == '上次位置' || text == '定位城市';
+    if (text.isEmpty || text == '当前位置' || text == '上次位置' || text == '定位城市') return true;
+    if (!RegExp(r'[一-鿿]').hasMatch(text)) return true;
+    return false;
   }
 
   Future<_WeatherLocation?> _systemLocation() async {
@@ -267,18 +267,17 @@ class _HomePageState extends State<HomePage> {
       if (mounted) setState(() => _cityResults = []);
       return;
     }
-    try {
-      final data = await Api.searchWeather(q);
-      final cities = data['cities'];
-      if (mounted) {
-        setState(() {
-          _cityResults = cities is List
-              ? List<Map<String, dynamic>>.from(cities)
-              : [];
-        });
-      }
-    } catch (_) {
-      if (mounted) setState(() => _cityResults = []);
+    final results = searchCityLocally(q);
+    if (mounted) {
+      setState(() {
+        _cityResults = results.map((c) => {
+          'name': c.name,
+          'admin1': c.province,
+          'country': '中国',
+          'latitude': c.lat,
+          'longitude': c.lng,
+        }).toList();
+      });
     }
   }
 

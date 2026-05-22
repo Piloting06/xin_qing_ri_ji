@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../stores/theme_state.dart';
+import '../stores/app_state.dart';
 import '../theme/xq_decorations.dart';
 import '../pages/home_page.dart';
 import '../pages/mood_page.dart';
@@ -10,6 +11,7 @@ import '../pages/treehole_page.dart';
 import '../pages/friends_page.dart';
 import '../pages/profile_page.dart';
 import '../pages/city_map_page.dart';
+import '../pages/login_page.dart';
 import 'onboarding_flow.dart';
 
 class MainScaffold extends StatefulWidget {
@@ -68,6 +70,22 @@ class _MainScaffoldState extends State<MainScaffold> {
   @override
   Widget build(BuildContext context) {
     final theme = context.watch<ThemeState>();
+    final appState = context.watch<AppState>();
+
+    if (appState.isLockedOut) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (_) => const LoginPage()),
+            (_) => false,
+          );
+          ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+            const SnackBar(content: Text('登录已过期，请重新登录')),
+          );
+        }
+      });
+    }
 
     return Scaffold(
       backgroundColor: theme.backgroundColor,

@@ -23,18 +23,15 @@ void main() async {
   unawaited(NotificationService.initialize());
   Api.onUnauthorized = () {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final nav = appNavigatorKey.currentState;
       final ctx = appNavigatorKey.currentContext;
-      if (nav == null || ctx == null) return;
-      ctx.read<AppState>().clearUser();
-      nav.pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => const LoginPage()),
-        (_) => false,
-      );
-      ScaffoldMessenger.maybeOf(
-        ctx,
-      )?.showSnackBar(const SnackBar(content: Text('登录已过期，请重新登录')));
+      if (ctx == null) return;
+      ctx.read<AppState>().setLockedOut(true);
     });
+  };
+  Api.onAuthenticated = () {
+    final ctx = appNavigatorKey.currentContext;
+    if (ctx == null) return;
+    ctx.read<AppState>().setLockedOut(false);
   };
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(

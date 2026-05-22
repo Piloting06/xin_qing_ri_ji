@@ -31,7 +31,9 @@ class CityCommentSheet extends StatelessWidget {
     final mood = map.cityMood(city.code);
     final commentCount = map.cityCommentCount(city.code);
 
-    return DraggableScrollableSheet(
+    return Padding(
+      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      child: DraggableScrollableSheet(
       initialChildSize: 0.65, minChildSize: 0.3, maxChildSize: 0.85,
       builder: (context, scrollCtrl) {
         return Container(
@@ -82,7 +84,8 @@ class CityCommentSheet extends StatelessWidget {
           ),
         );
       },
-    );
+    ),
+    ); // Padding close
   }
 
   Widget _moodSummary(String mood, ThemeState theme) {

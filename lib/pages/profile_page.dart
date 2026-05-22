@@ -6,6 +6,7 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../api/api_client.dart';
 import '../constants/keys.dart';
 import '../stores/app_state.dart';
@@ -310,8 +311,11 @@ class _ProfilePageState extends State<ProfilePage> {
             const SizedBox(height: 10),
             _aboutCard(theme),
             const SizedBox(height: 16),
+            // QQ群入口
+            _qqGroupRow(theme),
+            const SizedBox(height: 8),
             Text(
-              '心晴日记 1.6.1+7',
+              '心晴日记 1.7.1+8',
               textAlign: TextAlign.center,
               style: TextStyle(color: theme.textTertiary, fontSize: 11),
             ),
@@ -531,6 +535,37 @@ class _ProfilePageState extends State<ProfilePage> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _qqGroupRow(ThemeState theme) {
+    return _infoRow(
+      theme,
+      icon: Icons.chat_bubble_outline,
+      title: '加入交流群',
+      subtitle: '和更多用户一起聊聊',
+      trailing: '加入',
+      onTap: () async {
+        final url = Uri.parse('https://qm.qq.com/q/EKUVPDQV8Y');
+        try {
+          final can = await canLaunchUrl(url);
+          if (can) {
+            await launchUrl(url, mode: LaunchMode.externalApplication);
+          } else {
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('请先安装 QQ')),
+              );
+            }
+          }
+        } catch (_) {
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('跳转失败，请稍后重试')),
+            );
+          }
+        }
+      },
     );
   }
 

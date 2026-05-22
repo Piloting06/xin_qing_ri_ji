@@ -7,6 +7,7 @@ class Api {
   static const String baseUrl = 'http://114.55.138.55:8888/api';
   static const Duration timeout = Duration(seconds: 15);
   static void Function()? onUnauthorized;
+  static void Function()? onAuthenticated;
   static bool _notifyingUnauthorized = false;
 
   static Future<Map<String, String>> _headers({bool auth = true}) async {
@@ -21,6 +22,11 @@ class Api {
 
   static Future<Map<String, dynamic>> _handle(http.Response res) async {
     if (res.statusCode == 401) {
+      String msg = '登录已过期，请重新登录';
+      try {
+        final body = json.decode(res.body);
+        if (body is Map && body['message'] != null) msg = body['message'];
+      } catch (_) {}
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove(StorageKeys.token);
       await prefs.remove(StorageKeys.phone);
@@ -28,9 +34,8 @@ class Api {
       await prefs.remove(StorageKeys.displayName);
       if (!_notifyingUnauthorized) {
         _notifyingUnauthorized = true;
-        onUnauthorized?.call();
       }
-      throw ApiException('登录已过期，请重新登录', 401);
+      throw ApiException(msg, 401);
     }
     if (res.statusCode >= 400) {
       String msg = '请求失败';
@@ -74,6 +79,7 @@ class Api {
         await prefs.setString(StorageKeys.displayName, data['display_name']);
       }
       _notifyingUnauthorized = false;
+      onAuthenticated?.call();
     }
     return data;
   }
@@ -98,6 +104,7 @@ class Api {
         await prefs.setString(StorageKeys.displayName, data['display_name']);
       }
       _notifyingUnauthorized = false;
+      onAuthenticated?.call();
     }
     return data;
   }
@@ -147,29 +154,6 @@ class Api {
     final res = await http
         .get(
           Uri.parse('$baseUrl/weather?lat=$lat&lon=$lon'),
-          headers: await _headers(),
-        )
-        .timeout(timeout);
-    return await _handle(res);
-  }
-
-  static Future<Map<String, dynamic>> reverseWeatherLocation(
-    double lat,
-    double lon,
-  ) async {
-    final res = await http
-        .get(
-          Uri.parse('$baseUrl/weather/reverse?lat=$lat&lon=$lon'),
-          headers: await _headers(),
-        )
-        .timeout(timeout);
-    return await _handle(res);
-  }
-
-  static Future<Map<String, dynamic>> searchWeather(String query) async {
-    final res = await http
-        .get(
-          Uri.parse('$baseUrl/weather/search?q=${Uri.encodeComponent(query)}'),
           headers: await _headers(),
         )
         .timeout(timeout);

@@ -254,6 +254,8 @@ class _HomePageState extends State<HomePage> {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setDouble(_weatherLatKey, location.lat);
     await prefs.setDouble(_weatherLonKey, location.lon);
+    await prefs.setDouble('cityLat', location.lat);
+    await prefs.setDouble('cityLon', location.lon);
     if (_isGenericCity(location.city)) {
       await prefs.remove(_weatherCityKey);
     } else {

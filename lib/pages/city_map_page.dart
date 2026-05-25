@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -43,56 +42,181 @@ class _CityMapPageState extends State<CityMapPage>
     if (map.loading) {
       return Scaffold(
         backgroundColor: theme.backgroundColor,
-        body: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+        body: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.public, size: 48, color: theme.accentColor.withAlpha(80)),
+              const SizedBox(height: 16),
+              Text(
+                '正在加载城市情绪…',
+                style: TextStyle(color: theme.textSecondary, fontSize: 14),
+              ),
+            ],
+          ),
+        ),
       );
     }
 
-    // 城市列表：当前城市置顶，其余按评论数排序
-    final cities = List<CityData>.from(MapState.allCityList);
-    if (map.myCity != null) cities.remove(map.myCity);
-    cities.sort((a, b) => map.cityCommentCount(b.code).compareTo(map.cityCommentCount(a.code)));
-    if (map.myCity != null) cities.insert(0, map.myCity!);
+    final allCities = List<CityData>.from(MapState.allCityList);
+    if (map.myCity != null) allCities.remove(map.myCity);
+    allCities.sort(
+        (a, b) => map.cityCommentCount(b.code).compareTo(map.cityCommentCount(a.code)));
+    if (map.myCity != null) allCities.insert(0, map.myCity!);
 
-    // 搜索过滤
     final filtered = _search.trim().isEmpty
-        ? cities
-        : cities.where((c) =>
-            c.name.contains(_search.trim()) ||
-            c.province.contains(_search.trim())).toList();
+        ? allCities
+        : allCities
+            .where((c) =>
+                c.name.contains(_search.trim()) ||
+                c.province.contains(_search.trim()))
+            .toList();
+
+    final activeCities =
+        filtered.where((c) => map.cityCommentCount(c.code) > 0).toList();
+    final quietCities =
+        filtered.where((c) => map.cityCommentCount(c.code) == 0).toList();
 
     return Scaffold(
       backgroundColor: theme.backgroundColor,
       body: SafeArea(
         child: RefreshIndicator(
-          onRefresh: () async { await _map.initialize(); },
+          onRefresh: () async {
+            await _map.refresh();
+          },
           child: CustomScrollView(
             slivers: [
-              // 搜索条
+              // Search bar
               SliverToBoxAdapter(child: _searchBar(theme)),
-              // 卡片网格
-              filtered.isEmpty
-                  ? SliverFillRemaining(hasScrollBody: false, child: _emptySearch(theme))
-                  : SliverPadding(
-                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-                      sliver: SliverGrid(
-                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          mainAxisSpacing: 10,
-                          crossAxisSpacing: 10,
-                          childAspectRatio: 0.75,
+
+              // Stats header
+              if (_search.trim().isEmpty)
+                SliverToBoxAdapter(child: _statsHeader(map, theme)),
+
+              // Active cities section
+              if (activeCities.isNotEmpty && _search.trim().isEmpty) ...[
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+                    child: Row(
+                      children: [
+                        Icon(Icons.auto_awesome, size: 15, color: theme.accentColor),
+                        const SizedBox(width: 6),
+                        Text(
+                          '正在说话的城市',
+                          style: TextStyle(
+                            color: theme.textPrimary,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
-                        delegate: SliverChildBuilderDelegate(
-                          (_, i) => _cityCard(filtered[i], map, theme),
-                          childCount: filtered.length,
+                        const Spacer(),
+                        Text(
+                          '${activeCities.length}',
+                          style: TextStyle(
+                            color: theme.textTertiary,
+                            fontSize: 12,
+                          ),
                         ),
+                      ],
+                    ),
+                  ),
+                ),
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                  sliver: SliverGrid(
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      mainAxisSpacing: 10,
+                      crossAxisSpacing: 10,
+                      childAspectRatio: 0.72,
+                    ),
+                    delegate: SliverChildBuilderDelegate(
+                      (_, i) => _cityCard(activeCities[i], map, theme),
+                      childCount: activeCities.length,
+                    ),
+                  ),
+                ),
+
+                // Quiet section
+                if (quietCities.isNotEmpty) ...[
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+                      child: Row(
+                        children: [
+                          Icon(Icons.explore_outlined, size: 15,
+                              color: theme.textTertiary),
+                          const SizedBox(width: 6),
+                          Text(
+                            '等待第一个说话的人',
+                            style: TextStyle(
+                              color: theme.textSecondary,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const Spacer(),
+                          Text(
+                            '${quietCities.length}',
+                            style: TextStyle(
+                              color: theme.textTertiary,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-              // 底部提示
+                  ),
+                  SliverPadding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+                    sliver: SliverGrid(
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        mainAxisSpacing: 10,
+                        crossAxisSpacing: 10,
+                        childAspectRatio: 0.85,
+                      ),
+                      delegate: SliverChildBuilderDelegate(
+                        (_, i) => _cityCard(quietCities[i], map, theme),
+                        childCount: quietCities.length,
+                      ),
+                    ),
+                  ),
+                ],
+              ] else ...[
+                // Search results: flat grid
+                filtered.isEmpty
+                    ? SliverFillRemaining(
+                        hasScrollBody: false,
+                        child: _emptySearch(theme),
+                      )
+                    : SliverPadding(
+                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                        sliver: SliverGrid(
+                          gridDelegate:
+                              const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2,
+                            mainAxisSpacing: 10,
+                            crossAxisSpacing: 10,
+                            childAspectRatio: 0.72,
+                          ),
+                          delegate: SliverChildBuilderDelegate(
+                            (_, i) => _cityCard(filtered[i], map, theme),
+                            childCount: filtered.length,
+                          ),
+                        ),
+                      ),
+              ],
+
+              // Footer
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 20),
+                  padding: const EdgeInsets.symmetric(vertical: 24),
                   child: Text(
-                    '64 座城市 · 更多城市陆续开放中',
+                    '${MapState.allCityList.length} 座城市 · 更多城市陆续开放中',
                     textAlign: TextAlign.center,
                     style: TextStyle(color: theme.textTertiary, fontSize: 11),
                   ),
@@ -105,15 +229,138 @@ class _CityMapPageState extends State<CityMapPage>
     );
   }
 
+  Widget _statsHeader(MapState map, ThemeState theme) {
+    final myCity = map.myCity;
+    final totalActive = MapState.allCityList
+        .where((c) => map.cityCommentCount(c.code) > 0)
+        .length;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
+      child: myCity != null
+          ? Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    theme.accentColor.withAlpha(18),
+                    theme.accentColor.withAlpha(6),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: theme.accentColor.withAlpha(30)),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: theme.accentColor.withAlpha(22),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: Icon(Icons.location_on,
+                        color: theme.accentColor, size: 22),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '你在 ${myCity.name}',
+                          style: TextStyle(
+                            color: theme.textPrimary,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          '$totalActive 座城市正在分享情绪',
+                          style: TextStyle(
+                            color: theme.textSecondary,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: () {
+                      map.selectCityCode(myCity.code);
+                      CityCommentSheet.show(context);
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: theme.accentColor.withAlpha(25),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        '写足迹',
+                        style: TextStyle(
+                          color: theme.accentColor,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            )
+          : Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: theme.cardColor.withAlpha(120),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.explore, size: 22, color: theme.textTertiary),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '$totalActive 座城市有人在说话',
+                          style: TextStyle(
+                            color: theme.textPrimary,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          '定位或搜索你的城市，留下足迹',
+                          style: TextStyle(
+                            color: theme.textSecondary,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+    );
+  }
+
   Widget _searchBar(ThemeState theme) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(16),
         child: Container(
           decoration: BoxDecoration(
             color: theme.cardColor.withAlpha(180),
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(16),
             border: Border.all(color: theme.borderColor.withAlpha(120)),
           ),
           child: TextField(
@@ -122,17 +369,19 @@ class _CityMapPageState extends State<CityMapPage>
             style: TextStyle(color: theme.textPrimary, fontSize: 14),
             cursorColor: theme.accentColor,
             decoration: InputDecoration(
-              hintText: '搜城市...',
-              hintStyle: TextStyle(color: theme.textTertiary, fontSize: 14),
-              prefixIcon:
-                  Icon(Icons.search, color: theme.textSecondary, size: 20),
+              hintText: '搜城市…',
+              hintStyle:
+                  TextStyle(color: theme.textTertiary, fontSize: 14),
+              prefixIcon: Icon(Icons.search, color: theme.textSecondary, size: 20),
               suffixIcon: _search.isNotEmpty
                   ? IconButton(
-                      icon: Icon(Icons.clear, color: theme.textSecondary, size: 18),
+                      icon: Icon(Icons.clear,
+                          color: theme.textSecondary, size: 18),
                       onPressed: () {
                         _searchCtrl.clear();
                         setState(() => _search = '');
-                      })
+                      },
+                    )
                   : null,
               border: InputBorder.none,
               contentPadding:
@@ -148,6 +397,7 @@ class _CityMapPageState extends State<CityMapPage>
     final isMe = map.myCity != null && map.myCity!.code == city.code;
     final count = map.cityCommentCount(city.code);
     final mood = map.cityMood(city.code);
+    final hasActivity = count > 0;
 
     return Material(
       color: Colors.transparent,
@@ -162,52 +412,118 @@ class _CityMapPageState extends State<CityMapPage>
           duration: const Duration(milliseconds: 300),
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: _moodBg(mood, theme),
+            color: hasActivity
+                ? _moodBg(mood, theme).withAlpha(theme.isDark ? 55 : 40)
+                : theme.cardColor.withAlpha(120),
             borderRadius: BorderRadius.circular(18),
             border: Border.all(
-              color: isMe ? const Color(0xFFFF9F1C) : theme.borderColor.withAlpha(80),
+              color: isMe
+                  ? const Color(0xFFFF9F1C)
+                  : hasActivity
+                      ? _moodColor(mood).withAlpha(80)
+                      : theme.borderColor.withAlpha(60),
               width: isMe ? 2 : 0.5,
             ),
             boxShadow: isMe
-                ? [BoxShadow(color: const Color(0xFFFF9F1C).withAlpha(30), blurRadius: 12)]
+                ? [
+                    BoxShadow(
+                      color: const Color(0xFFFF9F1C).withAlpha(30),
+                      blurRadius: 12,
+                    )
+                  ]
                 : null,
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 城市名
-              Row(children: [
-                if (isMe) ...[
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    margin: const EdgeInsets.only(right: 6),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFF9F1C).withAlpha(30),
-                      borderRadius: BorderRadius.circular(6),
+              // City name row
+              Row(
+                children: [
+                  if (isMe) ...[
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 6, vertical: 2),
+                      margin: const EdgeInsets.only(right: 6),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFF9F1C).withAlpha(40),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: const Text(
+                        '当前',
+                        style: TextStyle(
+                          color: Color(0xFFFF9F1C),
+                          fontSize: 9,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
                     ),
-                    child: const Text('当前', style: TextStyle(color: Color(0xFFFF9F1C), fontSize: 9, fontWeight: FontWeight.w700)),
+                  ],
+                  Expanded(
+                    child: Text(
+                      city.name,
+                      style: TextStyle(
+                        color: theme.textPrimary,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
+                  if (hasActivity) ...[
+                    const SizedBox(width: 4),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: _moodColor(mood).withAlpha(30),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Text(
+                        '$count',
+                        style: TextStyle(
+                          color: _moodColor(mood),
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ],
                 ],
-                Text(city.name, style: TextStyle(color: theme.textPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
-                const Spacer(),
-                if (count > 0)
-                  Text('$count', style: TextStyle(color: theme.textTertiary, fontSize: 12, fontWeight: FontWeight.w600)),
-              ]),
-              const SizedBox(height: 2),
-              Text(city.province, style: TextStyle(color: theme.textTertiary, fontSize: 11)),
+              ),
+              const SizedBox(height: 4),
+              // Province
+              Text(
+                city.province,
+                style: TextStyle(color: theme.textTertiary, fontSize: 11),
+              ),
               const SizedBox(height: 8),
-              // 情绪描述
+              // Mood text
               Expanded(
                 child: Text(
                   _moodLine(mood, city.name, count),
-                  style: TextStyle(color: theme.textSecondary, fontSize: 11, height: 1.5),
+                  style: TextStyle(
+                    color: hasActivity
+                        ? theme.textSecondary
+                        : theme.textTertiary,
+                    fontSize: 11,
+                    height: 1.5,
+                  ),
                   maxLines: 3,
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
-              // 空状态
-              if (count == 0)
-                Text('还没有足迹', style: TextStyle(color: theme.textTertiary.withAlpha(120), fontSize: 10)),
+              if (!hasActivity)
+                Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: Text(
+                    '还没有足迹',
+                    style: TextStyle(
+                      color: theme.textTertiary.withAlpha(100),
+                      fontSize: 10,
+                    ),
+                  ),
+                ),
             ],
           ),
         ),
@@ -218,24 +534,32 @@ class _CityMapPageState extends State<CityMapPage>
   Widget _emptySearch(ThemeState theme) {
     return Padding(
       padding: const EdgeInsets.all(60),
-      child: Column(children: [
-        Icon(Icons.search_off, size: 48, color: theme.textTertiary),
-        const SizedBox(height: 12),
-        Text('没找到这个城市', style: TextStyle(color: theme.textSecondary, fontSize: 14)),
-      ]),
+      child: Column(
+        children: [
+          Icon(Icons.search_off, size: 48, color: theme.textTertiary),
+          const SizedBox(height: 12),
+          Text(
+            '没找到这个城市',
+            style: TextStyle(color: theme.textSecondary, fontSize: 14),
+          ),
+        ],
+      ),
     );
   }
 
-  Color _moodBg(String? mood, ThemeState theme) {
-    final c = switch (mood) {
+  Color _moodColor(String? mood) {
+    return switch (mood) {
       'warm' => const Color(0xFFF0A830),
       'sad' => const Color(0xFF7B9BB8),
       'anxious' => const Color(0xFFB090C8),
       'calm' => const Color(0xFF78B090),
       'excited' => const Color(0xFFF08848),
-      _ => theme.borderColor,
+      _ => const Color(0xFF8899AA),
     };
-    return c.withAlpha(theme.isDark ? 25 : 18);
+  }
+
+  Color _moodBg(String? mood, ThemeState theme) {
+    return _moodColor(mood);
   }
 
   String _moodLine(String? mood, String name, int count) {

@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'dart:convert';
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:geolocator/geolocator.dart';
@@ -170,6 +170,16 @@ class MapState extends ChangeNotifier {
     await _locate();
   }
 
+  /// 强制刷新（下拉刷新用）
+  Future<void> refresh() async {
+    _loading = true;
+    notifyListeners();
+    await _locate();
+    _loading = false;
+    notifyListeners();
+    await _pollStats();
+  }
+
   /// GPS 定位（多级回退：首页缓存 → GPS+内置列表 → IP定位）
   Future<void> _locate() async {
     _locating = true;
@@ -194,22 +204,43 @@ class MapState extends ChangeNotifier {
         if (city != null) { _myCity = city; _locating = false; _locationError = null; notifyListeners(); return; }
       }
 
-      // 3. GPS
+      // 3. GPS with proper permission handling
       try {
-        final pos = await Geolocator.getCurrentPosition(
-          locationSettings: const LocationSettings(accuracy: LocationAccuracy.low, timeLimit: Duration(seconds: 8)),
-        );
-        final city = _cityFromGeo(findNearestCity(pos.latitude, pos.longitude, maxKm: 100));
-        if (city != null) {
-          _myCity = city;
-          _locating = false;
-          _locationError = null;
-          await prefs.setDouble('cityLat', pos.latitude);
-          await prefs.setDouble('cityLon', pos.longitude);
+        final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+        if (!serviceEnabled) {
+          _locationError = '系统定位未开启';
           notifyListeners();
-          return;
+        } else {
+          final permission = await Geolocator.checkPermission();
+          if (permission == LocationPermission.deniedForever) {
+            _locationError = '定位权限已被永久拒绝，请在系统设置中开启';
+            notifyListeners();
+          } else {
+            if (permission == LocationPermission.denied) {
+              await Geolocator.requestPermission();
+            }
+            final pos = await Geolocator.getCurrentPosition(
+              locationSettings: const LocationSettings(
+                accuracy: LocationAccuracy.low,
+                timeLimit: Duration(seconds: 12),
+              ),
+            );
+            final city = _cityFromGeo(findNearestCity(pos.latitude, pos.longitude, maxKm: 100));
+            if (city != null) {
+              _myCity = city;
+              _locating = false;
+              _locationError = null;
+              await prefs.setDouble('cityLat', pos.latitude);
+              await prefs.setDouble('cityLon', pos.longitude);
+              notifyListeners();
+              return;
+            }
+          }
         }
-      } catch (_) {}
+      } catch (e) {
+        _locationError = 'GPS定位失败，正在尝试IP定位';
+        notifyListeners();
+      }
 
       // 4. IP 定位兜底
       try {
@@ -235,33 +266,6 @@ class MapState extends ChangeNotifier {
     return CityData(code: c.code, name: c.name, province: c.province, lat: c.lat, lng: c.lng, level: c.level);
   }
 
-  CityData? _findNearest(double lat, double lng, double maxKm) {
-    CityData? best; double bestDist = double.infinity;
-    for (final c in _allCities) {
-      final d = _haversine(lat, lng, c.lat, c.lng);
-      if (d < bestDist) { bestDist = d; best = c; }
-    }
-    return bestDist > maxKm ? null : best;
-  }
-
-  double _haversine(double lat1, double lng1, double lat2, double lng2) {
-    const R = 6371.0;
-    final dLat = (lat2 - lat1) * 3.14159265 / 180;
-    final dLng = (lng2 - lng1) * 3.14159265 / 180;
-    final a = _sinHalf(dLat) * _sinHalf(dLat) + _cos(lat1 * 3.14159265 / 180) * _cos(lat2 * 3.14159265 / 180) * _sinHalf(dLng) * _sinHalf(dLng);
-    return 2 * R * _atan2(_sqrt(a < 0 ? 0 : a > 1 ? 1 : a), _sqrt(1 - (a < 0 ? 0 : a > 1 ? 1 : a)));
-  }
-  double _sinHalf(double x) { double r = x; double t = x; for (int i = 1; i <= 10; i++) { t *= -x * x / ((2 * i) * (2 * i + 1)); r += t; } return r; }
-  double _cos(double x) => _sinHalf(1.57079632679 - x + 1.57079632679);
-  double _sqrt(double x) { if (x <= 0) return 0; double g = x / 2; for (int i = 0; i < 10; i++) g = (g + x / g) / 2; return g; }
-  double _atan2(double y, double x) {
-    if (x > 0) return _atan(y / x);
-    if (x < 0) return _atan(y / x) + (y >= 0 ? 3.14159265 : -3.14159265);
-    return y > 0 ? 1.57079633 : y < 0 ? -1.57079633 : 0;
-  }
-  double _atan(double x) { double r = x; double t = x; for (int i = 1; i <= 10; i++) { t *= -x * x * (2 * i - 1) / (2 * i + 1); r += t; } return r; }
-
-  /// 搜索城市
   CityData? searchCity(String q) {
     if (q.trim().isEmpty) return null;
     final lower = q.trim().toLowerCase();

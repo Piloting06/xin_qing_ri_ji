@@ -577,7 +577,7 @@ class _MoodPageState extends State<MoodPage> {
                     ),
                   ),
                 const SizedBox(height: 8),
-                // Photo picker
+                // Photo picker with storage notice
                 Row(
                   children: [
                     IconButton(
@@ -586,11 +586,22 @@ class _MoodPageState extends State<MoodPage> {
                         color: t.textSecondary,
                       ),
                       onPressed: _pickPhoto,
-                      tooltip: '添加照片（仅存本地）',
+                      tooltip: '添加照片',
                     ),
                     Text(
                       '${_photos.length}/9',
                       style: TextStyle(fontSize: 12, color: t.textSecondary),
+                    ),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        '照片仅保存在你的手机本地，不上传云端',
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: t.textTertiary.withAlpha(160),
+                          height: 1.3,
+                        ),
+                      ),
                     ),
                   ],
                 ),

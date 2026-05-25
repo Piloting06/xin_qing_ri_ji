@@ -167,4 +167,14 @@ router.post('/:id/comments', auth, (req, res) => {
   } catch (e) { res.status(500).json({ message: '评论失败' }); }
 });
 
+router.delete('/:id', auth, (req, res) => {
+  try {
+    const msg = db.prepare('SELECT id, user_id FROM treehole_messages WHERE id = ? AND is_visible = 1').get(req.params.id);
+    if (!msg) return res.status(404).json({ message: '留言不存在' });
+    if (msg.user_id !== req.userId) return res.status(403).json({ message: '只能撤回自己的留言' });
+    db.prepare('UPDATE treehole_messages SET is_visible = 0 WHERE id = ?').run(req.params.id);
+    res.json({ message: '已撤回' });
+  } catch (e) { res.status(500).json({ message: '撤回失败' }); }
+});
+
 module.exports = router;

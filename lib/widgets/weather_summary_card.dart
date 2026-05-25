@@ -7,6 +7,8 @@ import 'weather_card_carousel.dart';
 
 class WeatherSummaryCard extends StatelessWidget {
   final bool loading;
+  final bool refreshing;
+  final String? statusText;
   final Map<String, dynamic>? weather;
   final String cityName;
   final String locationStatus;
@@ -19,6 +21,8 @@ class WeatherSummaryCard extends StatelessWidget {
   const WeatherSummaryCard({
     super.key,
     required this.loading,
+    this.refreshing = false,
+    this.statusText,
     required this.weather,
     required this.cityName,
     required this.locationStatus,
@@ -34,9 +38,9 @@ class WeatherSummaryCard extends StatelessWidget {
     final theme = context.watch<ThemeState>();
     return AnimatedSwitcher(
       duration: const Duration(milliseconds: 220),
-      child: loading
+      child: loading && weather == null
           ? _buildLoading(theme)
-          : error != null || weather == null
+          : error != null && weather == null
           ? _buildError(theme)
           : _buildWeather(theme),
     );
@@ -45,36 +49,51 @@ class WeatherSummaryCard extends StatelessWidget {
   Widget _buildLoading(ThemeState theme) {
     return _shell(
       theme,
-      child: Row(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          SizedBox(
-            width: 24,
-            height: 24,
-            child: CircularProgressIndicator(
-              strokeWidth: 2.3,
-              color: theme.accentColor,
-            ),
+          Row(
+            children: [
+              Container(
+                width: 40, height: 40,
+                decoration: BoxDecoration(
+                  color: theme.accentColor.withAlpha(18),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: CircularProgressIndicator(
+                  strokeWidth: 2.3,
+                  color: theme.accentColor,
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '正在准备今天的天气',
+                      style: TextStyle(
+                        color: theme.textPrimary,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '会优先使用系统定位，失败后自动尝试缓存和 IP 定位。',
+                      style: TextStyle(color: theme.textSecondary, fontSize: 12),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '正在准备今天的天气',
-                  style: TextStyle(
-                    color: theme.textPrimary,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '会优先使用系统定位，失败后自动尝试缓存和 IP 定位。',
-                  style: TextStyle(color: theme.textSecondary, fontSize: 12),
-                ),
-              ],
-            ),
+          const SizedBox(height: 14),
+          LinearProgressIndicator(
+            color: theme.accentColor.withAlpha(80),
+            backgroundColor: theme.accentColor.withAlpha(15),
+            minHeight: 2,
+            borderRadius: BorderRadius.circular(1),
           ),
         ],
       ),
@@ -283,9 +302,23 @@ class WeatherSummaryCard extends StatelessWidget {
                     height: 128,
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: theme.cardElevated.withAlpha(theme.isDark ? 210 : 240),
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          theme.cardElevated.withAlpha(theme.isDark ? 230 : 250),
+                          theme.cardElevated.withAlpha(theme.isDark ? 180 : 220),
+                        ],
+                      ),
                       borderRadius: BorderRadius.circular(22),
-                      border: Border.all(color: theme.borderColor),
+                      border: Border.all(color: theme.borderColor.withAlpha(80)),
+                      boxShadow: [
+                        BoxShadow(
+                          color: theme.accentColor.withAlpha(theme.isDark ? 8 : 12),
+                          blurRadius: 16,
+                          offset: const Offset(0, 6),
+                        ),
+                      ],
                     ),
                     child: Column(
                       children: [
@@ -332,26 +365,46 @@ class WeatherSummaryCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                 decoration: BoxDecoration(
-                  color: theme.surfaceAlpha,
+                  gradient: LinearGradient(
+                    begin: Alignment.centerLeft,
+                    end: Alignment.centerRight,
+                    colors: [
+                      theme.gold.withAlpha(theme.isDark ? 12 : 16),
+                      theme.gold.withAlpha(theme.isDark ? 4 : 6),
+                    ],
+                  ),
                   borderRadius: BorderRadius.circular(18),
-                  border: Border.all(color: theme.borderColor.withAlpha(120)),
+                  border: Border.all(
+                    color: theme.gold.withAlpha(theme.isDark ? 30 : 25),
+                  ),
                 ),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(
-                      Icons.auto_awesome_outlined,
-                      size: 18,
-                      color: theme.gold,
+                    Container(
+                      width: 32, height: 32,
+                      decoration: BoxDecoration(
+                        color: theme.gold.withAlpha(22),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Icon(
+                        Icons.auto_awesome_outlined,
+                        size: 17,
+                        color: theme.gold,
+                      ),
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 10),
                     Expanded(
-                      child: Text(
-                        prompt,
-                        style: TextStyle(
-                          color: theme.textPrimary,
-                          fontSize: 13,
-                          height: 1.5,
+                      child: Padding(
+                        padding: const EdgeInsets.only(top: 4),
+                        child: Text(
+                          prompt,
+                          style: TextStyle(
+                            color: theme.textPrimary,
+                            fontSize: 13,
+                            height: 1.55,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
                       ),
                     ),
@@ -367,6 +420,40 @@ class WeatherSummaryCard extends StatelessWidget {
                     weatherUpdatedText(updatedAt),
                     style: TextStyle(color: theme.textSecondary, fontSize: 12),
                   ),
+                  if (statusText != null) ...[
+                    const SizedBox(width: 10),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: refreshing
+                            ? theme.accentColor.withAlpha(20)
+                            : theme.textSecondary.withAlpha(20),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (refreshing)
+                            SizedBox(
+                              width: 10,
+                              height: 10,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 1.5,
+                                color: theme.accentColor,
+                              ),
+                            ),
+                          if (refreshing) const SizedBox(width: 4),
+                          Text(
+                            statusText!,
+                            style: TextStyle(
+                              color: refreshing ? theme.accentColor : theme.textSecondary,
+                              fontSize: 11,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ],

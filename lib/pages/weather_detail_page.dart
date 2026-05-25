@@ -286,7 +286,7 @@ class WeatherDetailPage extends StatelessWidget {
             ],
             const SizedBox(height: 18),
             Text(
-              '未来三天',
+              '未来两天',
               style: TextStyle(
                 color: theme.textPrimary,
                 fontSize: 17,
@@ -294,11 +294,9 @@ class WeatherDetailPage extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 10),
-            _dayCard(theme, '今天', today),
+            _dayCard(theme, '明天', tomorrow, onTap: () => _showDayDialog(context, theme, '明天', tomorrow)),
             const SizedBox(height: 10),
-            _dayCard(theme, '明天', tomorrow),
-            const SizedBox(height: 10),
-            _dayCard(theme, '后天', dayAfter),
+            _dayCard(theme, '后天', dayAfter, onTap: () => _showDayDialog(context, theme, '后天', dayAfter)),
           ],
         ),
       ),
@@ -343,7 +341,7 @@ class WeatherDetailPage extends StatelessWidget {
     );
   }
 
-  Widget _dayCard(ThemeState theme, String title, Map<String, dynamic> day) {
+  Widget _dayCard(ThemeState theme, String title, Map<String, dynamic> day, {VoidCallback? onTap}) {
     final weatherText = day['weather']?.toString() ?? '暂无数据';
     final high = weatherInt(day['temp_max']);
     final low = weatherInt(day['temp_min']);
@@ -351,65 +349,59 @@ class WeatherDetailPage extends StatelessWidget {
     final wind = weatherInt(day['wind']);
     final code = weatherInt(day['weather_code']) ?? 0;
 
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: theme.cardColor,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: theme.borderColor),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 46,
-            height: 46,
-            decoration: BoxDecoration(
-              color: theme.accentColor.withAlpha(18),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Icon(
-              weatherIcon(code, weatherText),
-              color: theme.accentColor,
-              size: 24,
-            ),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: TextStyle(
-                    color: theme.textPrimary,
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '$weatherText · ${low == null ? '--' : '$low°'} / ${high == null ? '--' : '$high°'}',
-                  style: TextStyle(color: theme.textSecondary, fontSize: 13),
-                ),
+        onTap: onTap,
+        child: Ink(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                theme.cardElevated.withAlpha(theme.isDark ? 230 : 240),
+                theme.cardColor.withAlpha(200),
               ],
             ),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: theme.borderColor.withAlpha(100)),
           ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
+          child: Row(
             children: [
-              if (rain != null)
-                Text(
-                  '降水 $rain%',
-                  style: TextStyle(color: theme.textSecondary, fontSize: 12),
+              Container(
+                width: 52, height: 52,
+                decoration: BoxDecoration(
+                  color: theme.accentColor.withAlpha(20),
+                  borderRadius: BorderRadius.circular(16),
                 ),
-              if (wind != null)
-                Text(
-                  '风 $wind km/h',
-                  style: TextStyle(color: theme.textSecondary, fontSize: 12),
+                child: Icon(weatherIcon(code, weatherText), color: theme.accentColor, size: 26),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(title, style: TextStyle(color: theme.textPrimary, fontSize: 15, fontWeight: FontWeight.w700)),
+                    const SizedBox(height: 4),
+                    Text('$weatherText · ${low == null ? '--' : '$low°'} / ${high == null ? '--' : '$high°'}',
+                        style: TextStyle(color: theme.textSecondary, fontSize: 13)),
+                  ],
                 ),
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  if (rain != null) Text('降水 $rain%', style: TextStyle(color: theme.textSecondary, fontSize: 12)),
+                  if (wind != null) Text('风 $wind km/h', style: TextStyle(color: theme.textSecondary, fontSize: 12)),
+                  const SizedBox(height: 4),
+                  Icon(Icons.chevron_right, size: 18, color: theme.textTertiary),
+                ],
+              ),
             ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -429,6 +421,128 @@ class WeatherDetailPage extends StatelessWidget {
           fontWeight: FontWeight.w600,
         ),
       ),
+    );
+  }
+
+  void _showDayDialog(BuildContext context, ThemeState theme, String title, Map<String, dynamic> day) {
+    final w = day['weather']?.toString() ?? '--';
+    final code = weatherInt(day['weather_code']) ?? 0;
+    final high = weatherInt(day['temp_max']);
+    final low = weatherInt(day['temp_min']);
+    final rain = weatherInt(day['rain_prob']);
+    final wind = weatherInt(day['wind']);
+    final feels = weatherInt(day['feels_like']);
+    final prompt = weatherCardPrompt({title == '明天' ? 'tomorrow' : 'day_after': day, 'current': day});
+
+    final barColors = _weatherBarColors(code);
+
+    showDialog(
+      context: context,
+      builder: (ctx) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.all(20),
+        child: AnimatedScale(
+          scale: 1.0,
+          duration: const Duration(milliseconds: 280),
+          curve: Curves.easeOutCubic,
+          child: Container(
+            width: MediaQuery.sizeOf(context).width - 48,
+            constraints: const BoxConstraints(maxWidth: 400),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(24),
+              color: theme.cardColor,
+              boxShadow: [
+                BoxShadow(color: Colors.black.withAlpha(50), blurRadius: 30, offset: const Offset(0, 16)),
+              ],
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Color header
+                Stack(
+                  children: [
+                    Container(
+                      height: 64,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: barColors,
+                        ),
+                      ),
+                      child: Center(
+                        child: Text(title, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w800)),
+                      ),
+                    ),
+                    Positioned(
+                      right: 4, top: 4,
+                      child: IconButton(
+                        icon: const Icon(Icons.close, color: Colors.white, size: 20),
+                        onPressed: () => Navigator.pop(ctx),
+                      ),
+                    ),
+                  ],
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(22),
+                  child: Column(
+                    children: [
+                      // Weather icon
+                      CustomPaint(
+                        size: const Size(80, 60),
+                        painter: WeatherIllustrationPainter(code: code, inkColor: theme.ink, accentColor: theme.gold),
+                      ),
+                      const SizedBox(height: 8),
+                      Text('$low° / $high°',
+                          style: TextStyle(color: theme.textPrimary, fontSize: 56, fontWeight: FontWeight.w200, height: 1)),
+                      const SizedBox(height: 4),
+                      Text(w, style: TextStyle(color: theme.textSecondary, fontSize: 16)),
+                      const SizedBox(height: 18),
+                      // Metric pills
+                      Wrap(spacing: 8, runSpacing: 8, children: [
+                        if (feels != null) _metricPill(theme, '体感', '$feels°'),
+                        if (rain != null) _metricPill(theme, '降水', '$rain%'),
+                        if (wind != null) _metricPill(theme, '风速', '$wind km/h'),
+                      ]),
+                      const SizedBox(height: 16),
+                      // Tip
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: theme.accentColor.withAlpha(10),
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: Text(prompt, style: TextStyle(color: theme.textSecondary, fontSize: 12, height: 1.5)),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  List<Color> _weatherBarColors(int code) {
+    if (code <= 1) return const [Color(0xFFF5A623), Color(0xFFD4891A)]; // sunny
+    if (code <= 3) return const [Color(0xFF8899AA), Color(0xFF667788)]; // cloudy
+    if (code <= 48) return const [Color(0xFF99AABB), Color(0xFF778899)]; // fog
+    if (code <= 67 || (code >= 80 && code <= 82)) return const [Color(0xFF6B8FAA), Color(0xFF4A6D8A)]; // rain
+    if (code >= 71 && code <= 86) return const [Color(0xFFAABBCC), Color(0xFF8899BB)]; // snow
+    return const [Color(0xFF8899AA), Color(0xFF667788)];
+  }
+
+  Widget _metricPill(ThemeState theme, String label, String value) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: theme.accentColor.withAlpha(14),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Text('$label $value',
+          style: TextStyle(color: theme.textPrimary, fontSize: 12, fontWeight: FontWeight.w600)),
     );
   }
 }

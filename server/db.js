@@ -244,6 +244,13 @@ async function init() {
       created_at TEXT DEFAULT (datetime('now')),
       FOREIGN KEY (comment_id) REFERENCES city_comments(id)
     )`,
+    `CREATE TABLE IF NOT EXISTS sms_codes (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      phone TEXT NOT NULL,
+      code TEXT NOT NULL,
+      expires_at TEXT NOT NULL,
+      used INTEGER DEFAULT 0
+    )`,
   ];
 
   for (const sql of tables) {

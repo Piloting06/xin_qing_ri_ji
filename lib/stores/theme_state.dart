@@ -45,13 +45,12 @@ class ThemeState extends ChangeNotifier {
     final next = themeNames.containsKey(mode) ? mode : 'warm';
     if (_themeMode == next) return;
     _transitioning = true;
-    notifyListeners();
-    await Future.delayed(const Duration(milliseconds: 180));
     _themeMode = next;
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(StorageKeys.themeMode, next);
     notifyListeners();
-    await Future.delayed(const Duration(milliseconds: 240));
+    SharedPreferences.getInstance().then((prefs) {
+      prefs.setString(StorageKeys.themeMode, next);
+    });
+    await Future.delayed(const Duration(milliseconds: 280));
     _transitioning = false;
     notifyListeners();
   }

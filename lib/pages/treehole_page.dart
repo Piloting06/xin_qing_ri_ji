@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import '../utils/helpers.dart';
 import '../api/api_client.dart';
 import '../stores/theme_state.dart';
 import '../theme/xq_decorations.dart';
@@ -169,7 +170,7 @@ class _TreeholePageState extends State<TreeholePage>
       HapticFeedback.lightImpact();
       if (!mounted) return;
       setState(() {
-        final idx = _messages.indexWhere((m) => _readInt(m['id']) == id);
+        final idx = _messages.indexWhere((m) => readInt(m['id']) == id);
         if (idx >= 0) {
           final counts = data['counts'];
           if (counts is Map) {
@@ -401,12 +402,14 @@ class _TreeholePageState extends State<TreeholePage>
   }
 
   Widget _messageCard(Map<String, dynamic> message, ThemeState theme) {
-    final id = _readInt(message['id']);
+    final id = readInt(message['id']);
     final isOwn = message['is_own'] == true;
     final stamp = _displayTime(message['created_at']?.toString());
     final washi = theme.washiColors[(id ?? 0) % theme.washiColors.length];
 
-    return Container(
+    return GestureDetector(
+      onLongPress: isOwn ? () => _deleteTreehole(id ?? 0) : null,
+      child: Container(
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -464,7 +467,7 @@ class _TreeholePageState extends State<TreeholePage>
               _interactionChip(
                 theme,
                 Icons.volunteer_activism_outlined,
-                _readInt(message['cloud_hugs']) ?? 0,
+                readInt(message['cloud_hugs']) ?? 0,
                 _hasInteracted(message, 'cloud_hug'),
                 id == null
                     ? null
@@ -476,7 +479,7 @@ class _TreeholePageState extends State<TreeholePage>
               _interactionChip(
                 theme,
                 Icons.local_cafe_outlined,
-                _readInt(message['cloud_coffees']) ?? 0,
+                readInt(message['cloud_coffees']) ?? 0,
                 _hasInteracted(message, 'cloud_coffee'),
                 id == null
                     ? null
@@ -491,13 +494,37 @@ class _TreeholePageState extends State<TreeholePage>
           _commentSection(message, theme),
         ],
       ),
+    ),
+    ); // GestureDetector
+  }
+
+  Future<void> _deleteTreehole(int id) async {
+    final theme = context.read<ThemeState>();
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: theme.cardColor,
+        title: Text('撤回内容', style: TextStyle(color: theme.textPrimary)),
+        content: const Text('确定撤回这条树洞留言吗？此操作不可撤销。'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text('取消', style: TextStyle(color: theme.textSecondary))),
+          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('撤回', style: TextStyle(color: Color(0xFFD9706A)))),
+        ],
+      ),
     );
+    if (ok != true) return;
+    try {
+      await Api.deleteTreehole(id);
+      await _load();
+    } catch (_) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('撤回失败，请重试')));
+    }
   }
 
   Widget _commentSection(Map<String, dynamic> message, ThemeState theme) {
-    final msgId = _readInt(message['id']);
+    final msgId = readInt(message['id']);
     if (msgId == null) return const SizedBox.shrink();
-    final commentCount = _readInt(message['comment_count']) ?? 0;
+    final commentCount = readInt(message['comment_count']) ?? 0;
     final expanded = _commentsExpanded.contains(msgId);
     final loading = _commentsLoading.contains(msgId);
     final comments = _comments[msgId] ?? [];
@@ -862,10 +889,10 @@ class _TreeholePageState extends State<TreeholePage>
     for (var i = 0; i < current.length; i++) {
       final a = current[i];
       final b = next[i];
-      if (_readInt(a['id']) != _readInt(b['id']) ||
+      if (readInt(a['id']) != readInt(b['id']) ||
           a['content']?.toString() != b['content']?.toString() ||
-          _readInt(a['cloud_hugs']) != _readInt(b['cloud_hugs']) ||
-          _readInt(a['cloud_coffees']) != _readInt(b['cloud_coffees']) ||
+          readInt(a['cloud_hugs']) != readInt(b['cloud_hugs']) ||
+          readInt(a['cloud_coffees']) != readInt(b['cloud_coffees']) ||
           a['interactions']?.toString() != b['interactions']?.toString()) {
         return false;
       }
@@ -901,11 +928,4 @@ class _TreeholePageState extends State<TreeholePage>
     ];
     return prompts[DateTime.now().weekday % prompts.length];
   }
-}
-
-int? _readInt(dynamic value) {
-  if (value is int) return value;
-  if (value is num) return value.toInt();
-  if (value is String) return int.tryParse(value);
-  return null;
 }

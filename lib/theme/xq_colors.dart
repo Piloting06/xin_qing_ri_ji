@@ -12,7 +12,7 @@ class XqColors {
   static const lightBackground = Color(0xFFFFF5E8);
   static const lightSurface = Color(0xFFF7EBDD);
   static const lightCard = Color(0xFFFFFCF7);
-  static const lightCardElevated = Color(0xFFFFFFFE);
+  static const lightCardElevated = Color(0xFFFFFBF4); // 带暖黄调，非纯白
   static const lightAccent = Color(0xFFB8782C);
   static const lightAccentLight = Color(0xFFD99B57);
   static const lightAccentMuted = Color(0x2EB8782C);
@@ -40,10 +40,10 @@ class XqColors {
   //  深色模式（月光紫黑 + 柔薰衣草蓝）
   // ═══════════════════════════════════════
 
-  static const darkBackground = Color(0xFF11101C);
-  static const darkSurface = Color(0xFF19182A);
-  static const darkCard = Color(0xFF211F35);
-  static const darkCardElevated = Color(0xFF2B2945);
+  static const darkBackground = Color(0xFF0E1222); // 带蓝调，与城迹深蓝协调
+  static const darkSurface = Color(0xFF17182A);
+  static const darkCard = Color(0xFF1E1F38);
+  static const darkCardElevated = Color(0xFF282946);
   static const darkAccent = Color(0xFFB9B8FF);
   static const darkAccentLight = Color(0xFFD9D7FF);
   static const darkAccentMuted = Color(0x33B9B8FF);
@@ -74,7 +74,7 @@ class XqColors {
   static const mintBackground = Color(0xFFDDEBE3);
   static const mintSurface = Color(0xFFCFE3D8);
   static const mintCard = Color(0xFFF2F9F5);
-  static const mintCardElevated = Color(0xFFFAFDFB);
+  static const mintCardElevated = Color(0xFFF6FBF8); // 带绿调，非纯白
   static const mintAccent = Color(0xFF4D8C7A);
   static const mintAccentLight = Color(0xFF6DB5A2);
   static const mintAccentMuted = Color(0x2E4D8C7A);
@@ -103,7 +103,7 @@ class XqColors {
   static const blushBackground = Color(0xFFEFE1DD);
   static const blushSurface = Color(0xFFE5D3CF);
   static const blushCard = Color(0xFFFBF5F4);
-  static const blushCardElevated = Color(0xFFFFFCFB);
+  static const blushCardElevated = Color(0xFFFFF8F7); // 带粉调，非纯白
   static const blushAccent = Color(0xFFB87A75);
   static const blushAccentLight = Color(0xFFD4A09B);
   static const blushAccentMuted = Color(0x2EB87A75);

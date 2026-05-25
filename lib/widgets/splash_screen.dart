@@ -62,6 +62,25 @@ class _InkSplashScreenState extends State<InkSplashScreen>
           return Stack(
             fit: StackFit.expand,
             children: [
+              // Glow orbs matching auth backdrop style
+              Positioned(
+                top: -80,
+                right: -70,
+                child: _SplashGlow(
+                  size: 220,
+                  color: theme.accentColor.withAlpha(theme.isDark ? 42 : 30),
+                  opacity: (1 - exit).clamp(0.0, 1.0),
+                ),
+              ),
+              Positioned(
+                left: -80,
+                bottom: 80,
+                child: _SplashGlow(
+                  size: 180,
+                  color: theme.gold.withAlpha(theme.isDark ? 30 : 24),
+                  opacity: (1 - exit).clamp(0.0, 1.0),
+                ),
+              ),
               DecoratedBox(
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
@@ -113,13 +132,24 @@ class _InkSplashScreenState extends State<InkSplashScreen>
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          '记录今天的天气，也记录今天的你',
+                          '记录天气，也记录你',
                           style: TextStyle(
                             color: theme.textSecondary.withAlpha(
                               (170 * (1 - exit)).round().clamp(0, 170),
                             ),
                             fontSize: 13,
-                            letterSpacing: 1.2,
+                            letterSpacing: 1.5,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '每一座城市都有它的情绪',
+                          style: TextStyle(
+                            color: theme.textTertiary.withAlpha(
+                              (140 * (1 - exit)).round().clamp(0, 140),
+                            ),
+                            fontSize: 11,
+                            letterSpacing: 1,
                           ),
                         ),
                       ],
@@ -214,6 +244,33 @@ class _Line extends StatelessWidget {
       decoration: BoxDecoration(
         color: color,
         borderRadius: BorderRadius.circular(999),
+      ),
+    );
+  }
+}
+
+class _SplashGlow extends StatelessWidget {
+  final double size;
+  final Color color;
+  final double opacity;
+
+  const _SplashGlow({
+    required this.size,
+    required this.color,
+    required this.opacity,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Opacity(
+      opacity: opacity,
+      child: Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          gradient: RadialGradient(colors: [color, Colors.transparent]),
+        ),
       ),
     );
   }

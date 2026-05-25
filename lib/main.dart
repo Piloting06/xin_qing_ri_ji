@@ -39,6 +39,9 @@ void main() async {
       statusBarIconBrightness: Brightness.light,
     ),
   );
+  SystemChrome.setEnabledSystemUIMode(
+    SystemUiMode.edgeToEdge,
+  );
   runApp(const XinQingRiJiApp());
 }
 

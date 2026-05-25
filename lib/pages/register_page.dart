@@ -73,8 +73,22 @@ class _RegisterPageState extends State<RegisterPage> {
     setState(() => _error = null);
   }
 
+  bool _isValidPhone(String phone) {
+    if (!RegExp(r'^1\d{10}$').hasMatch(phone)) return false;
+    const validPrefixes = {
+      '130','131','132','133','134','135','136','137','138','139',
+      '145','146','147','148','149',
+      '150','151','152','153','155','156','157','158','159',
+      '162','165','166','167',
+      '170','171','172','173','174','175','176','177','178',
+      '180','181','182','183','184','185','186','187','188','189',
+      '190','191','193','195','196','197','198','199',
+    };
+    return validPrefixes.contains(phone.substring(0, 3));
+  }
+
   bool get _formValid {
-    final phoneOk = RegExp(r'^1\d{10}$').hasMatch(_phoneCtrl.text.trim());
+    final phoneOk = _isValidPhone(_phoneCtrl.text.trim());
     final passwordOk =
         _pwCtrl.text.length >= 6 && _pwCtrl.text == _pw2Ctrl.text;
     final questionOk = _questionType == 'custom'
@@ -164,13 +178,13 @@ class _RegisterPageState extends State<RegisterPage> {
     final theme = context.watch<ThemeState>();
     return Scaffold(
       backgroundColor: theme.backgroundColor,
-      body: SafeArea(
-        child: GestureDetector(
-          onTap: () => FocusScope.of(context).unfocus(),
-          child: Stack(
-            children: [
-              _RegisterBackdrop(theme: theme),
-              SingleChildScrollView(
+      body: Stack(
+        children: [
+          _RegisterBackdrop(theme: theme),
+          SafeArea(
+            child: GestureDetector(
+              onTap: () => FocusScope.of(context).unfocus(),
+              child: SingleChildScrollView(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 22,
                   vertical: 24,
@@ -297,9 +311,9 @@ class _RegisterPageState extends State<RegisterPage> {
                   ),
                 ),
               ),
-            ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
@@ -439,19 +453,19 @@ class _RegisterBackdrop extends StatelessWidget {
     return Stack(
       children: [
         Positioned(
-          top: -70,
-          left: -60,
-          child: _Glow(
-            size: 210,
-            color: theme.accentColor.withAlpha(theme.isDark ? 38 : 28),
+          top: -80,
+          right: -70,
+          child: _RegisterGlow(
+            size: 220,
+            color: theme.accentColor.withAlpha(theme.isDark ? 42 : 30),
           ),
         ),
         Positioned(
-          right: -90,
-          bottom: 130,
-          child: _Glow(
-            size: 190,
-            color: theme.gold.withAlpha(theme.isDark ? 30 : 22),
+          left: -80,
+          bottom: 80,
+          child: _RegisterGlow(
+            size: 180,
+            color: theme.gold.withAlpha(theme.isDark ? 30 : 24),
           ),
         ),
       ],
@@ -459,11 +473,11 @@ class _RegisterBackdrop extends StatelessWidget {
   }
 }
 
-class _Glow extends StatelessWidget {
+class _RegisterGlow extends StatelessWidget {
   final double size;
   final Color color;
 
-  const _Glow({required this.size, required this.color});
+  const _RegisterGlow({required this.size, required this.color});
 
   @override
   Widget build(BuildContext context) {

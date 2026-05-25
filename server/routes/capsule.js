@@ -93,4 +93,15 @@ router.get('/:id', auth, (req, res) => {
   }
 });
 
+router.delete('/:id', auth, (req, res) => {
+  try {
+    const cap = db.prepare('SELECT id, user_id, is_opened FROM time_capsules WHERE id = ?').get(req.params.id);
+    if (!cap) return res.status(404).json({ message: '胶囊不存在' });
+    if (cap.user_id !== req.userId) return res.status(403).json({ message: '只能删除自己的胶囊' });
+    if (!cap.is_opened) return res.status(400).json({ message: '只能删除已打开的胶囊' });
+    db.prepare('DELETE FROM time_capsules WHERE id = ?').run(req.params.id);
+    res.json({ message: '胶囊已删除' });
+  } catch (e) { res.status(500).json({ message: '删除失败' }); }
+});
+
 module.exports = router;

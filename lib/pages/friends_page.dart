@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import '../utils/helpers.dart';
 import '../api/api_client.dart';
 import '../constants/mood.dart';
 import '../stores/theme_state.dart';
@@ -69,7 +70,7 @@ class _FriendsPageState extends State<FriendsPage> {
   List<Map<String, dynamic>> _dedupeFriends(List<Map<String, dynamic>> rows) {
     final byId = <int, Map<String, dynamic>>{};
     for (final row in rows) {
-      final id = _readInt(row['id']);
+      final id = readInt(row['id']);
       if (id == null) continue;
       byId[id] = row;
     }
@@ -301,7 +302,7 @@ class _FriendsPageState extends State<FriendsPage> {
   }
 
   void _openFriend(Map<String, dynamic> friend) {
-    final id = _readInt(friend['id']);
+    final id = readInt(friend['id']);
     if (id == null) return;
     if (friend['can_view_mood'] != true) {
       ScaffoldMessenger.of(
@@ -318,7 +319,7 @@ class _FriendsPageState extends State<FriendsPage> {
   }
 
   Future<void> _openFriendNoteSheet(Map<String, dynamic> friend) async {
-    final id = _readInt(friend['id']);
+    final id = readInt(friend['id']);
     if (id == null) return;
     final name =
         friend['username']?.toString() ?? friend['phone']?.toString() ?? '这位好友';
@@ -481,7 +482,7 @@ class _FriendsPageState extends State<FriendsPage> {
   }
 
   Future<void> _confirmDeleteFriend(Map<String, dynamic> friend) async {
-    final id = _readInt(friend['id']);
+    final id = readInt(friend['id']);
     if (id == null) return;
     final name =
         friend['username']?.toString() ?? friend['phone']?.toString() ?? '这位好友';
@@ -513,7 +514,7 @@ class _FriendsPageState extends State<FriendsPage> {
     try {
       await Api.deleteFriend(id);
       if (!mounted) return;
-      setState(() => _friends.removeWhere((row) => _readInt(row['id']) == id));
+      setState(() => _friends.removeWhere((row) => readInt(row['id']) == id));
       HapticFeedback.mediumImpact();
       ScaffoldMessenger.of(
         context,
@@ -642,7 +643,7 @@ class _FriendsPageState extends State<FriendsPage> {
     required VoidCallback onAdd,
     required bool adding,
   }) {
-    final relation = _readInt(user['relation_status']);
+    final relation = readInt(user['relation_status']);
     final direction = user['relation_direction']?.toString();
     final disabled = adding || relation == 0 || relation == 1;
     final label = relation == 1
@@ -742,7 +743,7 @@ class _FriendsPageState extends State<FriendsPage> {
   }
 
   Widget _requestCard(Map<String, dynamic> request, ThemeState theme) {
-    final id = _readInt(request['id']);
+    final id = readInt(request['id']);
     final name =
         request['username']?.toString() ??
         request['phone']?.toString() ??
@@ -849,7 +850,7 @@ class _FriendsPageState extends State<FriendsPage> {
   Widget _friendCard(Map<String, dynamic> friend, ThemeState theme) {
     final name =
         friend['username']?.toString() ?? friend['phone']?.toString() ?? '好友';
-    final mood = _readInt(friend['latest_mood']);
+    final mood = readInt(friend['latest_mood']);
     final canView = friend['can_view_mood'] == true;
     final note = friend['latest_mood_notes']?.toString().trim() ?? '';
     final latestNote = friend['latest_note']?.toString().trim() ?? '';
@@ -888,7 +889,7 @@ class _FriendsPageState extends State<FriendsPage> {
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),
                     onSelected: (value) {
-                      final id = _readInt(friend['id']);
+                      final id = readInt(friend['id']);
                       if (id == null) return;
                       if (value == 'view') _openFriend(friend);
                       if (value == 'note') _openFriendNoteSheet(friend);
@@ -1128,7 +1129,7 @@ class _FriendMoodPageState extends State<FriendMoodPage> {
   }
 
   Future<void> _loadComments(Map<String, dynamic> mood) async {
-    final moodId = _readInt(mood['id']);
+    final moodId = readInt(mood['id']);
     if (moodId == null) return;
     setState(() => _commentsLoading = true);
     try {
@@ -1161,7 +1162,7 @@ class _FriendMoodPageState extends State<FriendMoodPage> {
 
   Future<void> _sendComment() async {
     final mood = _selectedMood;
-    final moodId = mood == null ? null : _readInt(mood['id']);
+    final moodId = mood == null ? null : readInt(mood['id']);
     final content = _commentCtrl.text.trim();
     if (moodId == null || content.isEmpty || _sending) return;
     if (content.length > 200) {
@@ -1286,7 +1287,7 @@ class _FriendMoodPageState extends State<FriendMoodPage> {
 
   Widget _moodCard(Map<String, dynamic> mood, ThemeState theme) {
     final selected = identical(mood, _selectedMood);
-    final score = _readInt(mood['emotion_type']) ?? 0;
+    final score = readInt(mood['emotion_type']) ?? 0;
     final note = mood['notes']?.toString().trim() ?? '';
     final date = mood['date']?.toString() ?? '';
 
@@ -1467,9 +1468,3 @@ class _FriendMoodPageState extends State<FriendMoodPage> {
   }
 }
 
-int? _readInt(dynamic value) {
-  if (value is int) return value;
-  if (value is num) return value.toInt();
-  if (value is String) return int.tryParse(value);
-  return null;
-}

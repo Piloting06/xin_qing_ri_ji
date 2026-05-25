@@ -3,6 +3,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { db } = require('../db');
 const auth = require('../middleware/auth');
+const { sendSms } = require('../sms');
 const router = express.Router();
 
 router.post('/register', (req, res) => {
@@ -97,6 +98,48 @@ router.post('/delete-account', auth, (req, res) => {
     res.json({ message: '账号已注销' });
   } catch (e) {
     res.status(500).json({ message: '注销失败' });
+  }
+});
+
+// ── SMS & password reset ──
+
+router.post('/send-sms-code', (req, res) => {
+  try {
+    const phone = String(req.body.phone || '').trim();
+    if (!/^1[3-9]\d{9}$/.test(phone)) {
+      return res.status(400).json({ message: '手机号格式错误' });
+    }
+    const code = String(Math.floor(100000 + Math.random() * 900000));
+    db.prepare('INSERT INTO sms_codes (phone, code, expires_at) VALUES (?, ?, datetime(\'now\', \'+5 minutes\'))')
+      .run(phone, code);
+    sendSms(phone, code).catch(e => console.error('SMS send error:', e.message));
+    res.json({ message: '验证码已发送' });
+  } catch (e) {
+    console.error('send-sms-code:', e.message);
+    res.status(500).json({ message: '发送失败' });
+  }
+});
+
+router.post('/reset-password', (req, res) => {
+  try {
+    const phone = String(req.body.phone || '').trim();
+    const { code, new_password } = req.body;
+    if (!new_password || new_password.length < 6) {
+      return res.status(400).json({ message: '密码至少6位' });
+    }
+    const row = db.prepare(
+      'SELECT id FROM sms_codes WHERE phone = ? AND code = ? AND expires_at > datetime(\'now\') AND used = 0'
+    ).get(phone, code);
+    if (!row) {
+      return res.status(400).json({ message: '验证码错误或已过期' });
+    }
+    const hash = bcrypt.hashSync(new_password, 10);
+    db.prepare('UPDATE users SET password_hash = ? WHERE phone = ? AND is_active = 1').run(hash, phone);
+    db.prepare('UPDATE sms_codes SET used = 1 WHERE id = ?').run(row.id);
+    res.json({ message: '密码已重置' });
+  } catch (e) {
+    console.error('reset-password:', e.message);
+    res.status(500).json({ message: '重置失败' });
   }
 });
 

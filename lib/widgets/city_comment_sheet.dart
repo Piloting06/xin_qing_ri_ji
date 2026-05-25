@@ -3,6 +3,30 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../stores/map_state.dart';
 import '../stores/theme_state.dart';
+import '../api/api_client.dart';
+
+Future<void> _deleteCityComment(int id, BuildContext ctx) async {
+  final theme = ctx.read<ThemeState>();
+  final ok = await showDialog<bool>(
+    context: ctx,
+    builder: (c) => AlertDialog(
+      backgroundColor: theme.cardColor,
+      title: Text('撤回评论', style: TextStyle(color: theme.textPrimary)),
+      content: const Text('确定撤回这条评论吗？此操作不可撤销。'),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(c, false), child: Text('取消', style: TextStyle(color: theme.textSecondary))),
+        TextButton(onPressed: () => Navigator.pop(c, true), child: const Text('撤回', style: TextStyle(color: Color(0xFFD9706A)))),
+      ],
+    ),
+  );
+  if (ok != true) return;
+  try {
+    await Api.deleteCityComment(id);
+    if (ctx.mounted) ctx.read<MapState>().refresh();
+  } catch (_) {
+    if (ctx.mounted) ScaffoldMessenger.of(ctx).showSnackBar(const SnackBar(content: Text('撤回失败，请重试')));
+  }
+}
 
 class CityCommentSheet extends StatelessWidget {
   const CityCommentSheet({super.key});
@@ -73,7 +97,7 @@ class CityCommentSheet extends StatelessWidget {
                                   child: CircularProgressIndicator(strokeWidth: 2),
                                 ));
                               }
-                              return _commentTile(map.comments[i], map, theme);
+                              return _commentTile(map.comments[i], map, theme, context);
                             },
                           ),
                   ),
@@ -121,7 +145,7 @@ class CityCommentSheet extends StatelessWidget {
     );
   }
 
-  Widget _commentTile(Map<String, dynamic> c, MapState map, ThemeState theme) {
+  Widget _commentTile(Map<String, dynamic> c, MapState map, ThemeState theme, BuildContext sheetCtx) {
     final isOwn = c['is_own'] == true;
     final content = c['content']?.toString() ?? '';
     final likes = c['likes'] as int? ?? 0;
@@ -139,6 +163,14 @@ class CityCommentSheet extends StatelessWidget {
           const SizedBox(height: 4),
           Row(children: [
             Text(stamp, style: TextStyle(color: theme.textTertiary, fontSize: 11)),
+            if (isOwn)
+              GestureDetector(
+                onTap: () => _deleteCityComment(c['id'] as int, sheetCtx),
+                child: Padding(
+                  padding: const EdgeInsets.only(left: 8),
+                  child: Icon(Icons.close, size: 14, color: theme.textTertiary.withAlpha(140)),
+                ),
+              ),
             const Spacer(),
             GestureDetector(
               onTap: liked ? null : () => map.likeComment(c['id'] as int),

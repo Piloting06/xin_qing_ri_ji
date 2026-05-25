@@ -136,6 +136,37 @@ class Api {
     await _handle(res);
   }
 
+  // ── SMS & Password Reset ──
+  static Future<void> sendSmsCode(String phone) async {
+    final res = await http
+        .post(
+          Uri.parse('$baseUrl/auth/send-sms-code'),
+          headers: await _headers(auth: false),
+          body: json.encode({'phone': phone}),
+        )
+        .timeout(timeout);
+    await _handle(res);
+  }
+
+  static Future<void> resetPassword(
+    String phone,
+    String code,
+    String newPassword,
+  ) async {
+    final res = await http
+        .post(
+          Uri.parse('$baseUrl/auth/reset-password'),
+          headers: await _headers(auth: false),
+          body: json.encode({
+            'phone': phone,
+            'code': code,
+            'new_password': newPassword,
+          }),
+        )
+        .timeout(timeout);
+    await _handle(res);
+  }
+
   static Future<void> updateDisplayName(String name) async {
     final prefs = await SharedPreferences.getInstance();
     final res = await http
@@ -518,6 +549,20 @@ class Api {
   static Future<Map<String, dynamic>> deleteCityComment(int commentId) async {
     final res = await http
         .delete(Uri.parse('$baseUrl/city/comments/$commentId'), headers: await _headers())
+        .timeout(timeout);
+    return await _handle(res);
+  }
+
+  static Future<Map<String, dynamic>> deleteTreehole(int messageId) async {
+    final res = await http
+        .delete(Uri.parse('$baseUrl/treehole/$messageId'), headers: await _headers())
+        .timeout(timeout);
+    return await _handle(res);
+  }
+
+  static Future<Map<String, dynamic>> deleteCapsule(int capsuleId) async {
+    final res = await http
+        .delete(Uri.parse('$baseUrl/capsule/$capsuleId'), headers: await _headers())
         .timeout(timeout);
     return await _handle(res);
   }

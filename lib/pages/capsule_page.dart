@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import '../utils/helpers.dart';
 
 import '../api/api_client.dart';
 import '../services/notification_service.dart';
@@ -78,7 +79,7 @@ class _CapsulePageState extends State<CapsulePage> {
     _initialHandled = true;
     Map<String, dynamic>? capsule;
     for (final item in _capsules) {
-      if (_readInt(item['id']) == widget.initialCapsuleId) {
+      if (readInt(item['id']) == widget.initialCapsuleId) {
         capsule = item;
         break;
       }
@@ -111,7 +112,7 @@ class _CapsulePageState extends State<CapsulePage> {
     final dateStr = DateFormat('yyyy-MM-dd').format(openDate);
     try {
       final data = await Api.createCapsule(text, dateStr);
-      final capsuleId = _readInt(data['id']);
+      final capsuleId = readInt(data['id']);
       var reminderReady = false;
       if (capsuleId != null) {
         reminderReady = await NotificationService.scheduleCapsuleReminder(
@@ -158,7 +159,7 @@ class _CapsulePageState extends State<CapsulePage> {
     Map<String, dynamic> capsule, {
     bool fromReminder = false,
   }) async {
-    final id = _readInt(capsule['id']);
+    final id = readInt(capsule['id']);
     if (id == null) return;
     if (_isOpened(capsule)) {
       _showContent(capsule, fromReminder: fromReminder);
@@ -627,11 +628,42 @@ class _CapsulePageState extends State<CapsulePage> {
                 ),
               ),
               Icon(Icons.chevron_right, color: theme.textTertiary, size: 20),
+              if (opened)
+                GestureDetector(
+                  onTap: () => _deleteCapsule(capsule),
+                  child: Padding(
+                    padding: const EdgeInsets.only(left: 8),
+                    child: Icon(Icons.delete_outline, color: theme.errorColor.withAlpha(160), size: 18),
+                  ),
+                ),
             ],
           ),
         ),
       ),
     );
+  }
+
+  Future<void> _deleteCapsule(Map<String, dynamic> capsule) async {
+    final theme = context.read<ThemeState>();
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: theme.cardColor,
+        title: Text('撤回内容', style: TextStyle(color: theme.textPrimary)),
+        content: const Text('确定删除这颗已打开的胶囊吗？此操作不可撤销。'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text('取消', style: TextStyle(color: theme.textSecondary))),
+          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('删除', style: TextStyle(color: Color(0xFFD9706A)))),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    try {
+      await Api.deleteCapsule(capsule['id'] as int);
+      await _load();
+    } catch (_) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('删除失败，请重试')));
+    }
   }
 
   bool _isOpened(Map<String, dynamic> capsule) {
@@ -656,9 +688,3 @@ class _CapsulePageState extends State<CapsulePage> {
   }
 }
 
-int? _readInt(dynamic value) {
-  if (value is int) return value;
-  if (value is num) return value.toInt();
-  if (value is String) return int.tryParse(value);
-  return null;
-}

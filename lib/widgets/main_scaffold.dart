@@ -7,10 +7,8 @@ import '../stores/app_state.dart';
 import '../theme/xq_decorations.dart';
 import '../pages/home_page.dart';
 import '../pages/mood_page.dart';
-import '../pages/treehole_page.dart';
-import '../pages/friends_page.dart';
-import '../pages/profile_page.dart';
 import '../pages/city_map_page.dart';
+import '../pages/profile_page.dart';
 import '../pages/login_page.dart';
 import 'onboarding_flow.dart';
 
@@ -36,7 +34,7 @@ class _MainScaffoldState extends State<MainScaffold> {
   @override
   void initState() {
     super.initState();
-    _currentIndex = widget.initialIndex.clamp(0, 5);
+    _currentIndex = widget.initialIndex.clamp(0, 3);
     _pageController = PageController(initialPage: _currentIndex);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!_onboardingChecked && mounted) {
@@ -72,6 +70,14 @@ class _MainScaffoldState extends State<MainScaffold> {
     final theme = context.watch<ThemeState>();
     final appState = context.watch<AppState>();
 
+    final overlayStyle = SystemUiOverlayStyle(
+      systemNavigationBarColor: theme.backgroundColor,
+      systemNavigationBarDividerColor: theme.backgroundColor,
+      systemNavigationBarIconBrightness: theme.isDark ? Brightness.light : Brightness.dark,
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: theme.isDark ? Brightness.light : Brightness.dark,
+    );
+
     if (appState.isLockedOut) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
@@ -87,55 +93,59 @@ class _MainScaffoldState extends State<MainScaffold> {
       });
     }
 
-    return Scaffold(
-      backgroundColor: theme.backgroundColor,
-      body: Stack(
-        children: [
-          // Content pages — 底部 padding 防止胶囊遮挡
-          Padding(
-            padding: const EdgeInsets.only(bottom: 90),
-            child: PageView(
-              controller: _pageController,
-              onPageChanged: (i) => setState(() => _currentIndex = i),
-              children: const [
-                HomePage(),
-                MoodPage(),
-                CityMapPage(),
-                TreeholePage(),
-                FriendsPage(),
-                ProfilePage(),
-              ],
-            ),
-          ),
-          // Dissolve transition overlay
-          if (theme.transitioning)
+    final bottomInsets = MediaQuery.of(context).padding.bottom;
+
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: overlayStyle,
+      child: Scaffold(
+        backgroundColor: theme.backgroundColor,
+        extendBody: true,
+        body: Stack(
+          children: [
             Positioned.fill(
-              child: TweenAnimationBuilder<double>(
-                tween: Tween(begin: 0.3, end: 0.0),
-                duration: const Duration(milliseconds: 600),
-                curve: Curves.easeOut,
-                builder: (context, value, child) => Opacity(
-                  opacity: value,
-                  child: Container(
-                    color: theme.accentColor.withAlpha((value * 120).round()),
+              child: Container(color: theme.backgroundColor),
+            ),
+            Padding(
+              padding: EdgeInsets.only(bottom: 70 + bottomInsets),
+              child: PageView(
+                controller: _pageController,
+                onPageChanged: (i) => setState(() => _currentIndex = i),
+                children: const [
+                  HomePage(),
+                  MoodPage(),
+                  CityMapPage(),
+                  ProfilePage(),
+                ],
+              ),
+            ),
+            if (theme.transitioning)
+              Positioned.fill(
+                child: TweenAnimationBuilder<double>(
+                  tween: Tween(begin: 0.3, end: 0.0),
+                  duration: const Duration(milliseconds: 600),
+                  curve: Curves.easeOut,
+                  builder: (context, value, child) => Opacity(
+                    opacity: value,
+                    child: Container(
+                      color: theme.accentColor.withAlpha((value * 120).round()),
+                    ),
                   ),
                 ),
               ),
-            ),
-          // 毛玻璃悬浮胶囊
-          Positioned(
-            bottom: 6,
-            left: 0,
-            right: 0,
-            child: Center(
-              child: _FrostedCapsule(
-                currentIndex: _currentIndex,
-                theme: theme,
-                onTap: _onTabTap,
+            Positioned(
+              bottom: 6 + bottomInsets,
+              left: 0,
+              right: 0,
+              child: Center(
+                child: _FrostedCapsule(
+                  currentIndex: _currentIndex,
+                  theme: theme,
+                  onTap: _onTabTap,
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -157,8 +167,6 @@ class _FrostedCapsule extends StatelessWidget {
     _TabIcon(Icons.wb_sunny_outlined, Icons.wb_sunny),
     _TabIcon(Icons.favorite_border, Icons.favorite),
     _TabIcon(Icons.explore_outlined, Icons.explore),
-    _TabIcon(Icons.forest_outlined, Icons.forest),
-    _TabIcon(Icons.people_outline, Icons.people),
     _TabIcon(Icons.person_outline, Icons.person),
   ];
 
@@ -169,13 +177,14 @@ class _FrostedCapsule extends StatelessWidget {
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
         child: Container(
-          height: 56,
-          padding: const EdgeInsets.symmetric(horizontal: 16),
+          height: 66,
+          padding: const EdgeInsets.symmetric(horizontal: 20),
           decoration: BoxDecoration(
-            color: theme.cardColor.withAlpha(200),
+            color: theme.isDark
+                ? const Color(0xFF0E1222).withAlpha(120)
+                : theme.backgroundColor.withAlpha(140),
             borderRadius: BorderRadius.circular(28),
-            border: Border.all(color: theme.borderColor, width: 0.5),
-            boxShadow: XqDecorations.shadowMedium(dark: theme.isDark),
+            border: Border.all(color: theme.borderColor.withAlpha(40), width: 0.5),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -223,43 +232,59 @@ class _CapsuleTabItem extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
-      child: SizedBox(
-        width: 48,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            AnimatedScale(
-              scale: active ? 1.15 : 1.0,
-              duration: const Duration(milliseconds: 200),
-              curve: Curves.easeOutBack,
-              child: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 200),
-                transitionBuilder: (child, anim) =>
-                    FadeTransition(opacity: anim, child: child),
-                child: Icon(
-                  active ? icon.filled : icon.outlined,
-                  key: ValueKey(active),
-                  size: 22,
-                  color: color,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 260),
+        curve: Curves.easeOutCubic,
+        transform: Matrix4.translationValues(0, active ? -3 : 0, 0),
+        child: SizedBox(
+          width: 64,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              TweenAnimationBuilder<double>(
+                tween: Tween(begin: 1.0, end: active ? 1.0 : 1.0),
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeOutBack,
+                builder: (context, value, child) => Transform.scale(
+                  scale: value,
+                  child: child,
+                ),
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 200),
+                  transitionBuilder: (child, anim) =>
+                      FadeTransition(opacity: anim, child: child),
+                  child: Icon(
+                    active ? icon.filled : icon.outlined,
+                    key: ValueKey(active),
+                    size: 28,
+                    color: color,
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 4),
-            // 墨点指示器
-            AnimatedOpacity(
-              opacity: active ? 1.0 : 0.0,
-              duration: const Duration(milliseconds: 200),
-              child: Container(
-                width: 5,
-                height: 5,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: accentColor,
+              const SizedBox(height: 4),
+              TweenAnimationBuilder<double>(
+                tween: Tween(begin: 0.0, end: active ? 1.0 : 0.0),
+                duration: const Duration(milliseconds: 260),
+                curve: Curves.easeOutBack,
+                builder: (context, value, child) => Opacity(
+                  opacity: value,
+                  child: Transform.scale(scale: value, child: child),
+                ),
+                child: Container(
+                  width: 5,
+                  height: 5,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: accentColor,
+                    boxShadow: [
+                      BoxShadow(color: accentColor.withAlpha(80), blurRadius: 4, spreadRadius: 1),
+                    ],
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

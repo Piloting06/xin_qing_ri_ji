@@ -4,6 +4,7 @@ const jwt = require('jsonwebtoken');
 const { db } = require('../db');
 const auth = require('../middleware/auth');
 const { sendSms } = require('../sms');
+const { sendEmailCode } = require('../mail');
 const router = express.Router();
 
 router.post('/register', (req, res) => {
@@ -140,6 +141,87 @@ router.post('/reset-password', (req, res) => {
   } catch (e) {
     console.error('reset-password:', e.message);
     res.status(500).json({ message: '重置失败' });
+  }
+});
+
+// ── Email auth ──
+
+router.post('/send-email-code', (req, res) => {
+  try {
+    const email = String(req.body.email || '').trim();
+    if (!email.includes('@') || email.length < 5) {
+      return res.status(400).json({ message: '邮箱格式错误' });
+    }
+    const code = String(Math.floor(100000 + Math.random() * 900000));
+    db.prepare("INSERT INTO sms_codes (phone, code, expires_at) VALUES (?, ?, datetime('now', '+5 minutes'))")
+      .run(email, code);
+    sendEmailCode(email, code).catch(e => console.error('Email send error:', e.message));
+    res.json({ message: '验证码已发送' });
+  } catch (e) {
+    console.error('send-email-code:', e.message);
+    res.status(500).json({ message: '发送失败' });
+  }
+});
+
+router.post('/email-register', (req, res) => {
+  try {
+    const email = String(req.body.email || '').trim();
+    const { password, code } = req.body;
+    if (!email.includes('@') || !password || password.length < 6) {
+      return res.status(400).json({ message: '请填写完整信息' });
+    }
+    const vRow = db.prepare(
+      "SELECT id FROM sms_codes WHERE phone = ? AND code = ? AND expires_at > datetime('now') AND used = 0"
+    ).get(email, code);
+    if (!vRow) return res.status(400).json({ message: '验证码错误或已过期' });
+    db.prepare('UPDATE sms_codes SET used = 1 WHERE id = ?').run(vRow.id);
+    const existing = db.prepare('SELECT id FROM users WHERE email = ? AND is_active = 1').get(email);
+    if (existing) return res.status(409).json({ message: '该邮箱已注册' });
+    const hash = bcrypt.hashSync(password, 10);
+    const username = email.split('@')[0];
+    const result = db.prepare('INSERT INTO users (phone, username, password_hash, email) VALUES (?, ?, ?, ?)')
+      .run(email, username, hash, email);
+    const token = jwt.sign({ userId: result.lastInsertRowid }, process.env.JWT_SECRET, { expiresIn: '30d' });
+    res.json({ token, display_name: username });
+  } catch (e) {
+    console.error('email-register:', e.message);
+    res.status(500).json({ message: '注册失败' });
+  }
+});
+
+router.post('/email-login', (req, res) => {
+  try {
+    const email = String(req.body.email || '').trim();
+    const { password } = req.body;
+    const user = db.prepare('SELECT * FROM users WHERE email = ? AND is_active = 1 AND deleted_at IS NULL').get(email);
+    if (!user || !bcrypt.compareSync(password, user.password_hash)) {
+      return res.status(401).json({ message: '邮箱或密码错误' });
+    }
+    const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: '30d' });
+    res.json({ token, display_name: user.username });
+  } catch (e) {
+    console.error('email-login:', e.message);
+    res.status(500).json({ message: '登录失败' });
+  }
+});
+
+router.post('/bind-email', auth, (req, res) => {
+  try {
+    const email = String(req.body.email || '').trim();
+    const code = req.body.code;
+    if (!email.includes('@')) return res.status(400).json({ message: '邮箱格式错误' });
+    const vRow = db.prepare(
+      "SELECT id FROM sms_codes WHERE phone = ? AND code = ? AND expires_at > datetime('now') AND used = 0"
+    ).get(email, code);
+    if (!vRow) return res.status(400).json({ message: '验证码错误或已过期' });
+    db.prepare('UPDATE sms_codes SET used = 1 WHERE id = ?').run(vRow.id);
+    const dup = db.prepare('SELECT id FROM users WHERE email = ? AND id != ? AND is_active = 1').get(email, req.userId);
+    if (dup) return res.status(409).json({ message: '该邮箱已被其他账号绑定' });
+    db.prepare('UPDATE users SET email = ? WHERE id = ?').run(email, req.userId);
+    res.json({ message: '邮箱绑定成功', email });
+  } catch (e) {
+    console.error('bind-email:', e.message);
+    res.status(500).json({ message: '绑定失败' });
   }
 });
 

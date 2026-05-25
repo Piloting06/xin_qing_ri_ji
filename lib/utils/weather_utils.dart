@@ -82,14 +82,14 @@ String weatherCardPrompt(Map<String, dynamic>? weather) {
   final current = weatherCurrent(weather);
   final today = weatherDay(weather);
   final text = (current['weather'] ?? today['weather'] ?? '').toString();
-  if (text.contains('雨')) return '轻一点写，也记下这场雨带来的感觉。';
-  if (text.contains('雪')) return '今天的安静很适合留下一小段只属于自己的记录。';
-  if (text.contains('雷')) return '今天的天气有点锋利，更适合把情绪说清楚。';
-  if (text.contains('雾')) return '今天有一点朦胧，适合慢慢写下心里还没说完的话。';
+  if (text.contains('雨')) return '雨声是最好的白噪音。给自己倒杯热的，慢慢写。';
+  if (text.contains('雪')) return '雪落下来的时候，世界变得很安静。写几句今天的感受吧。';
+  if (text.contains('雷')) return '雷声很大也没关系，写下来比放在心里更安全。';
+  if (text.contains('雾')) return '大雾天不适合赶路，适合坐一会儿，想想最想写的事。';
   if (text.contains('阴') || text.contains('云')) {
-    return '云层收着一点光，让今天的心情也软下来。';
+    return '灰蒙蒙的天也没关系，心情可以是彩色的。';
   }
-  return '天气刚刚好，不如顺手记下今天最值得留住的一刻。';
+  return '窗外阳光正好，适合出去走走。或者坐在这里写几个字。';
 }
 
 /// 首页仪表盘提示 — 偏行动引导
@@ -97,8 +97,8 @@ String dashboardPrompt(Map<String, dynamic>? weather) {
   final current = weatherCurrent(weather);
   final today = weatherDay(weather);
   final text = (current['weather'] ?? today['weather'] ?? '').toString();
-  if (text.contains('雨')) return '今天适合把心事写轻一点，也记下这场雨带来的感觉。';
-  if (text.contains('雪')) return '今天外面的安静，正好适合给自己一小段慢下来的记录。';
+  if (text.contains('雨')) return '今天适合慢下来，心事写轻一点，也记下这场雨的感觉。';
+  if (text.contains('雪')) return '雪天的安静值得珍惜，给自己一小段独处的时间。';
   if (text.contains('雷')) return '今天能量很强，不如把想说的都写下来。';
   if (text.contains('雾')) return '朦胧的天气里，更值得好好看一眼今天的自己。';
   if (text.contains('阴') || text.contains('云')) {

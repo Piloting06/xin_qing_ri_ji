@@ -21,8 +21,10 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   final _phoneCtrl = TextEditingController();
   final _pwCtrl = TextEditingController();
+  final _emailCtrl = TextEditingController();
   bool _loading = false;
   bool _obscure = true;
+  bool _useEmail = false;
   String? _error;
   String? _phoneError;
 
@@ -39,6 +41,7 @@ class _LoginPageState extends State<LoginPage> {
     _pwCtrl.removeListener(_onInputChanged);
     _phoneCtrl.dispose();
     _pwCtrl.dispose();
+    _emailCtrl.dispose();
     super.dispose();
   }
 

@@ -1,4 +1,5 @@
 const express = require('express');
+const { sendWeatherFeedback } = require('../mail');
 const auth = require('../middleware/auth');
 const router = express.Router();
 
@@ -138,6 +139,17 @@ router.get('/location', async (req, res) => {
       });
     }).on('error', () => res.json({ lat: null, lon: null, city: '未知' }));
   } catch (_) { res.json({ lat: null, lon: null, city: '未知' }); }
+});
+
+router.post('/feedback', auth, (req, res) => {
+  try {
+    const { type, weather, temp, city, note } = req.body;
+    sendWeatherFeedback({ type, weather, temp, city, note, userId: req.userId })
+      .catch(e => console.error('Feedback email error:', e.message));
+    res.json({ message: '反馈已收到' });
+  } catch (e) {
+    res.status(500).json({ message: '提交失败' });
+  }
 });
 
 module.exports = router;

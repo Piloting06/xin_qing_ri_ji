@@ -584,6 +584,85 @@ class Api {
         .timeout(timeout);
     return await _handle(res);
   }
+
+  // ── Email auth ──
+  static Future<void> sendEmailCode(String email) async {
+    final res = await http
+        .post(
+          Uri.parse('$baseUrl/auth/send-email-code'),
+          headers: await _headers(auth: false),
+          body: json.encode({'email': email}),
+        )
+        .timeout(timeout);
+    await _handle(res);
+  }
+
+  static Future<Map<String, dynamic>> emailRegister(String email, String password, String code) async {
+    final res = await http
+        .post(
+          Uri.parse('$baseUrl/auth/email-register'),
+          headers: await _headers(auth: false),
+          body: json.encode({'email': email, 'password': password, 'code': code}),
+        )
+        .timeout(timeout);
+    final data = await _handle(res);
+    if (data['token'] != null) {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(StorageKeys.token, data['token']);
+      _notifyingUnauthorized = false;
+      onAuthenticated?.call();
+    }
+    return data;
+  }
+
+  static Future<Map<String, dynamic>> emailLogin(String email, String password) async {
+    final res = await http
+        .post(
+          Uri.parse('$baseUrl/auth/email-login'),
+          headers: await _headers(auth: false),
+          body: json.encode({'email': email, 'password': password}),
+        )
+        .timeout(timeout);
+    final data = await _handle(res);
+    if (data['token'] != null) {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(StorageKeys.token, data['token']);
+      _notifyingUnauthorized = false;
+      onAuthenticated?.call();
+    }
+    return data;
+  }
+
+  static Future<Map<String, dynamic>> bindEmail(String email, String code) async {
+    final res = await http
+        .post(
+          Uri.parse('$baseUrl/auth/bind-email'),
+          headers: await _headers(),
+          body: json.encode({'email': email, 'code': code}),
+        )
+        .timeout(timeout);
+    return await _handle(res);
+  }
+
+  // ── Weather feedback ──
+  static Future<void> sendWeatherFeedback({
+    required String type,
+    required String weather,
+    required String temp,
+    required String city,
+    String note = '',
+  }) async {
+    try {
+      await http.post(
+        Uri.parse('$baseUrl/weather/feedback'),
+        headers: await _headers(),
+        body: json.encode({
+          'type': type, 'weather': weather, 'temp': temp,
+          'city': city, 'note': note,
+        }),
+      ).timeout(timeout);
+    } catch (_) {}
+  }
 }
 
 class ApiException implements Exception {

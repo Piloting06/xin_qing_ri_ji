@@ -19,6 +19,7 @@ import '../widgets/mood_calendar.dart';
 import '../widgets/mood_card.dart';
 import '../stores/app_state.dart';
 import '../stores/theme_state.dart';
+import '../widgets/mood_card_maker.dart';
 
 class MoodPage extends StatefulWidget {
   const MoodPage({super.key});
@@ -613,15 +614,27 @@ class _MoodPageState extends State<MoodPage> {
                         child: OutlinedButton.icon(
                           onPressed: _shareCard,
                           icon: const Icon(Icons.ios_share, size: 18),
-                          label: const Text('生成心情卡片'),
+                          label: const Text('分享心情'),
                           style: OutlinedButton.styleFrom(
                             foregroundColor: t.accentColor,
-                            side: BorderSide(
-                              color: t.accentColor.withAlpha(80),
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(14),
-                            ),
+                            side: BorderSide(color: t.accentColor.withAlpha(80)),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () => MoodCardMaker.show(context,
+                            date: appState.selectedDate, moodLabel: moodLabels[_moodScore] ?? '心情',
+                            moodScore: _moodScore, text: _notesCtrl.text, tags: _selectedTags,
+                          ),
+                          icon: const Icon(Icons.auto_awesome, size: 18),
+                          label: const Text('制成卡片'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: t.gold,
+                            side: BorderSide(color: t.gold.withAlpha(80)),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                           ),
                         ),
                       ),

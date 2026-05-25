@@ -814,32 +814,39 @@ class _FriendsPageState extends State<FriendsPage> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _sectionTitle('${_friends.length} 位好友', theme),
-        const SizedBox(height: 8),
+        const SizedBox(height: 10),
         if (_friends.isEmpty)
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.all(28),
+            padding: const EdgeInsets.all(32),
             decoration: BoxDecoration(
               color: theme.cardColor,
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: theme.borderColor),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: theme.borderColor.withAlpha(80)),
+              boxShadow: [BoxShadow(color: Colors.black.withAlpha(theme.isDark ? 20 : 8), blurRadius: 12, offset: const Offset(0, 4))],
             ),
-            child: Text(
-              '还没有友人，可以用手机号添加一个愿意分享心情的人。',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: theme.textSecondary),
-            ),
+            child: Column(children: [
+              Icon(Icons.people_outline, size: 48, color: theme.textTertiary),
+              const SizedBox(height: 12),
+              Text('还没有好友', style: TextStyle(color: theme.textPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
+              const SizedBox(height: 4),
+              Text('用手机号添加一个愿意分享心情的人', style: TextStyle(color: theme.textSecondary, fontSize: 12)),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: 160, height: 40,
+                child: FilledButton(
+                  onPressed: _openAddFriendSheet,
+                  style: FilledButton.styleFrom(backgroundColor: theme.accentColor, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                  child: const Text('添加好友', style: TextStyle(fontSize: 13)),
+                ),
+              ),
+            ]),
           )
         else
-          GridView.builder(
+          ListView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              mainAxisSpacing: 10,
-              crossAxisSpacing: 10,
-              childAspectRatio: 0.85,
-            ),
+            padding: EdgeInsets.zero,
             itemCount: _friends.length,
             itemBuilder: (_, i) => _friendCard(_friends[i], theme),
           ),
@@ -856,7 +863,9 @@ class _FriendsPageState extends State<FriendsPage> {
     final latestNote = friend['latest_note']?.toString().trim() ?? '';
     final latestNoteIsMine = friend['latest_note_is_mine'] == true;
 
-    return Material(
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Material(
       color: Colors.transparent,
       child: InkWell(
         borderRadius: BorderRadius.circular(20),
@@ -866,12 +875,12 @@ class _FriendsPageState extends State<FriendsPage> {
           decoration: BoxDecoration(
             color: theme.cardColor,
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: theme.borderColor),
+            border: Border.all(color: theme.borderColor.withAlpha(80)),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withAlpha(theme.isDark ? 22 : 8),
-                blurRadius: 14,
-                offset: const Offset(0, 7),
+                color: Colors.black.withAlpha(theme.isDark ? 20 : 8),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
               ),
             ],
           ),
@@ -978,6 +987,7 @@ class _FriendsPageState extends State<FriendsPage> {
             ],
           ),
         ),
+      ),
       ),
     );
   }

@@ -261,6 +261,9 @@ async function init() {
   if (!userColumns.includes('deleted_at')) {
     db.run('ALTER TABLE users ADD COLUMN deleted_at TEXT');
   }
+  if (!userColumns.includes('email')) {
+    db.run('ALTER TABLE users ADD COLUMN email TEXT');
+  }
 
   saveDb();
   console.log('Database initialized');

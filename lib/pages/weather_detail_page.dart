@@ -4,6 +4,7 @@ import '../stores/theme_state.dart';
 import '../theme/xq_decorations.dart';
 import '../utils/weather_utils.dart';
 import '../widgets/weather_card_carousel.dart';
+import '../widgets/weather_feedback_bar.dart';
 
 enum WeatherDetailAction { relocate, chooseCity }
 
@@ -297,6 +298,14 @@ class WeatherDetailPage extends StatelessWidget {
             _dayCard(theme, '明天', tomorrow, onTap: () => _showDayDialog(context, theme, '明天', tomorrow)),
             const SizedBox(height: 10),
             _dayCard(theme, '后天', dayAfter, onTap: () => _showDayDialog(context, theme, '后天', dayAfter)),
+            const SizedBox(height: 20),
+            WeatherFeedbackBar(
+              weatherText: weatherText,
+              currentTemp: currentTemp,
+              high: high,
+              low: low,
+              cityName: cityName,
+            ),
           ],
         ),
       ),

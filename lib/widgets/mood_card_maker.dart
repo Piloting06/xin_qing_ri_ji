@@ -117,9 +117,9 @@ class _MoodCardMakerState extends State<MoodCardMaker> {
         borderRadius: BorderRadius.circular(20),
         child: Stack(
           children: [
-            // Card content
-            AspectRatio(
-              aspectRatio: 16 / 9,
+            // Card content — fixed height, text as primary element
+            SizedBox(
+              height: 360,
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(22, 16, 22, 12),
                 child: Column(
@@ -133,70 +133,59 @@ class _MoodCardMakerState extends State<MoodCardMaker> {
                       ],
                     ),
 
-                    // Weather row (only if data available)
+                    // Weather row
                     if (hasWeather) ...[
                       const SizedBox(height: 6),
                       Row(
                         children: [
                           Icon(Icons.wb_sunny_outlined, size: 10, color: _accentColor.withAlpha(150)),
                           const SizedBox(width: 4),
-                          Text(
+                          Expanded(child: Text(
                             '${widget.weatherText}${widget.cityName != null ? "  ${widget.cityName}" : ""}${widget.temperature != null ? " · ${widget.temperature}" : ""}',
                             style: TextStyle(color: _textColor.withAlpha(150), fontSize: 10),
-                          ),
+                            maxLines: 1, overflow: TextOverflow.ellipsis,
+                          )),
                         ],
                       ),
                     ],
 
-                    const Spacer(),
+                    const SizedBox(height: 12),
 
-                    // Emoji + label (compact header)
-                    Text(_moodEmoji, style: TextStyle(fontSize: 32, height: 1.2)),
-                    const SizedBox(height: 2),
-                    Text(widget.moodLabel, style: TextStyle(color: _textColor, fontSize: 16, fontWeight: FontWeight.w600, height: 1.2)),
-
-                    const SizedBox(height: 10),
-
-                    // Text content — the main element
-                    if (widget.text.isNotEmpty)
-                      Expanded(
-                        child: Center(
-                          child: Text(
-                            widget.text,
-                            style: TextStyle(color: _textColor, fontSize: 15, height: 1.7),
-                            textAlign: TextAlign.center,
-                            maxLines: 4,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      )
-                    else
-                      Expanded(
-                        child: Center(
-                          child: Text('写点什么吧', style: TextStyle(color: _textColor.withAlpha(60), fontSize: 14)),
-                        ),
-                      ),
-
-                    // Tags — subtle, below main text
-                    if (widget.tags.isNotEmpty) ...[
-                      const SizedBox(height: 6),
-                      Text(
-                        widget.tags.take(4).join(' · '),
-                        style: TextStyle(color: _accentColor.withAlpha(120), fontSize: 10),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-
-                    const Spacer(),
-
-                    // Bottom watermark
+                    // Mood emoji + label (compact, secondary weight)
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Text('心晴日记', style: TextStyle(color: _accentColor.withAlpha(90), fontSize: 9)),
+                        Text(_moodEmoji, style: const TextStyle(fontSize: 22)),
                         const SizedBox(width: 6),
-                        Text('记录天气，也记录你', style: TextStyle(color: _textColor.withAlpha(50), fontSize: 8)),
+                        Text(widget.moodLabel, style: TextStyle(color: _textColor, fontSize: 14, fontWeight: FontWeight.w500)),
+                      ],
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    // Text content — the main element, takes remaining space
+                    Expanded(
+                      child: widget.text.isNotEmpty
+                        ? Text(
+                            widget.text,
+                            style: TextStyle(color: _textColor, fontSize: 15, height: 1.6),
+                            maxLines: 5,
+                            overflow: TextOverflow.ellipsis,
+                          )
+                        : Text('写点什么吧', style: TextStyle(color: _textColor.withAlpha(60), fontSize: 14)),
+                    ),
+
+                    // Tags + watermark row
+                    Row(
+                      children: [
+                        if (widget.tags.isNotEmpty)
+                          Expanded(
+                            child: Text(
+                              widget.tags.take(3).join(' · '),
+                              style: TextStyle(color: _accentColor.withAlpha(100), fontSize: 10),
+                              maxLines: 1, overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        Text('心晴日记', style: TextStyle(color: _accentColor.withAlpha(70), fontSize: 9)),
                       ],
                     ),
                   ],
@@ -227,7 +216,10 @@ class _MoodCardMakerState extends State<MoodCardMaker> {
       final file = File(p.join(dir.path, 'mood_card_${DateTime.now().millisecondsSinceEpoch}.png'));
       await file.writeAsBytes(byteData.buffer.asUint8List());
       await Gal.putImage(file.path);
-      if (mounted) XqToast.success(context, '卡片已保存到相册');
+      if (mounted) {
+        XqToast.success(context, '卡片已保存到相册');
+        Navigator.pop(context);
+      }
     } catch (_) {
       if (mounted) XqToast.error(context, '保存失败');
     } finally {
@@ -249,6 +241,7 @@ class _MoodCardMakerState extends State<MoodCardMaker> {
         files: [XFile(file.path)],
         text: '心晴日记 · ${widget.date}\n${widget.moodLabel} — ${widget.text.isNotEmpty ? widget.text : "记录天气，也记录你"}',
       ));
+      if (mounted) Navigator.pop(context);
     } catch (_) {}
   }
 
@@ -297,7 +290,20 @@ class _MoodCardMakerState extends State<MoodCardMaker> {
             const SizedBox(height: 8),
             Center(child: Container(width: 36, height: 4, decoration: BoxDecoration(color: sheetTheme.borderColor, borderRadius: BorderRadius.circular(2)))),
             const SizedBox(height: 10),
-            Text('制成一张卡片', style: TextStyle(color: sheetTheme.textPrimary, fontSize: 17, fontWeight: FontWeight.w700)),
+            Row(
+              children: [
+                const SizedBox(width: 48),
+                Expanded(child: Text('制成一张卡片', textAlign: TextAlign.center, style: TextStyle(color: sheetTheme.textPrimary, fontSize: 17, fontWeight: FontWeight.w700))),
+                SizedBox(
+                  width: 48,
+                  child: IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: Icon(Icons.close, color: sheetTheme.textSecondary, size: 22),
+                    padding: EdgeInsets.zero,
+                  ),
+                ),
+              ],
+            ),
             const SizedBox(height: 6),
             Text('点击色块切换风格', style: TextStyle(color: sheetTheme.textTertiary, fontSize: 12)),
             const SizedBox(height: 12),
@@ -401,7 +407,8 @@ class _PaperGrainPainter extends CustomPainter {
 class _DarkOverlay extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return Stack(
+    return Positioned.fill(
+      child: Stack(
       children: [
         Positioned(
           top: 0, left: 0, right: 0, height: 120,
@@ -426,6 +433,7 @@ class _DarkOverlay extends StatelessWidget {
           ),
         ),
       ],
+      ),
     );
   }
 }
@@ -450,11 +458,13 @@ class _StarDotsPainter extends CustomPainter {
 class _MintOverlay extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return IgnorePointer(
-      child: Container(
-        decoration: BoxDecoration(
-          border: Border.all(color: const Color(0xFF4D8C7A).withAlpha(20), width: 1),
-          borderRadius: BorderRadius.circular(20),
+    return Positioned.fill(
+      child: IgnorePointer(
+        child: Container(
+          decoration: BoxDecoration(
+            border: Border.all(color: const Color(0xFF4D8C7A).withAlpha(20), width: 1),
+            borderRadius: BorderRadius.circular(20),
+          ),
         ),
       ),
     );

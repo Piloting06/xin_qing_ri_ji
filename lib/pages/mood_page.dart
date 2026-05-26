@@ -237,9 +237,6 @@ class _MoodPageState extends State<MoodPage> {
           _saved = true;
           _dirty = false;
         });
-        Future.delayed(const Duration(seconds: 2), () {
-          if (mounted) setState(() => _saved = false);
-        });
       }
     } catch (e) {
       if (mounted) {
@@ -643,7 +640,7 @@ class _MoodPageState extends State<MoodPage> {
                   ),
                 ],
                 const SizedBox(height: 24),
-                const SizedBox(height: 24),
+                // Calendar
                 // Mood Calendar
                 MoodCalendar(
                   moods: _allMoods,

@@ -184,22 +184,20 @@ class _HomePageState extends State<HomePage> {
     double lon, {
     required String fallback,
   }) async {
-    // Use client-side IP geolocation — gets phone's real IP, not server's
+    // Priority: coordinate matching for Chinese city names
+    final nearest = findNearestCity(lat, lon, maxKm: 100);
+    if (nearest != null) return '${nearest.name}，${nearest.province}，中国';
+
+    // Fallback: IP geolocation (returns English names)
     try {
       final loc = await _clientIpLocation();
       final ipCity = loc['city']?.toString() ?? '';
       final ipRegion = loc['regionName']?.toString() ?? '';
       if (ipCity.isNotEmpty && ipCity != '未知') {
-        if (ipRegion.isNotEmpty && ipRegion != '未知') {
-          return '$ipCity，$ipRegion，中国';
-        }
+        if (ipRegion.isNotEmpty && ipRegion != '未知') return '$ipCity，$ipRegion，中国';
         return '$ipCity，中国';
       }
     } catch (_) {}
-
-    // Fallback to coordinate matching
-    final nearest = findNearestCity(lat, lon, maxKm: 100);
-    if (nearest != null) return '${nearest.name}，${nearest.province}，中国';
 
     return fallback;
   }

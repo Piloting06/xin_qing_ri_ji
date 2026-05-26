@@ -29,7 +29,7 @@ class _WeatherCardCarouselState extends State<WeatherCardCarousel> {
   late PageController _pageCtrl;
   int _currentPage = 0;
 
-  static const _labels = ['今天', '明天', '后天'];
+  static const _labels = ['明天', '后天'];
 
   @override
   void initState() {

@@ -219,7 +219,6 @@ class WeatherDetailPage extends StatelessWidget {
             if (tomorrow.isNotEmpty || dayAfter.isNotEmpty)
               WeatherCardCarousel(
                 days: [
-                  if (today.isNotEmpty) today,
                   if (tomorrow.isNotEmpty) tomorrow,
                   if (dayAfter.isNotEmpty) dayAfter,
                 ],
@@ -296,19 +295,6 @@ class WeatherDetailPage extends StatelessWidget {
                 ),
               ),
             ],
-            const SizedBox(height: 18),
-            Text(
-              '未来两天',
-              style: TextStyle(
-                color: theme.textPrimary,
-                fontSize: 17,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            const SizedBox(height: 10),
-            _dayCard(theme, '明天', tomorrow, onTap: () => _showDayDialog(context, theme, '明天', tomorrow)),
-            const SizedBox(height: 10),
-            _dayCard(theme, '后天', dayAfter, onTap: () => _showDayDialog(context, theme, '后天', dayAfter)),
             const SizedBox(height: 20),
             WeatherFeedbackBar(
               weatherText: weatherText,

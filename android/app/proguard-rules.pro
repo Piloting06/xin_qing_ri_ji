@@ -7,11 +7,20 @@
 -keep class io.flutter.plugins.** { *; }
 -dontwarn io.flutter.embedding.**
 
-# Keep geolocator plugin (R8 strips shared library JNI classes)
--keep class com.baseflow.geolocator.** { *; }
--dontwarn com.baseflow.geolocator.**
-
-# Keep other plugins that use platform channels
+# Keep all Flutter plugin classes (prevent R8 from stripping platform channel code)
 -keep class com.baseflow.** { *; }
--keep class androidx.lifecycle.** { *; }
+-keep class com.baseflow.geolocator.** { *; }
+-keep class io.flutter.plugin.common.** { *; }
+-keep class io.flutter.plugin.platform.** { *; }
 -dontwarn com.baseflow.**
+
+# Keep data classes that might be serialized/deserialized
+-keepclassmembers class * {
+    @com.google.gson.annotations.SerializedName <fields>;
+}
+-keep class com.google.gson.** { *; }
+-dontwarn com.google.gson.**
+
+# Keep Android lifecycle components
+-keep class androidx.lifecycle.** { *; }
+-dontwarn androidx.lifecycle.**

@@ -39,13 +39,13 @@ class MoodCardMaker extends StatefulWidget {
     this.temperature,
   });
 
-  static void show(BuildContext context, {
+  static Future<T?> show<T>(BuildContext context, {
     required String date, required String moodLabel, required int moodScore,
     required String text, required List<String> tags,
     String? createdAt, String? weatherText, String? cityName, String? temperature,
   }) {
     final t = context.read<ThemeState>();
-    showModalBottomSheet(
+    return showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
@@ -119,7 +119,7 @@ class _MoodCardMakerState extends State<MoodCardMaker> {
           children: [
             // Card content — fixed height, text as primary element
             SizedBox(
-              height: 360,
+              height: 280,
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(22, 16, 22, 12),
                 child: Column(
@@ -278,7 +278,7 @@ class _MoodCardMakerState extends State<MoodCardMaker> {
     final screenHeight = MediaQuery.of(context).size.height;
 
     return Container(
-      height: screenHeight * 0.78,
+      height: screenHeight * 0.72,
       decoration: BoxDecoration(
         color: sheetTheme.cardColor,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),

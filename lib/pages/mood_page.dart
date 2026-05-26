@@ -237,6 +237,9 @@ class _MoodPageState extends State<MoodPage> {
           _saved = true;
           _dirty = false;
         });
+        Future.delayed(const Duration(seconds: 3), () {
+          if (mounted) setState(() => _saved = false);
+        });
       }
     } catch (e) {
       if (mounted) {
@@ -246,6 +249,13 @@ class _MoodPageState extends State<MoodPage> {
         ).showSnackBar(SnackBar(content: Text('保存失败: $e')));
       }
     }
+  }
+
+  Future<void> _quickShare() async {
+    // Quick share: opens card maker in share mode (same as card maker, directly usable)
+    // User can pick theme and share, sheet auto-closes after.
+    await _openCardMaker();
+    if (mounted) setState(() => _saved = false);
   }
 
   Future<void> _openCardMaker() async {
@@ -270,7 +280,7 @@ class _MoodPageState extends State<MoodPage> {
       }
     } catch (_) {}
     if (!mounted) return;
-    MoodCardMaker.show(context,
+    await MoodCardMaker.show(context,
       date: appState.selectedDate,
       moodLabel: moodLabels[_moodScore] ?? '心情',
       moodScore: _moodScore,
@@ -281,6 +291,7 @@ class _MoodPageState extends State<MoodPage> {
       cityName: cityName,
       temperature: temperature,
     );
+    if (mounted) setState(() => _saved = false);
   }
 
   @override
@@ -371,10 +382,14 @@ class _MoodPageState extends State<MoodPage> {
                   ],
                 ),
                 const SizedBox(height: 16),
-                // 8 Emotion buttons (2x4)
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
+                // 8 Emotion buttons — 2-column grid
+                GridView.count(
+                  crossAxisCount: 2,
+                  mainAxisSpacing: 12,
+                  crossAxisSpacing: 12,
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  childAspectRatio: 2.2,
                   children: List.generate(8, (i) {
                     final s = i + 1;
                     final active = s == _moodScore;
@@ -394,39 +409,34 @@ class _MoodPageState extends State<MoodPage> {
                         _saved = false;
                       }),
                       child: AnimatedScale(
-                        scale: active ? 1.05 : 1.0,
+                        scale: active ? 1.04 : 1.0,
                         duration: const Duration(milliseconds: 200),
                         curve: Curves.easeOutBack,
                         child: Container(
-                          width: (MediaQuery.of(context).size.width - 48) / 4,
-                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
                           decoration: BoxDecoration(
-                            color: active
-                                ? color.withAlpha(25)
-                                : t.surfaceAlpha,
-                            borderRadius: BorderRadius.circular(
-                              XqDecorations.radiusMedium,
-                            ),
+                            color: active ? color.withAlpha(28) : t.surfaceAlpha,
+                            borderRadius: BorderRadius.circular(16),
                             border: Border.all(
-                              color: active ? color : t.borderColor,
-                              width: active ? 2 : 1,
+                              color: active ? color.withAlpha(180) : t.borderColor.withAlpha(80),
+                              width: active ? 1.5 : 1,
                             ),
                             boxShadow: active
-                                ? XqDecorations.shadowSubtle(dark: t.isDark)
+                                ? [BoxShadow(color: color.withAlpha(30), blurRadius: 8, offset: const Offset(0, 2))]
                                 : null,
                           ),
-                          child: Column(
+                          child: Row(
                             children: [
-                              Text(
-                                moodEmojis[s]!,
-                                style: TextStyle(fontSize: active ? 30 : 26),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                moodLabels[s]!,
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  color: active ? color : t.textSecondary,
+                              Text(moodEmojis[s]!, style: const TextStyle(fontSize: 22)),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  moodLabels[s]!,
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: active ? FontWeight.w600 : FontWeight.w400,
+                                    color: active ? color : t.textSecondary,
+                                  ),
                                 ),
                               ),
                             ],
@@ -440,18 +450,16 @@ class _MoodPageState extends State<MoodPage> {
                 // Emotion tags (dynamic)
                 if (_moodScore > 0 && _currentTags.isNotEmpty) ...[
                   Wrap(
-                    spacing: 6,
-                    runSpacing: 6,
+                    spacing: 10,
+                    runSpacing: 10,
                     children: _currentTags
-                        .take(16)
+                        .take(8)
                         .toList()
                         .asMap()
                         .entries
                         .map((entry) {
-                          final index = entry.key;
                           final tag = entry.value;
                           final sel = _selectedTags.contains(tag['id']);
-                          final washiColor = t.washiColors[index % 4];
                           return GestureDetector(
                             onTap: () => setState(() {
                               if (sel) {
@@ -462,34 +470,25 @@ class _MoodPageState extends State<MoodPage> {
                               _dirty = true;
                               _saved = false;
                             }),
-                            child: Transform.rotate(
-                              angle: sel ? 0 : (index % 3 - 1) * 0.03,
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 10,
-                                  vertical: 6,
-                                ),
-                                decoration: BoxDecoration(
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                              decoration: BoxDecoration(
+                                color: sel
+                                    ? t.accentColor.withAlpha(30)
+                                    : t.borderColor.withAlpha(60),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
                                   color: sel
-                                      ? t.accentColor.withAlpha(30)
-                                      : washiColor.withAlpha(120),
-                                  borderRadius: BorderRadius.circular(
-                                    XqDecorations.radiusSmall,
-                                  ),
-                                  border: Border.all(
-                                    color: sel
-                                        ? t.accentColor
-                                        : washiColor.withAlpha(60),
-                                  ),
+                                      ? t.accentColor.withAlpha(180)
+                                      : t.borderColor.withAlpha(40),
                                 ),
-                                child: Text(
-                                  '${tag['icon']} ${tag['label']}',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: sel
-                                        ? t.accentColor
-                                        : t.textSecondary,
-                                  ),
+                              ),
+                              child: Text(
+                                '${tag['icon']} ${tag['label']}',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: sel ? FontWeight.w600 : FontWeight.w400,
+                                  color: sel ? t.accentColor : t.textSecondary,
                                 ),
                               ),
                             ),
@@ -613,7 +612,7 @@ class _MoodPageState extends State<MoodPage> {
                     children: [
                       Expanded(
                         child: OutlinedButton.icon(
-                          onPressed: _openCardMaker,
+                          onPressed: _quickShare,
                           icon: const Icon(Icons.ios_share, size: 18),
                           label: const Text('分享心情'),
                           style: OutlinedButton.styleFrom(

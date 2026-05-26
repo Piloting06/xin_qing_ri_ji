@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../api/api_client.dart';
@@ -9,7 +10,6 @@ import '../stores/theme_state.dart';
 import '../utils/weather_utils.dart';
 import '../utils/geo_utils.dart';
 import '../widgets/weather_summary_card.dart';
-import '../widgets/weather_card_carousel.dart';
 import 'capsule_page.dart';
 import 'mood_page.dart';
 import 'treehole_page.dart';
@@ -184,9 +184,9 @@ class _HomePageState extends State<HomePage> {
     double lon, {
     required String fallback,
   }) async {
-    // Use IP geolocation city name directly — ip-api returns Chinese city names
+    // Use client-side IP geolocation — gets phone's real IP, not server's
     try {
-      final loc = await Api.getLocation();
+      final loc = await _clientIpLocation();
       final ipCity = loc['city']?.toString() ?? '';
       final ipRegion = loc['regionName']?.toString() ?? '';
       if (ipCity.isNotEmpty && ipCity != '未知') {
@@ -294,24 +294,36 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  /// 直接从客户端调用 ip-api.com，获取手机真实 IP 对应的城市
+  Future<Map<String, dynamic>> _clientIpLocation() async {
+    try {
+      final res = await http.get(Uri.parse('http://ip-api.com/json/?fields=status,lat,lon,city,regionName,country'))
+          .timeout(const Duration(seconds: 5));
+      final j = json.decode(res.body) as Map<String, dynamic>;
+      if (j['status'] == 'success') return j;
+    } catch (_) {}
+    return {'status': 'fail'};
+  }
+
   Future<_WeatherLocation?> _ipLocation() async {
-    final loc = await Api.getLocation();
-    if (loc['error'] == true || loc['lat'] == null || loc['lon'] == null) {
-      throw Exception(loc['message']?.toString() ?? 'IP 定位失败');
+    final loc = await _clientIpLocation();
+    if (loc['status'] != 'success' || loc['lat'] == null || loc['lon'] == null) {
+      throw Exception('IP 定位失败');
     }
     final ipLat = (loc['lat'] as num).toDouble();
     final ipLng = (loc['lon'] as num).toDouble();
-    final nearest = findNearestCity(ipLat, ipLng, maxKm: 200);
-    final city = nearest != null
-        ? '${nearest.name}，${nearest.province}，中国'
-        : 'IP 定位城市';
-    return _WeatherLocation(
-      lat: ipLat,
-      lon: ipLng,
-      city: city,
-      status: 'IP 定位',
-      cacheable: true,
-    );
+    final ipCity = loc['city']?.toString() ?? '';
+    final ipRegion = loc['regionName']?.toString() ?? '';
+    String city;
+    if (ipCity.isNotEmpty && ipCity != '未知') {
+      city = ipRegion.isNotEmpty && ipRegion != '未知'
+          ? '$ipCity，$ipRegion，中国'
+          : '$ipCity，中国';
+    } else {
+      final nearest = findNearestCity(ipLat, ipLng, maxKm: 200);
+      city = nearest != null ? '${nearest.name}，${nearest.province}，中国' : 'IP 定位城市';
+    }
+    return _WeatherLocation(lat: ipLat, lon: ipLng, city: city, status: 'IP 定位', cacheable: true);
   }
 
   Future<void> _cacheLocation(
@@ -475,10 +487,8 @@ class _HomePageState extends State<HomePage> {
                 onChooseCity: _openCitySearch,
                 onOpenDetail: _openWeatherDetail,
               ),
-              if (_weather != null && !_loading) ...[
-                const SizedBox(height: 12),
-                _buildMiniForecast(theme),
-              ],
+              if (_weather != null && !_loading)
+                const SizedBox(height: 14),
               if (_showCitySearch) _buildCitySearch(theme),
               const SizedBox(height: 18),
               _buildTodayDashboard(theme),
@@ -486,23 +496,6 @@ class _HomePageState extends State<HomePage> {
           ),
         ),
       ),
-    );
-  }
-
-  Widget _buildMiniForecast(ThemeState theme) {
-    final today = weatherDay(_weather, key: 'today', index: 0);
-    final tomorrow = weatherDay(_weather, key: 'tomorrow', index: 1);
-    final dayAfter = weatherDay(_weather, key: 'day_after', index: 2);
-    final days = <Map<String, dynamic>>[];
-    if (today.isNotEmpty) days.add(today);
-    if (tomorrow.isNotEmpty) days.add(tomorrow);
-    if (dayAfter.isNotEmpty) days.add(dayAfter);
-    if (days.isEmpty) return const SizedBox.shrink();
-
-    return WeatherCardCarousel(
-      days: days,
-      cityName: _currentCity,
-      onTap: _openWeatherDetail,
     );
   }
 

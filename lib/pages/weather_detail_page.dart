@@ -214,6 +214,17 @@ class WeatherDetailPage extends StatelessWidget {
                 ],
               ),
             ),
+            const SizedBox(height: 24),
+            // 3-day forecast carousel
+            if (tomorrow.isNotEmpty || dayAfter.isNotEmpty)
+              WeatherCardCarousel(
+                days: [
+                  if (today.isNotEmpty) today,
+                  if (tomorrow.isNotEmpty) tomorrow,
+                  if (dayAfter.isNotEmpty) dayAfter,
+                ],
+                cityName: cityName,
+              ),
             const SizedBox(height: 18),
             Text(
               '现在感受',

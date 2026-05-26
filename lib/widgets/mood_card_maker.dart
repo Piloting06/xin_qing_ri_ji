@@ -150,37 +150,43 @@ class _MoodCardMakerState extends State<MoodCardMaker> {
 
                     const Spacer(),
 
-                    // Emoji (large, centered)
-                    Text(_moodEmoji, style: TextStyle(fontSize: 36, height: 1.2)),
-                    const SizedBox(height: 4),
+                    // Emoji + label (compact header)
+                    Text(_moodEmoji, style: TextStyle(fontSize: 32, height: 1.2)),
+                    const SizedBox(height: 2),
+                    Text(widget.moodLabel, style: TextStyle(color: _textColor, fontSize: 16, fontWeight: FontWeight.w600, height: 1.2)),
 
-                    // Mood label
-                    Text(widget.moodLabel, style: TextStyle(color: _textColor, fontSize: 18, fontWeight: FontWeight.w600, height: 1.2)),
+                    const SizedBox(height: 10),
 
-                    const SizedBox(height: 8),
-
-                    // Text content
+                    // Text content — the main element
                     if (widget.text.isNotEmpty)
-                      Text(
-                        widget.text,
-                        style: TextStyle(color: _textColor, fontSize: 14, height: 1.6),
-                        textAlign: TextAlign.center,
-                        maxLines: 3,
-                        overflow: TextOverflow.ellipsis,
+                      Expanded(
+                        child: Center(
+                          child: Text(
+                            widget.text,
+                            style: TextStyle(color: _textColor, fontSize: 15, height: 1.7),
+                            textAlign: TextAlign.center,
+                            maxLines: 4,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
                       )
                     else
-                      Text('写点什么吧', style: TextStyle(color: _textColor.withAlpha(80), fontSize: 13)),
+                      Expanded(
+                        child: Center(
+                          child: Text('写点什么吧', style: TextStyle(color: _textColor.withAlpha(60), fontSize: 14)),
+                        ),
+                      ),
 
-                    const SizedBox(height: 8),
-
-                    // Tags row
-                    if (widget.tags.isNotEmpty)
+                    // Tags — subtle, below main text
+                    if (widget.tags.isNotEmpty) ...[
+                      const SizedBox(height: 6),
                       Text(
                         widget.tags.take(4).join(' · '),
-                        style: TextStyle(color: _accentColor, fontSize: 11),
+                        style: TextStyle(color: _accentColor.withAlpha(120), fontSize: 10),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
+                    ],
 
                     const Spacer(),
 
@@ -368,9 +374,10 @@ class _MoodCardMakerState extends State<MoodCardMaker> {
 class _WarmOverlay extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return CustomPaint(
-      size: Size.infinite,
-      painter: _PaperGrainPainter(),
+    return Positioned.fill(
+      child: IgnorePointer(
+        child: CustomPaint(painter: _PaperGrainPainter()),
+      ),
     );
   }
 }
@@ -396,7 +403,6 @@ class _DarkOverlay extends StatelessWidget {
   Widget build(BuildContext context) {
     return Stack(
       children: [
-        // Warm glow from top
         Positioned(
           top: 0, left: 0, right: 0, height: 120,
           child: IgnorePointer(
@@ -414,10 +420,10 @@ class _DarkOverlay extends StatelessWidget {
             ),
           ),
         ),
-        // Star dots
-        CustomPaint(
-          size: Size.infinite,
-          painter: _StarDotsPainter(),
+        Positioned.fill(
+          child: IgnorePointer(
+            child: CustomPaint(painter: _StarDotsPainter()),
+          ),
         ),
       ],
     );
@@ -461,9 +467,10 @@ class _BlushOverlay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return CustomPaint(
-      size: Size.infinite,
-      painter: _VelvetNoisePainter(accent: accent),
+    return Positioned.fill(
+      child: IgnorePointer(
+        child: CustomPaint(painter: _VelvetNoisePainter(accent: accent)),
+      ),
     );
   }
 }

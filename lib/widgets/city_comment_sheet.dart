@@ -1,9 +1,9 @@
+import 'xq_toast.dart';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../stores/map_state.dart';
 import '../stores/theme_state.dart';
-import '../api/api_client.dart';
 
 Future<void> _deleteCityComment(int id, BuildContext ctx) async {
   final theme = ctx.read<ThemeState>();
@@ -20,11 +20,9 @@ Future<void> _deleteCityComment(int id, BuildContext ctx) async {
     ),
   );
   if (ok != true) return;
-  try {
-    await Api.deleteCityComment(id);
-    if (ctx.mounted) ctx.read<MapState>().refresh();
-  } catch (_) {
-    if (ctx.mounted) ScaffoldMessenger.of(ctx).showSnackBar(const SnackBar(content: Text('撤回失败，请重试')));
+  final success = await ctx.read<MapState>().deleteComment(id);
+  if (!success && ctx.mounted) {
+    XqToast.error(ctx, '撤回失败，请重试');
   }
 }
 
@@ -217,7 +215,7 @@ class CityCommentSheet extends StatelessWidget {
               final r = await map.postComment(t);
               setState(() => sending = false);
               if (r.ok) { ctrl.clear(); }
-              else { if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(r.message), duration: const Duration(seconds: 2))); }
+              else { if (context.mounted) XqToast.error(context, r.message); }
             },
           )),
         ])),

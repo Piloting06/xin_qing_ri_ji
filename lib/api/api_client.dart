@@ -35,6 +35,7 @@ class Api {
       if (!_notifyingUnauthorized) {
         _notifyingUnauthorized = true;
       }
+      onUnauthorized?.call();
       throw ApiException(msg, 401);
     }
     if (res.statusCode >= 400) {
@@ -609,6 +610,9 @@ class Api {
     if (data['token'] != null) {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(StorageKeys.token, data['token']);
+      if (data['display_name'] != null) {
+        await prefs.setString(StorageKeys.displayName, data['display_name']);
+      }
       _notifyingUnauthorized = false;
       onAuthenticated?.call();
     }

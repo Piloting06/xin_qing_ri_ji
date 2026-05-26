@@ -18,6 +18,7 @@ import '../stores/theme_state.dart';
 import '../theme/xq_colors.dart';
 import '../theme/xq_typography.dart';
 import '../services/notification_service.dart';
+import '../widgets/xq_toast.dart';
 import 'capsule_page.dart';
 import 'friends_page.dart';
 import 'legal_page.dart';
@@ -45,6 +46,7 @@ class _ProfilePageState extends State<ProfilePage> {
   int _consecutive = 0;
   String? _avatarPath;
   String _phone = '';
+  String _boundEmail = '';
 
   @override
   void initState() {
@@ -132,9 +134,9 @@ class _ProfilePageState extends State<ProfilePage> {
       await prefs.remove(_legacyAvatarPathKey);
       if (!mounted) return;
       setState(() => _avatarPath = dest.path);
-      ScaffoldMessenger.of(context).showSnackBar(_snack('头像已保存', true));
+      XqToast.success(context, '头像已保存');
     } catch (_) {
-      if (mounted) _showErr('头像保存失败，请重试');
+      if (mounted) XqToast.error(context, '头像保存失败，请重试');
     }
   }
 
@@ -149,10 +151,10 @@ class _ProfilePageState extends State<ProfilePage> {
           _checkedIn = true;
           _consecutive = r['consecutive_days'] ?? _consecutive;
         });
-        ScaffoldMessenger.of(context).showSnackBar(_snack('今日已记录', true));
+        XqToast.success(context, '今日已记录');
       }
     } catch (_) {
-      if (mounted) _showErr('签到失败，请稍后重试');
+      if (mounted) XqToast.error(context, '签到失败，请稍后重试');
     } finally {
       if (mounted) setState(() => _checkingIn = false);
     }
@@ -167,10 +169,10 @@ class _ProfilePageState extends State<ProfilePage> {
       if (mounted) {
         context.read<AppState>().setDisplayName(name);
         _nameCtrl.clear();
-        ScaffoldMessenger.of(context).showSnackBar(_snack('名字已更新', true));
+        XqToast.success(context, '名字已更新');
       }
     } catch (_) {
-      if (mounted) _showErr('名字保存失败，请稍后重试');
+      if (mounted) XqToast.error(context, '名字保存失败，请稍后重试');
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -193,10 +195,10 @@ class _ProfilePageState extends State<ProfilePage> {
       if (mounted) {
         _oldPwCtrl.clear();
         _newPwCtrl.clear();
-        ScaffoldMessenger.of(context).showSnackBar(_snack('密码已更改', true));
+        XqToast.success(context, '密码已更改');
       }
     } catch (_) {
-      if (mounted) _showErr('修改失败，请检查当前密码');
+      if (mounted) XqToast.error(context, '修改失败，请检查当前密码');
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -207,18 +209,14 @@ class _ProfilePageState extends State<ProfilePage> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text('注销账号', style: TextStyle(color: theme.errorColor)),
-        content: const Text('注销后会退出当前账号，并释放手机号。重新注册会创建一个全新账号。确定继续吗？'),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        backgroundColor: theme.cardColor,
+        title: Text('注销账号', style: TextStyle(color: theme.errorColor, fontSize: 17, fontWeight: FontWeight.w700)),
+        content: const Text('注销后会退出当前账号，并释放手机号。重新注册会创建一个全新账号。'),
+        actionsPadding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('取消'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            style: TextButton.styleFrom(foregroundColor: theme.errorColor),
-            child: const Text('确定注销'),
-          ),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text('取消', style: TextStyle(color: theme.textSecondary))),
+          TextButton(onPressed: () => Navigator.pop(ctx, true), style: TextButton.styleFrom(foregroundColor: const Color(0xFFD9706A)), child: const Text('确定注销')),
         ],
       ),
     );
@@ -236,7 +234,7 @@ class _ProfilePageState extends State<ProfilePage> {
         (_) => false,
       );
     } catch (_) {
-      if (mounted) _showErr('注销失败，请稍后重试');
+      if (mounted) XqToast.error(context, '注销失败，请稍后重试');
     }
   }
 
@@ -245,18 +243,14 @@ class _ProfilePageState extends State<ProfilePage> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('退出登录'),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        backgroundColor: theme.cardColor,
+        title: const Text('退出登录', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
         content: const Text('确定要退出当前账号吗？'),
+        actionsPadding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('取消'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            style: TextButton.styleFrom(foregroundColor: theme.errorColor),
-            child: const Text('退出'),
-          ),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text('取消', style: TextStyle(color: theme.textSecondary))),
+          TextButton(onPressed: () => Navigator.pop(ctx, true), style: TextButton.styleFrom(foregroundColor: const Color(0xFFD9706A)), child: const Text('退出')),
         ],
       ),
     );
@@ -275,8 +269,153 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
+  void _showEmailSheet(ThemeState theme) {
+    final emailCtrl = TextEditingController();
+    final codeCtrl = TextEditingController();
+    var sending = false;
+    var countdown = 0;
+    var binding = false;
+
+    void startCountdown() {
+      Future.delayed(const Duration(seconds: 1), () {
+        if (countdown <= 0) return;
+        countdown--;
+        if (mounted) setState(() {});
+        startCountdown();
+      });
+    }
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSheetState) {
+          return Container(
+          padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
+          decoration: BoxDecoration(
+            color: theme.cardColor,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: SafeArea(
+            top: false,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(22, 20, 22, 16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Center(child: Container(width: 36, height: 4, decoration: BoxDecoration(color: theme.borderColor, borderRadius: BorderRadius.circular(2)))),
+                  const SizedBox(height: 16),
+                  Text(_boundEmail.isEmpty ? '绑定邮箱' : '更换邮箱', style: TextStyle(color: theme.textPrimary, fontSize: 18, fontWeight: FontWeight.w700)),
+                  if (_boundEmail.isNotEmpty) ...[
+                    const SizedBox(height: 6),
+                    Text('当前: $_boundEmail', style: TextStyle(color: theme.textSecondary, fontSize: 13)),
+                  ],
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: emailCtrl,
+                    keyboardType: TextInputType.emailAddress,
+                    onChanged: (_) => setSheetState(() {}),
+                    style: TextStyle(color: theme.textPrimary, fontSize: 14),
+                    cursorColor: theme.accentColor,
+                    decoration: InputDecoration(
+                      labelText: '邮箱地址',
+                      labelStyle: TextStyle(color: theme.textSecondary, fontSize: 13),
+                      prefixIcon: Icon(Icons.email_outlined, color: theme.accentColor, size: 18),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: theme.borderColor)),
+                      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: theme.accentColor)),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: codeCtrl,
+                          keyboardType: TextInputType.number,
+                          inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(6)],
+                          style: TextStyle(color: theme.textPrimary, fontSize: 14),
+                          cursorColor: theme.accentColor,
+                          decoration: InputDecoration(
+                            labelText: '验证码',
+                            labelStyle: TextStyle(color: theme.textSecondary, fontSize: 13),
+                            prefixIcon: Icon(Icons.pin_outlined, color: theme.accentColor, size: 18),
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: theme.borderColor)),
+                            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: theme.accentColor)),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      SizedBox(
+                        width: 120, height: 44,
+                        child: OutlinedButton(
+                          onPressed: (sending || countdown > 0 || !emailCtrl.text.contains('@') || !emailCtrl.text.contains('.')) ? null : () async {
+                            sending = true;
+                            setSheetState(() {});
+                            try {
+                              await Api.sendEmailCode(emailCtrl.text.trim());
+                              countdown = 60;
+                              sending = false;
+                              if (mounted) setState(() {});
+                              startCountdown();
+                            } catch (_) {
+                              sending = false;
+                              if (mounted) setState(() {});
+                            }
+                          },
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: theme.accentColor,
+                            disabledForegroundColor: theme.accentColor.withAlpha(100),
+                            side: BorderSide(color: theme.accentColor.withAlpha(140)),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                          child: countdown > 0 ? Text('${countdown}s', style: const TextStyle(fontSize: 13)) : sending ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)) : const Text('发送验证码', style: TextStyle(fontSize: 12)),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  SizedBox(
+                    height: 48,
+                    child: FilledButton(
+                      onPressed: binding ? null : () async {
+                        if (emailCtrl.text.trim().isEmpty || codeCtrl.text.isEmpty) return;
+                        binding = true;
+                        setSheetState(() {});
+                        try {
+                          await Api.bindEmail(emailCtrl.text.trim(), codeCtrl.text);
+                          setState(() => _boundEmail = emailCtrl.text.trim());
+                          if (ctx.mounted) Navigator.pop(ctx);
+                          if (mounted) XqToast.success(context, '邮箱绑定成功');
+                        } on ApiException catch (e) {
+                          binding = false;
+                          setSheetState(() {});
+                          if (mounted) XqToast.error(context, e.message);
+                        } catch (_) {
+                          binding = false;
+                          setSheetState(() {});
+                          if (mounted) XqToast.error(context, '绑定失败，请稍后重试');
+                        }
+                      },
+                      style: FilledButton.styleFrom(backgroundColor: theme.accentColor, foregroundColor: theme.textOnAccent, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
+                      child: binding
+                          ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                          : const Text('确认绑定'),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+      ),
+    );
+  }
+
   void _showErr(String msg) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+    XqToast.error(context, msg);
   }
 
   SnackBar _snack(String msg, bool ok) {
@@ -668,6 +807,18 @@ class _ProfilePageState extends State<ProfilePage> {
                 ),
               );
             },
+          ),
+
+          _divider(theme),
+
+          // Email bind
+          _infoRow(
+            theme,
+            icon: Icons.email_outlined,
+            title: _boundEmail.isEmpty ? '绑定邮箱' : '邮箱',
+            subtitle: _boundEmail.isEmpty ? '绑定后可用邮箱登录' : _boundEmail,
+            trailing: _boundEmail.isEmpty ? '绑定' : '更换',
+            onTap: () => _showEmailSheet(theme),
           ),
 
           _divider(theme),

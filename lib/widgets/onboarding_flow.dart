@@ -12,10 +12,11 @@ class OnboardingFlow {
     final prefs = await SharedPreferences.getInstance();
     final dn = prefs.getString(StorageKeys.displayName) ?? '';
     final onboarded = prefs.getBool(StorageKeys.onboardingDone) ?? false;
+    final appDn = context.read<AppState>().displayName;
 
     if (!context.mounted) return;
 
-    if (dn.isEmpty) {
+    if (dn.isEmpty && appDn.isEmpty) {
       final name = await _showNameDialog(context);
       if (name == null || !context.mounted) return;
       try {

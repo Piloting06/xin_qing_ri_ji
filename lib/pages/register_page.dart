@@ -1,3 +1,4 @@
+import '../widgets/xq_toast.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -22,10 +23,15 @@ class _RegisterPageState extends State<RegisterPage> {
   final _pw2Ctrl = TextEditingController();
   final _customQuestionCtrl = TextEditingController();
   final _customAnswerCtrl = TextEditingController();
+  final _emailCtrl = TextEditingController();
+  final _emailCodeCtrl = TextEditingController();
   bool _loading = false;
   String? _error;
   bool _obscure = true;
   bool _obscure2 = true;
+  bool _useEmail = false;
+  bool _sendingCode = false;
+  int _codeCountdown = 0;
 
   String _questionType = 'choice';
   int _choiceAnswer = 0;
@@ -48,6 +54,8 @@ class _RegisterPageState extends State<RegisterPage> {
       _pw2Ctrl,
       _customQuestionCtrl,
       _customAnswerCtrl,
+      _emailCtrl,
+      _emailCodeCtrl,
     ]) {
       ctrl.addListener(_onInputChanged);
     }
@@ -61,6 +69,8 @@ class _RegisterPageState extends State<RegisterPage> {
       _pw2Ctrl,
       _customQuestionCtrl,
       _customAnswerCtrl,
+      _emailCtrl,
+      _emailCodeCtrl,
     ]) {
       ctrl.removeListener(_onInputChanged);
       ctrl.dispose();
@@ -87,10 +97,19 @@ class _RegisterPageState extends State<RegisterPage> {
     return validPrefixes.contains(phone.substring(0, 3));
   }
 
+  bool get _emailValid => _emailCtrl.text.trim().contains('@') && _emailCtrl.text.trim().contains('.');
   bool get _formValid {
+    if (_useEmail) {
+      final passwordOk = _pwCtrl.text.length >= 6 && _pwCtrl.text == _pw2Ctrl.text;
+      final questionOk = _questionType == 'custom'
+          ? _customQuestionCtrl.text.trim().isNotEmpty && _customAnswerCtrl.text.trim().isNotEmpty
+          : _questionType == 'date'
+          ? _dateAnswer != null
+          : true;
+      return _emailValid && _emailCodeCtrl.text.trim().isNotEmpty && passwordOk && questionOk;
+    }
     final phoneOk = _isValidPhone(_phoneCtrl.text.trim());
-    final passwordOk =
-        _pwCtrl.text.length >= 6 && _pwCtrl.text == _pw2Ctrl.text;
+    final passwordOk = _pwCtrl.text.length >= 6 && _pwCtrl.text == _pw2Ctrl.text;
     final questionOk = _questionType == 'custom'
         ? _customQuestionCtrl.text.trim().isNotEmpty &&
               _customAnswerCtrl.text.trim().isNotEmpty
@@ -100,10 +119,36 @@ class _RegisterPageState extends State<RegisterPage> {
     return phoneOk && passwordOk && questionOk;
   }
 
+  Future<void> _sendEmailCode() async {
+    if (_sendingCode || !_emailValid) return;
+    setState(() => _sendingCode = true);
+    try {
+      await Api.sendEmailCode(_emailCtrl.text.trim());
+      if (!mounted) return;
+      setState(() => _codeCountdown = 60);
+      _startCountdown();
+      XqToast.info(context, '验证码已发送');
+    } on ApiException catch (e) {
+      if (mounted) setState(() => _error = e.message);
+    } catch (_) {
+      if (mounted) setState(() => _error = '发送失败，请稍后重试');
+    } finally {
+      if (mounted) setState(() => _sendingCode = false);
+    }
+  }
+
+  void _startCountdown() {
+    Future.delayed(const Duration(seconds: 1), () {
+      if (!mounted || _codeCountdown <= 0) return;
+      setState(() => _codeCountdown--);
+      _startCountdown();
+    });
+  }
+
   Future<void> _register() async {
     if (_loading) return;
     if (!_formValid) {
-      setState(() => _error = '请确认手机号、密码和安全问题都填写正确');
+      setState(() => _error = '请确认所有信息都填写正确');
       return;
     }
     setState(() {
@@ -112,23 +157,32 @@ class _RegisterPageState extends State<RegisterPage> {
     });
     HapticFeedback.mediumImpact();
     try {
-      final question = switch (_questionType) {
-        'date' => _dateQuestions[0],
-        'choice' => _choiceQuestions[0],
-        _ => _customQuestionCtrl.text.trim(),
-      };
-      final answer = switch (_questionType) {
-        'choice' => '$_choiceAnswer',
-        'date' => _dateAnswer?.toIso8601String() ?? '',
-        _ => _customAnswerCtrl.text.trim(),
-      };
-      final data = await Api.register(
-        _phoneCtrl.text.trim(),
-        _pwCtrl.text,
-        questionType: _questionType,
-        question: question,
-        answer: answer,
-      );
+      final Map<String, dynamic> data;
+      if (_useEmail) {
+        data = await Api.emailRegister(
+          _emailCtrl.text.trim(),
+          _pwCtrl.text,
+          _emailCodeCtrl.text.trim(),
+        );
+      } else {
+        final question = switch (_questionType) {
+          'date' => _dateQuestions[0],
+          'choice' => _choiceQuestions[0],
+          _ => _customQuestionCtrl.text.trim(),
+        };
+        final answer = switch (_questionType) {
+          'choice' => '$_choiceAnswer',
+          'date' => _dateAnswer?.toIso8601String() ?? '',
+          _ => _customAnswerCtrl.text.trim(),
+        };
+        data = await Api.register(
+          _phoneCtrl.text.trim(),
+          _pwCtrl.text,
+          questionType: _questionType,
+          question: question,
+          answer: answer,
+        );
+      }
       final dn = data['display_name']?.toString() ?? '';
       if (!mounted) return;
       context.read<AppState>().setDisplayName(dn);
@@ -209,23 +263,118 @@ class _RegisterPageState extends State<RegisterPage> {
                               ),
                               const SizedBox(height: 6),
                               Text(
-                                '用一个手机号保存你的心情、天气和友人关系。',
+                                _useEmail ? '用邮箱注册，保存你的心情和天气日记。' : '用一个手机号保存你的心情、天气和友人关系。',
                                 style: TextStyle(
                                   color: theme.textSecondary,
                                   fontSize: 13,
                                 ),
                               ),
-                              const SizedBox(height: 20),
-                              _RegisterInput(
-                                controller: _phoneCtrl,
-                                label: '手机号',
-                                hint: '请输入 11 位手机号',
-                                icon: Icons.phone_iphone_rounded,
-                                keyboardType: TextInputType.phone,
-                                inputFormatters: [
-                                  FilteringTextInputFormatter.digitsOnly,
-                                ],
+                              const SizedBox(height: 16),
+                              // 手机号 / 邮箱切换
+                              Container(
+                                decoration: BoxDecoration(
+                                  color: theme.surfaceAlpha,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                padding: const EdgeInsets.all(4),
+                                child: Row(
+                                  children: [
+                                    Expanded(
+                                      child: GestureDetector(
+                                        onTap: () => setState(() => _useEmail = false),
+                                        child: AnimatedContainer(
+                                          duration: const Duration(milliseconds: 200),
+                                          padding: const EdgeInsets.symmetric(vertical: 10),
+                                          decoration: BoxDecoration(
+                                            color: !_useEmail ? theme.cardColor : Colors.transparent,
+                                            borderRadius: BorderRadius.circular(10),
+                                            boxShadow: !_useEmail ? [BoxShadow(color: Colors.black.withAlpha(theme.isDark ? 30 : 10), blurRadius: 6, offset: const Offset(0, 2))] : null,
+                                          ),
+                                          child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                                            Icon(Icons.phone_iphone_rounded, size: 16, color: !_useEmail ? theme.accentColor : theme.textTertiary),
+                                            const SizedBox(width: 6),
+                                            Text('手机号', style: TextStyle(color: !_useEmail ? theme.accentColor : theme.textTertiary, fontSize: 13, fontWeight: FontWeight.w600)),
+                                          ]),
+                                        ),
+                                      ),
+                                    ),
+                                    Expanded(
+                                      child: GestureDetector(
+                                        onTap: () => setState(() => _useEmail = true),
+                                        child: AnimatedContainer(
+                                          duration: const Duration(milliseconds: 200),
+                                          padding: const EdgeInsets.symmetric(vertical: 10),
+                                          decoration: BoxDecoration(
+                                            color: _useEmail ? theme.cardColor : Colors.transparent,
+                                            borderRadius: BorderRadius.circular(10),
+                                            boxShadow: _useEmail ? [BoxShadow(color: Colors.black.withAlpha(theme.isDark ? 30 : 10), blurRadius: 6, offset: const Offset(0, 2))] : null,
+                                          ),
+                                          child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                                            Icon(Icons.email_outlined, size: 16, color: _useEmail ? theme.accentColor : theme.textTertiary),
+                                            const SizedBox(width: 6),
+                                            Text('邮箱', style: TextStyle(color: _useEmail ? theme.accentColor : theme.textTertiary, fontSize: 13, fontWeight: FontWeight.w600)),
+                                          ]),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
+                              const SizedBox(height: 16),
+                              if (_useEmail) ...[
+                                _RegisterInput(
+                                  controller: _emailCtrl,
+                                  label: '邮箱',
+                                  hint: '请输入邮箱地址',
+                                  icon: Icons.email_outlined,
+                                  keyboardType: TextInputType.emailAddress,
+                                ),
+                                const SizedBox(height: 14),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: _RegisterInput(
+                                        controller: _emailCodeCtrl,
+                                        label: '验证码',
+                                        hint: '6位验证码',
+                                        icon: Icons.pin_outlined,
+                                        keyboardType: TextInputType.number,
+                                        inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(6)],
+                                      ),
+                                    ),
+                                    const SizedBox(width: 10),
+                                    Padding(
+                                      padding: const EdgeInsets.only(top: 14),
+                                      child: SizedBox(
+                                        height: 44, width: 120,
+                                        child: OutlinedButton(
+                                          onPressed: (_sendingCode || _codeCountdown > 0 || !_emailValid) ? null : _sendEmailCode,
+                                          style: OutlinedButton.styleFrom(
+                                            foregroundColor: theme.accentColor,
+                                            disabledForegroundColor: theme.accentColor.withAlpha(100),
+                                            side: BorderSide(color: theme.accentColor.withAlpha(140)),
+                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                          ),
+                                          child: _codeCountdown > 0
+                                              ? Text('${_codeCountdown}s', style: const TextStyle(fontSize: 13))
+                                              : _sendingCode
+                                                  ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                                                  : const Text('发送验证码', style: TextStyle(fontSize: 12)),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ] else ...[
+                                _RegisterInput(
+                                  controller: _phoneCtrl,
+                                  label: '手机号',
+                                  hint: '请输入 11 位手机号',
+                                  icon: Icons.phone_iphone_rounded,
+                                  keyboardType: TextInputType.phone,
+                                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                                ),
+                              ],
                               const SizedBox(height: 14),
                               _RegisterInput(
                                 controller: _pwCtrl,
@@ -263,7 +412,7 @@ class _RegisterPageState extends State<RegisterPage> {
                                 ),
                               ),
                               const SizedBox(height: 16),
-                              _securityQuestion(theme),
+                              if (!_useEmail) _securityQuestion(theme),
                               AnimatedSwitcher(
                                 duration: const Duration(milliseconds: 180),
                                 child: _error == null

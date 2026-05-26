@@ -293,12 +293,15 @@ class _MoodPageState extends State<MoodPage> {
 
     return Scaffold(
       backgroundColor: t.backgroundColor,
+      bottomNavigationBar: (_dirty || _saving || _saved)
+          ? _buildSaveBar(t)
+          : null,
       body: SafeArea(
         child: Stack(
           children: [
             ListView(
               controller: _scrollCtrl,
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 120),
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
               children: [
                 // Header
                 Row(
@@ -689,22 +692,6 @@ class _MoodPageState extends State<MoodPage> {
                 const SizedBox(height: 60),
               ],
             ),
-            if (_dirty || _saving || _saved)
-              Positioned(
-                left: 16,
-                right: 16,
-                bottom: 12,
-                child: AnimatedSlide(
-                  duration: const Duration(milliseconds: 180),
-                  curve: Curves.easeOutCubic,
-                  offset: Offset.zero,
-                  child: AnimatedOpacity(
-                    duration: const Duration(milliseconds: 160),
-                    opacity: 1,
-                    child: _buildSaveBar(t),
-                  ),
-                ),
-              ),
           ],
         ),
       ),

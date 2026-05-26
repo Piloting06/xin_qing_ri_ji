@@ -52,6 +52,11 @@ class _CityMapPageState extends State<CityMapPage>
                 '正在加载城市情绪…',
                 style: TextStyle(color: theme.textSecondary, fontSize: 14),
               ),
+              const SizedBox(height: 6),
+              Text(
+                '首次加载可能需要几秒',
+                style: TextStyle(color: theme.textTertiary, fontSize: 12),
+              ),
             ],
           ),
         ),

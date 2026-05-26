@@ -1,3 +1,5 @@
+import '../widgets/xq_empty_state.dart';
+import '../widgets/xq_toast.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
@@ -234,18 +236,21 @@ class _CapsulePageState extends State<CapsulePage> {
       builder: (ctx) {
         final theme = Provider.of<ThemeState>(ctx, listen: false);
         return Container(
-          margin: const EdgeInsets.all(16),
-          padding: const EdgeInsets.all(20),
+          padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
           decoration: BoxDecoration(
             color: theme.cardColor,
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: theme.borderColor),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
           ),
           child: SafeArea(
-            child: Column(
+            top: false,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
+              child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                Center(child: Container(width: 36, height: 4, decoration: BoxDecoration(color: theme.borderColor, borderRadius: BorderRadius.circular(2)))),
+                const SizedBox(height: 16),
                 Row(
                   children: [
                     Icon(
@@ -288,7 +293,8 @@ class _CapsulePageState extends State<CapsulePage> {
               ],
             ),
           ),
-        );
+        ),
+      );
       },
     );
   }
@@ -519,18 +525,11 @@ class _CapsulePageState extends State<CapsulePage> {
 
   Widget _capsuleList(ThemeState theme) {
     if (_capsules.isEmpty) {
-      return Container(
-        padding: const EdgeInsets.all(28),
-        decoration: BoxDecoration(
-          color: theme.cardColor,
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: theme.borderColor),
-        ),
-        child: Text(
-          '还没有时光胶囊。',
-          textAlign: TextAlign.center,
-          style: TextStyle(color: theme.textSecondary),
-        ),
+      return XqEmptyState(
+        icon: Icons.hourglass_empty,
+        title: '还没有时光胶囊',
+        subtitle: '写一封信给未来的自己，到了那天再打开',
+        iconColor: theme.accentColor.withAlpha(80),
       );
     }
 
@@ -662,7 +661,7 @@ class _CapsulePageState extends State<CapsulePage> {
       await Api.deleteCapsule(capsule['id'] as int);
       await _load();
     } catch (_) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('删除失败，请重试')));
+      if (mounted) XqToast.info(context, '删除失败，请重试');
     }
   }
 

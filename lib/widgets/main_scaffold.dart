@@ -79,7 +79,7 @@ class _MainScaffoldState extends State<MainScaffold> {
     );
 
     if (appState.isLockedOut) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
+      Future.delayed(const Duration(milliseconds: 120), () {
         if (mounted) {
           Navigator.pushAndRemoveUntil(
             context,
@@ -278,7 +278,7 @@ class _CapsuleTabItem extends StatelessWidget {
                     shape: BoxShape.circle,
                     color: accentColor,
                     boxShadow: [
-                      BoxShadow(color: accentColor.withAlpha(80), blurRadius: 4, spreadRadius: 1),
+                      BoxShadow(color: accentColor.withAlpha(110), blurRadius: 6, spreadRadius: 1),
                     ],
                   ),
                 ),

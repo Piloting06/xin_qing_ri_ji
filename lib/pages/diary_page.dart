@@ -7,6 +7,7 @@ import '../api/api_client.dart';
 import '../stores/theme_state.dart';
 import '../theme/xq_typography.dart';
 import '../theme/xq_paper_textures.dart';
+import '../widgets/xq_toast.dart';
 
 class DiaryPage extends StatefulWidget {
   final String? initialDate;
@@ -99,7 +100,10 @@ class _DiaryPageState extends State<DiaryPage> {
         if (mounted) setState(() => _saved = false);
       });
     } catch (_) {
-      if (mounted) setState(() => _saving = false);
+      if (mounted) {
+        setState(() => _saving = false);
+        XqToast.error(context, '保存失败，请稍后重试');
+      }
     }
   }
 
@@ -295,7 +299,7 @@ class _DiaryPageState extends State<DiaryPage> {
       context: context,
       backgroundColor: t.cardColor,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       builder: (ctx) {
         return Padding(
@@ -337,7 +341,7 @@ class _DiaryPageState extends State<DiaryPage> {
       context: context,
       backgroundColor: t.cardColor,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       builder: (ctx) => SizedBox(
         height: 300,

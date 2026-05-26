@@ -461,7 +461,7 @@ class WeatherDetailPage extends StatelessWidget {
               borderRadius: BorderRadius.circular(24),
               color: theme.cardColor,
               boxShadow: [
-                BoxShadow(color: Colors.black.withAlpha(50), blurRadius: 30, offset: const Offset(0, 16)),
+                BoxShadow(color: Colors.black.withAlpha(60), blurRadius: 24, offset: const Offset(0, 12)),
               ],
             ),
             clipBehavior: Clip.antiAlias,
@@ -472,14 +472,14 @@ class WeatherDetailPage extends StatelessWidget {
                 Stack(
                   children: [
                     Container(
-                      height: 64,
+                      height: 56,
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           colors: barColors,
                         ),
                       ),
                       child: Center(
-                        child: Text(title, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w800)),
+                        child: Icon(weatherIcon(code, w), color: Colors.white, size: 32),
                       ),
                     ),
                     Positioned(
@@ -502,7 +502,7 @@ class WeatherDetailPage extends StatelessWidget {
                       ),
                       const SizedBox(height: 8),
                       Text('$low° / $high°',
-                          style: TextStyle(color: theme.textPrimary, fontSize: 56, fontWeight: FontWeight.w200, height: 1)),
+                          style: TextStyle(color: theme.textPrimary, fontSize: 48, fontWeight: FontWeight.w300, height: 1)),
                       const SizedBox(height: 4),
                       Text(w, style: TextStyle(color: theme.textSecondary, fontSize: 16)),
                       const SizedBox(height: 18),
@@ -512,7 +512,20 @@ class WeatherDetailPage extends StatelessWidget {
                         if (rain != null) _metricPill(theme, '降水', '$rain%'),
                         if (wind != null) _metricPill(theme, '风速', '$wind km/h'),
                       ]),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 20),
+                      SizedBox(
+                        width: double.infinity, height: 44,
+                        child: FilledButton(
+                          onPressed: () => Navigator.pop(ctx),
+                          style: FilledButton.styleFrom(
+                            backgroundColor: barColors[0],
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                          ),
+                          child: const Text('知道了'),
+                        ),
+                      ),
+                      const SizedBox(height: 6),
                       // Tip
                       Container(
                         width: double.infinity,

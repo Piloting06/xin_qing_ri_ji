@@ -9,9 +9,9 @@ class XqColors {
   //  浅色模式（奶油手账）
   // ═══════════════════════════════════════
 
-  static const lightBackground = Color(0xFFFFF5E8);
-  static const lightSurface = Color(0xFFF7EBDD);
-  static const lightCard = Color(0xFFFFFCF7);
+  static const lightBackground = Color(0xFFFAF4EC);
+  static const lightSurface = Color(0xFFF2EBE4);
+  static const lightCard = Color(0xFFFDFAF6);
   static const lightCardElevated = Color(0xFFFFFBF4); // 带暖黄调，非纯白
   static const lightAccent = Color(0xFFB8782C);
   static const lightAccentLight = Color(0xFFD99B57);
@@ -100,30 +100,30 @@ class XqColors {
   //  豆沙柔粉（灰调豆沙粉，哑光质感）
   // ═══════════════════════════════════════
 
-  static const blushBackground = Color(0xFFEFE1DD);
-  static const blushSurface = Color(0xFFE5D3CF);
-  static const blushCard = Color(0xFFFBF5F4);
-  static const blushCardElevated = Color(0xFFFFF8F7); // 带粉调，非纯白
-  static const blushAccent = Color(0xFFB87A75);
-  static const blushAccentLight = Color(0xFFD4A09B);
-  static const blushAccentMuted = Color(0x2EB87A75);
-  static const blushTextPrimary = Color(0xFF2B2322);
-  static const blushTextSecondary = Color(0xFF695956);
-  static const blushTextTertiary = Color(0xFF968381);
+  static const blushBackground = Color(0xFFF2DED8);
+  static const blushSurface = Color(0xFFEAD7D1);
+  static const blushCard = Color(0xFFFDF6F4);
+  static const blushCardElevated = Color(0xFFFFF8F6);
+  static const blushAccent = Color(0xFFC4707A);
+  static const blushAccentLight = Color(0xFFDE9BA3);
+  static const blushAccentMuted = Color(0x2EC4707A);
+  static const blushTextPrimary = Color(0xFF2B2222);
+  static const blushTextSecondary = Color(0xFF6B5454);
+  static const blushTextTertiary = Color(0xFF9B8181);
   static const blushTextOnAccent = Color(0xFFFFFFFF);
-  static const blushBorder = Color(0xFFE0D0CD);
-  static const blushBorderFocus = Color(0xFFB87A75);
+  static const blushBorder = Color(0xFFE5D1CE);
+  static const blushBorderFocus = Color(0xFFC4707A);
   static const blushError = Color(0xFFC5524C);
   static const blushSuccess = Color(0xFF4F8C62);
   static const blushWarning = Color(0xFFD0832D);
-  static const blushInk = Color(0xFF382B27);
-  static const blushInkLight = Color(0x99847672);
-  static const blushGold = Color(0xFFB88A82);
-  static const blushPaperLine = Color(0xFFE5D5D1);
-  static const blushWashi1 = Color(0xFFE8CFCB);
-  static const blushWashi2 = Color(0xFFEDD5CE);
-  static const blushWashi3 = Color(0xFFE6CAC6);
-  static const blushWashi4 = Color(0xFFEBD2CB);
+  static const blushInk = Color(0xFF3B2826);
+  static const blushInkLight = Color(0x998A7472);
+  static const blushGold = Color(0xFFC48286);
+  static const blushPaperLine = Color(0xFFEAD5D1);
+  static const blushWashi1 = Color(0xFFEECFC9);
+  static const blushWashi2 = Color(0xFFF2D5CD);
+  static const blushWashi3 = Color(0xFFEBCAC3);
+  static const blushWashi4 = Color(0xFFF0D2CA);
 
   // ═══════════════════════════════════════
   //  心情颜色（主题无关）

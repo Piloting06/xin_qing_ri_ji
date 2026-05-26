@@ -1,3 +1,4 @@
+import 'xq_toast.dart';
 import 'dart:io';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
@@ -8,6 +9,7 @@ import 'package:gal/gal.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:provider/provider.dart';
 import '../stores/theme_state.dart';
+import '../constants/mood.dart';
 
 class MoodCardMaker extends StatefulWidget {
   final String date;
@@ -31,8 +33,6 @@ class MoodCardMaker extends StatefulWidget {
     required String date, required String moodLabel, required int moodScore,
     required String text, required List<String> tags,
   }) {
-    final theme = ThemeState();
-    // read from context instead
     final t = context.read<ThemeState>();
     showModalBottomSheet(
       context: context,
@@ -52,39 +52,39 @@ class MoodCardMaker extends StatefulWidget {
 class _MoodCardMakerState extends State<MoodCardMaker> {
   final _repaintKey = GlobalKey();
   bool _saving = false;
+  late String _cardTheme;
+
+  static const _cardThemes = ['warm', 'dark', 'mint', 'blush'];
+
+  @override
+  void initState() {
+    super.initState();
+    _cardTheme = widget.theme.themeMode;
+  }
 
   Color get _bgColor {
-    switch (widget.theme.themeMode) {
+    switch (_cardTheme) {
       case 'dark': return const Color(0xFF0E1222);
       case 'mint': return const Color(0xFFDDEBE3);
-      case 'blush': return const Color(0xFFEFE1DD);
-      default: return const Color(0xFFFFF5E8);
+      case 'blush': return const Color(0xFFF2DED8);
+      default: return const Color(0xFFFAF4EC);
     }
   }
 
   Color get _accentColor {
-    switch (widget.theme.themeMode) {
+    switch (_cardTheme) {
       case 'dark': return const Color(0xFFB9B8FF);
       case 'mint': return const Color(0xFF4D8C7A);
-      case 'blush': return const Color(0xFFB87A75);
+      case 'blush': return const Color(0xFFC4707A);
       default: return const Color(0xFFB8782C);
     }
   }
 
   Color get _textColor {
-    switch (widget.theme.themeMode) {
-      case 'dark': return const Color(0xFFF4F0E7);
-      default: return const Color(0xFF2F2118);
-    }
+    return _cardTheme == 'dark' ? const Color(0xFFF4F0E7) : const Color(0xFF2F2118);
   }
 
-  String get _moodEmoji {
-    if (widget.moodScore >= 80) return '😊';
-    if (widget.moodScore >= 60) return '😌';
-    if (widget.moodScore >= 40) return '😐';
-    if (widget.moodScore >= 20) return '😢';
-    return '😞';
-  }
+  String get _moodEmoji => moodEmojis[widget.moodScore] ?? '😌';
 
   Future<void> _save() async {
     setState(() => _saving = true);
@@ -98,13 +98,9 @@ class _MoodCardMakerState extends State<MoodCardMaker> {
       final file = File(p.join(dir.path, 'mood_card_${DateTime.now().millisecondsSinceEpoch}.png'));
       await file.writeAsBytes(byteData.buffer.asUint8List());
       await Gal.putImage(file.path);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('卡片已保存到相册'), duration: Duration(seconds: 2)),
-        );
-      }
+      if (mounted) XqToast.success(context, '卡片已保存到相册');
     } catch (_) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('保存失败')));
+      if (mounted) XqToast.error(context, '保存失败');
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -127,135 +123,200 @@ class _MoodCardMakerState extends State<MoodCardMaker> {
     } catch (_) {}
   }
 
+  Widget _themeDot(String mode) {
+    final active = _cardTheme == mode;
+    final dotColors = switch (mode) {
+      'dark' => [const Color(0xFF32376E), const Color(0xFF1B1F3B), const Color(0xFF0E1222)],
+      'mint' => [const Color(0xFF4D8C7A), const Color(0xFFA8D5C0), const Color(0xFFDDEBE3)],
+      'blush' => [const Color(0xFFC4707A), const Color(0xFFE7C0B8), const Color(0xFFF2DED8)],
+      _ => [const Color(0xFFB8782C), const Color(0xFFE2C99E), const Color(0xFFFAF4EC)],
+    };
+    return GestureDetector(
+      onTap: () => setState(() => _cardTheme = mode),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 240),
+        curve: Curves.easeOutCubic,
+        width: active ? 44 : 34,
+        height: active ? 44 : 34,
+        margin: const EdgeInsets.symmetric(horizontal: 6),
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          gradient: SweepGradient(colors: dotColors),
+          boxShadow: active ? [BoxShadow(color: dotColors[0].withAlpha(80), blurRadius: 10)] : null,
+          border: Border.all(color: widget.theme.cardColor, width: active ? 3 : 2),
+        ),
+        child: active ? const Center(child: Icon(Icons.check, size: 18, color: Colors.white)) : null,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final emoji = _moodEmoji;
+    final sheetTheme = widget.theme;
+    final screenHeight = MediaQuery.of(context).size.height;
+
     return Container(
+      height: screenHeight * 0.78,
       decoration: BoxDecoration(
-        color: widget.theme.cardColor,
+        color: sheetTheme.cardColor,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       ),
       child: SafeArea(
         top: false,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Center(child: Container(width: 36, height: 4, decoration: BoxDecoration(color: widget.theme.borderColor, borderRadius: BorderRadius.circular(2)))),
-              const SizedBox(height: 12),
-              Text('制成一张卡片', style: TextStyle(color: widget.theme.textPrimary, fontSize: 17, fontWeight: FontWeight.w700)),
-              const SizedBox(height: 16),
-              // Card preview
-              RepaintBoundary(
-                key: _repaintKey,
-                child: Container(
-                  width: double.infinity,
-                  constraints: const BoxConstraints(maxWidth: 400),
-                  decoration: BoxDecoration(
-                    color: _bgColor,
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [BoxShadow(color: Colors.black.withAlpha(40), blurRadius: 20, offset: const Offset(0, 8))],
-                  ),
-                  child: AspectRatio(
-                    aspectRatio: 16 / 9,
-                    child: Padding(
-                      padding: const EdgeInsets.all(24),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Top: date + watermark
-                          Row(
-                            children: [
-                              Text(widget.date, style: TextStyle(color: _textColor.withAlpha(160), fontSize: 12)),
-                              const Spacer(),
-                              Icon(Icons.wb_sunny_outlined, size: 14, color: _accentColor.withAlpha(120)),
-                              const SizedBox(width: 4),
-                              Text('XINQING RIJI', style: TextStyle(color: _accentColor.withAlpha(100), fontSize: 9, fontWeight: FontWeight.w600, letterSpacing: 1.5)),
-                            ],
-                          ),
-                          const Spacer(),
-                          // Center: emoji + mood
-                          Row(
-                            children: [
-                              Text(emoji, style: const TextStyle(fontSize: 48)),
-                              const SizedBox(width: 16),
+        child: Column(
+          children: [
+            const SizedBox(height: 8),
+            Center(child: Container(width: 36, height: 4, decoration: BoxDecoration(color: sheetTheme.borderColor, borderRadius: BorderRadius.circular(2)))),
+            const SizedBox(height: 10),
+            Text('制成一张卡片', style: TextStyle(color: sheetTheme.textPrimary, fontSize: 17, fontWeight: FontWeight.w700)),
+            const SizedBox(height: 6),
+            Text('点击色块切换风格', style: TextStyle(color: sheetTheme.textTertiary, fontSize: 12)),
+            const SizedBox(height: 12),
+
+            // Theme picker
+            Row(mainAxisAlignment: MainAxisAlignment.center, children: _cardThemes.map(_themeDot).toList()),
+
+            const SizedBox(height: 16),
+
+            // Card preview — card stays compact, everything fits inside
+            Expanded(
+              child: SingleChildScrollView(
+                physics: const NeverScrollableScrollPhysics(),
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: RepaintBoundary(
+                  key: _repaintKey,
+                  child: Container(
+                    width: double.infinity,
+                    constraints: const BoxConstraints(maxWidth: 420),
+                    decoration: BoxDecoration(
+                      color: _bgColor,
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [BoxShadow(color: Colors.black.withAlpha(50), blurRadius: 24, offset: const Offset(0, 10))],
+                    ),
+                    child: AspectRatio(
+                      aspectRatio: 16 / 9,
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(22, 16, 22, 12),
+                        child: Column(
+                          children: [
+                            // Top bar
+                            Row(
+                              children: [
+                                Text(widget.date, style: TextStyle(color: _textColor.withAlpha(140), fontSize: 11)),
+                                const Spacer(),
+                                Icon(Icons.wb_sunny_outlined, size: 10, color: _accentColor.withAlpha(70)),
+                                const SizedBox(width: 3),
+                                Text('XINQING RIJI', style: TextStyle(color: _accentColor.withAlpha(80), fontSize: 8, fontWeight: FontWeight.w600, letterSpacing: 1.2)),
+                              ],
+                            ),
+
+                            const SizedBox(height: 10),
+
+                            // Emoji + label (compact)
+                            Row(
+                              children: [
+                                Text(emoji, style: const TextStyle(fontSize: 24)),
+                                const SizedBox(width: 8),
+                                Text(widget.moodLabel, style: TextStyle(color: _textColor, fontSize: 16, fontWeight: FontWeight.w700)),
+                                if (widget.tags.isNotEmpty) ...[
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: Text(
+                                      widget.tags.take(3).join(' · '),
+                                      style: TextStyle(color: _accentColor, fontSize: 10),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+
+                            const SizedBox(height: 10),
+
+                            // Text content — THIS is the main element
+                            if (widget.text.isNotEmpty)
                               Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(widget.moodLabel, style: TextStyle(color: _textColor, fontSize: 22, fontWeight: FontWeight.w800)),
-                                    if (widget.tags.isNotEmpty)
-                                      Padding(
-                                        padding: const EdgeInsets.only(top: 4),
-                                        child: Text(widget.tags.take(3).join(' · '), style: TextStyle(color: _accentColor, fontSize: 12)),
-                                      ),
-                                  ],
+                                child: Center(
+                                  child: Text(
+                                    widget.text,
+                                    style: TextStyle(color: _textColor, fontSize: 15, height: 1.6),
+                                    textAlign: TextAlign.center,
+                                    maxLines: 4,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              )
+                            else
+                              Expanded(
+                                child: Center(
+                                  child: Text('写点什么吧', style: TextStyle(color: _textColor.withAlpha(80), fontSize: 13)),
                                 ),
                               ),
-                            ],
-                          ),
-                          // Text content
-                          if (widget.text.isNotEmpty) ...[
-                            const SizedBox(height: 16),
-                            Text(widget.text, style: TextStyle(color: _textColor.withAlpha(200), fontSize: 13, height: 1.5), maxLines: 2, overflow: TextOverflow.ellipsis),
+
+                            // Bottom watermark
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text('心晴日记', style: TextStyle(color: _accentColor.withAlpha(80), fontSize: 9)),
+                                const SizedBox(width: 6),
+                                Text('记录天气，也记录你', style: TextStyle(color: _textColor.withAlpha(50), fontSize: 8)),
+                              ],
+                            ),
                           ],
-                          const Spacer(),
-                          // Bottom watermark
-                          Row(
-                            children: [
-                              Icon(Icons.wb_sunny_outlined, size: 10, color: _accentColor.withAlpha(80)),
-                              const SizedBox(width: 4),
-                              Text('心晴日记', style: TextStyle(color: _accentColor.withAlpha(100), fontSize: 10)),
-                              const Spacer(),
-                              Text('记录天气，也记录你', style: TextStyle(color: _textColor.withAlpha(80), fontSize: 9)),
-                            ],
-                          ),
-                        ],
+                        ),
                       ),
                     ),
                   ),
                 ),
               ),
-              const SizedBox(height: 20),
-              // Buttons
-              Row(
+            ),
+
+            // Buttons
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+              child: Column(
                 children: [
-                  Expanded(
-                    child: SizedBox(
-                      height: 46,
-                      child: OutlinedButton.icon(
-                        onPressed: _saving ? null : _save,
-                        icon: const Icon(Icons.download, size: 18),
-                        label: const Text('保存'),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: _accentColor,
-                          side: BorderSide(color: _accentColor.withAlpha(100)),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  Container(height: 1, color: sheetTheme.borderColor.withAlpha(80)),
+                  const SizedBox(height: 14),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: SizedBox(height: 48,
+                          child: OutlinedButton.icon(
+                            onPressed: _saving ? null : _save,
+                            icon: const Icon(Icons.download_rounded, size: 18),
+                            label: const Text('保存到相册'),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: _accentColor,
+                              side: BorderSide(color: _accentColor.withAlpha(120)),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                            ),
+                          ),
                         ),
                       ),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: SizedBox(
-                      height: 46,
-                      child: FilledButton.icon(
-                        onPressed: _saving ? null : _share,
-                        icon: const Icon(Icons.share, size: 18),
-                        label: const Text('分享'),
-                        style: FilledButton.styleFrom(
-                          backgroundColor: _accentColor,
-                          foregroundColor: _bgColor.computeLuminance() > 0.5 ? const Color(0xFF222222) : Colors.white,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: SizedBox(height: 48,
+                          child: FilledButton.icon(
+                            onPressed: _saving ? null : _share,
+                            icon: const Icon(Icons.share_rounded, size: 18),
+                            label: const Text('分享给朋友'),
+                            style: FilledButton.styleFrom(
+                              backgroundColor: _accentColor,
+                              foregroundColor: _cardTheme == 'dark' ? const Color(0xFF1B1F3B) : Colors.white,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                            ),
+                          ),
                         ),
                       ),
-                    ),
+                    ],
                   ),
                 ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

@@ -1,3 +1,5 @@
+import '../widgets/xq_toast.dart';
+import '../widgets/xq_empty_state.dart';
 import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
@@ -342,37 +344,14 @@ class _TreeholePageState extends State<TreeholePage>
         padding: const EdgeInsets.fromLTRB(16, 18, 16, 12),
         children: [
           const SizedBox(height: 56),
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: theme.cardColor,
-              borderRadius: BorderRadius.circular(22),
-              border: Border.all(color: theme.borderColor),
-            ),
-            child: Column(
-              children: [
-                Icon(Icons.forest_outlined, color: theme.gold, size: 26),
-                const SizedBox(height: 10),
-                Text(
-                  '还没有留言，今天就做第一个吧。',
-                  textAlign: TextAlign.center,
-                  style: XqTypography.bodyMedium.copyWith(
-                    color: theme.textPrimary,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  '不用写很多，一句就够了。',
-                  textAlign: TextAlign.center,
-                  style: XqTypography.bodySmall.copyWith(
-                    color: theme.textSecondary,
-                  ),
-                ),
-              ],
-            ),
+          XqEmptyState(
+            icon: Icons.forest_outlined,
+            title: '还没有留言',
+            subtitle: '不用写很多，一句就够了。今天就做第一个吧。',
+            iconColor: theme.accentColor.withAlpha(80),
           ),
         ],
-      );
+    );
     }
     return ListView.builder(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
@@ -517,7 +496,7 @@ class _TreeholePageState extends State<TreeholePage>
       await Api.deleteTreehole(id);
       await _load();
     } catch (_) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('撤回失败，请重试')));
+      if (mounted) XqToast.info(context, '撤回失败，请重试');
     }
   }
 

@@ -101,9 +101,11 @@ class MoodCalendar extends StatelessWidget {
                 final isToday =
                     selected.year == now.year && selected.month == now.month && day == now.day;
                 final isSelected = dateStr == selectedDate;
+                final isFuture = DateTime(selected.year, selected.month, day)
+                    .isAfter(DateTime(now.year, now.month, now.day));
 
                 return GestureDetector(
-                  onTap: () => onDayTap(dateStr),
+                  onTap: isFuture ? null : () => onDayTap(dateStr),
                   child: Container(
                     width: 30,
                     height: 34,
@@ -130,7 +132,9 @@ class MoodCalendar extends StatelessWidget {
                           day.toString(),
                           style: TextStyle(
                             fontSize: 12,
-                            color: isSelected || isToday
+                            color: isFuture
+                                ? theme.textTertiary.withAlpha(100)
+                                : isSelected || isToday
                                 ? theme.accentColor
                                 : theme.textPrimary,
                             fontWeight: isSelected || isToday

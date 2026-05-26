@@ -436,7 +436,7 @@ class _FriendsPageState extends State<FriendsPage> {
                             color: theme.textSecondary.withAlpha(150),
                           ),
                           border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(16),
+                            borderRadius: BorderRadius.circular(20),
                           ),
                           contentPadding: const EdgeInsets.all(14),
                         ),
@@ -567,8 +567,9 @@ class _FriendsPageState extends State<FriendsPage> {
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: theme.cardColor,
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: theme.borderColor),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: theme.borderColor.withAlpha(80)),
+        boxShadow: [BoxShadow(color: Colors.black.withAlpha(theme.isDark ? 20 : 8), blurRadius: 12, offset: const Offset(0, 4))],
       ),
       child: Row(
         children: [
@@ -711,7 +712,7 @@ class _FriendsPageState extends State<FriendsPage> {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: theme.errorColor.withAlpha(18),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(color: theme.errorColor.withAlpha(70)),
       ),
       child: Row(
@@ -826,7 +827,7 @@ class _FriendsPageState extends State<FriendsPage> {
               boxShadow: [BoxShadow(color: Colors.black.withAlpha(theme.isDark ? 20 : 8), blurRadius: 12, offset: const Offset(0, 4))],
             ),
             child: Column(children: [
-              Icon(Icons.people_outline, size: 48, color: theme.textTertiary),
+              Icon(Icons.people_outline, size: 48, color: theme.accentColor.withAlpha(80)),
               const SizedBox(height: 12),
               Text('还没有好友', style: TextStyle(color: theme.textPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
               const SizedBox(height: 4),

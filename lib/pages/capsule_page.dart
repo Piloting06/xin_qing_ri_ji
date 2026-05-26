@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../utils/helpers.dart';
+import '../utils/time_utils.dart';
 
 import '../api/api_client.dart';
 import '../services/notification_service.dart';
@@ -659,6 +660,7 @@ class _CapsulePageState extends State<CapsulePage> {
     if (ok != true) return;
     try {
       await Api.deleteCapsule(capsule['id'] as int);
+      NotificationService.cancelCapsuleReminder(capsule['id'] as int);
       await _load();
     } catch (_) {
       if (mounted) XqToast.info(context, '删除失败，请重试');
@@ -675,10 +677,7 @@ class _CapsulePageState extends State<CapsulePage> {
     return DateTime(now.year, now.month, now.day);
   }
 
-  String _shortDate(dynamic value) {
-    final text = value?.toString() ?? '';
-    return text.length >= 10 ? text.substring(0, 10) : text;
-  }
+  String _shortDate(dynamic value) => TimeUtils.absolute(value?.toString());
 
   String _notificationPreview(String text) {
     final cleaned = text.replaceAll('\n', ' ').trim();

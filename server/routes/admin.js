@@ -113,11 +113,10 @@ router.get('/users/:id', adminAuth, (req, res) => {
     if (!user) return res.status(404).json({ message: '用户不存在' });
 
     const moods = db.prepare('SELECT * FROM moods WHERE user_id = ? ORDER BY date DESC LIMIT 30').all(user.id);
-    const diaries = db.prepare('SELECT * FROM diaries WHERE user_id = ? ORDER BY date DESC LIMIT 30').all(user.id);
     const capsules = db.prepare('SELECT * FROM time_capsules WHERE user_id = ? ORDER BY open_date DESC LIMIT 30').all(user.id);
     const checkins = db.prepare('SELECT * FROM checkins WHERE user_id = ? ORDER BY date DESC LIMIT 30').all(user.id);
 
-    res.json({ user, moods, diaries, capsules, checkins });
+    res.json({ user, moods, capsules, checkins });
   } catch (e) { res.status(500).json({ message: '获取用户详情失败' }); }
 });
 

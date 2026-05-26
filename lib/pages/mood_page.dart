@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -14,9 +15,7 @@ import 'package:intl/intl.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../api/api_client.dart';
 import '../constants/mood.dart';
-import 'diary_page.dart';
 import '../widgets/mood_calendar.dart';
-import '../widgets/mood_card.dart';
 import '../stores/app_state.dart';
 import '../stores/theme_state.dart';
 import '../widgets/mood_card_maker.dart';
@@ -252,37 +251,39 @@ class _MoodPageState extends State<MoodPage> {
     }
   }
 
-  Future<void> _shareCard() async {
-    final date = context.read<AppState>().selectedDate;
-    final note = _notesCtrl.text.trim().isEmpty
-        ? (moodLabels[_moodScore] ?? '今天的心情')
-        : _notesCtrl.text.trim();
-    final path = await MoodCardShare.generateAndSave(
-      context,
-      date: date,
-      weather: '心情记录',
-      temp: '',
-      moodScore: _moodScore,
-      note: note,
-      weatherCode: 0,
-    );
-    if (path != null && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('卡片已保存: $path'),
-          duration: const Duration(seconds: 2),
-        ),
-      );
-    } else {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('卡片生成失败，请重试'),
-            duration: Duration(seconds: 1),
-          ),
-        );
+  Future<void> _openCardMaker() async {
+    final appState = context.read<AppState>();
+    String? weatherText, cityName, temperature;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final weatherData = prefs.getString('weather_data');
+      if (weatherData != null) {
+        final d = const JsonDecoder().convert(weatherData);
+        final current = d['current'] as Map<String, dynamic>?;
+        if (current != null) {
+          weatherText = current['weather']?.toString();
+          temperature = current['temp_current']?.toString() != null
+              ? '${current['temp_current']}°'
+              : null;
+        }
       }
-    }
+      cityName = prefs.getString('weather_city')?.toString();
+      if (cityName != null && cityName.contains('，')) {
+        cityName = cityName.split('，').first;
+      }
+    } catch (_) {}
+    if (!mounted) return;
+    MoodCardMaker.show(context,
+      date: appState.selectedDate,
+      moodLabel: moodLabels[_moodScore] ?? '心情',
+      moodScore: _moodScore,
+      text: _notesCtrl.text,
+      tags: _selectedTags,
+      createdAt: DateTime.now().toUtc().toIso8601String(),
+      weatherText: weatherText,
+      cityName: cityName,
+      temperature: temperature,
+    );
   }
 
   @override
@@ -535,7 +536,7 @@ class _MoodPageState extends State<MoodPage> {
                         TextField(
                           controller: _notesCtrl,
                           maxLines: 4,
-                          style: XqTypography.diaryBody.copyWith(
+                          style: XqTypography.handwrittenBody.copyWith(
                             color: t.textPrimary,
                           ),
                           cursorColor: t.accentColor,
@@ -615,7 +616,7 @@ class _MoodPageState extends State<MoodPage> {
                     children: [
                       Expanded(
                         child: OutlinedButton.icon(
-                          onPressed: _shareCard,
+                          onPressed: _openCardMaker,
                           icon: const Icon(Icons.ios_share, size: 18),
                           label: const Text('分享心情'),
                           style: OutlinedButton.styleFrom(
@@ -628,40 +629,13 @@ class _MoodPageState extends State<MoodPage> {
                       const SizedBox(width: 10),
                       Expanded(
                         child: OutlinedButton.icon(
-                          onPressed: () => MoodCardMaker.show(context,
-                            date: appState.selectedDate, moodLabel: moodLabels[_moodScore] ?? '心情',
-                            moodScore: _moodScore, text: _notesCtrl.text, tags: _selectedTags,
-                          ),
+                          onPressed: _openCardMaker,
                           icon: const Icon(Icons.auto_awesome, size: 18),
                           label: const Text('制成卡片'),
                           style: OutlinedButton.styleFrom(
                             foregroundColor: t.gold,
                             side: BorderSide(color: t.gold.withAlpha(80)),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: OutlinedButton.icon(
-                          onPressed: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => DiaryPage(
-                                initialDate: context
-                                    .read<AppState>()
-                                    .selectedDate,
-                              ),
-                            ),
-                          ),
-                          icon: const Icon(Icons.edit_note, size: 20),
-                          label: const Text('写日记'),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: t.gold,
-                            side: BorderSide(color: t.gold.withAlpha(80)),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(14),
-                            ),
                           ),
                         ),
                       ),

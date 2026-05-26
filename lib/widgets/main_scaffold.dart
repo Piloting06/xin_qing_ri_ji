@@ -2,6 +2,8 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import '../api/api_client.dart';
+import '../services/notification_service.dart';
 import '../stores/theme_state.dart';
 import '../stores/app_state.dart';
 import '../theme/xq_decorations.dart';
@@ -41,6 +43,7 @@ class _MainScaffoldState extends State<MainScaffold> {
         _onboardingChecked = true;
         OnboardingFlow.checkAndShow(context);
       }
+      _rescheduleCapsuleReminders();
     });
   }
 
@@ -48,6 +51,26 @@ class _MainScaffoldState extends State<MainScaffold> {
   void dispose() {
     _pageController.dispose();
     super.dispose();
+  }
+
+  Future<void> _rescheduleCapsuleReminders() async {
+    try {
+      final data = await Api.getCapsuleList();
+      final capsules = data['capsules'] as List? ?? [];
+      for (final c in capsules) {
+        if (c is! Map) continue;
+        if (c['is_opened'] == 1) continue;
+        final id = c['id'];
+        final openDate = c['open_date']?.toString();
+        final content = c['content']?.toString() ?? '';
+        if (id == null || openDate == null) continue;
+        await NotificationService.scheduleCapsuleReminder(
+          capsuleId: id is int ? id : int.tryParse(id.toString()) ?? 0,
+          openDate: openDate,
+          preview: content.length > 36 ? '${content.substring(0, 36)}...' : content,
+        );
+      }
+    } catch (_) {}
   }
 
   void goToTab(int i) {

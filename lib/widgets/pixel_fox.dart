@@ -8,14 +8,12 @@ class PixelFox extends StatefulWidget {
   final int streak;
   final int totalMoods;
   final int todayMood;
-  final VoidCallback? onWriteDiary;
 
   const PixelFox({
     super.key,
     this.streak = 0,
     this.totalMoods = 0,
     this.todayMood = 0,
-    this.onWriteDiary,
   });
 
   @override
@@ -87,10 +85,6 @@ class _PixelFoxState extends State<PixelFox>
                 child: _BubbleMenu(
                   stage: _stage,
                   mood: widget.todayMood,
-                  onWriteDiary: () {
-                    setState(() => _showBubble = false);
-                    widget.onWriteDiary?.call();
-                  },
                   onDismiss: () => setState(() => _showBubble = false),
                 ),
               ),
@@ -379,13 +373,11 @@ class _FoxPainter extends CustomPainter {
 class _BubbleMenu extends StatelessWidget {
   final int stage;
   final int mood;
-  final VoidCallback onWriteDiary;
   final VoidCallback onDismiss;
 
   const _BubbleMenu({
     required this.stage,
     required this.mood,
-    required this.onWriteDiary,
     required this.onDismiss,
   });
 
@@ -418,7 +410,6 @@ class _BubbleMenu extends StatelessWidget {
               style: TextStyle(color: theme.textPrimary, fontSize: 13),
             ),
             const SizedBox(height: 6),
-            _bubbleBtn('📝 写日记', onWriteDiary, theme.accentColor),
           ],
         ),
       ),

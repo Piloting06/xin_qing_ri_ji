@@ -1576,7 +1576,7 @@ class _ProfilePageState extends State<ProfilePage> {
               style: FilledButton.styleFrom(
                 backgroundColor: theme.errorColor,
                 foregroundColor:
-                    theme.isDark ? XqColors.darkBackground : Colors.white,
+                    theme.isDark ? theme.backgroundColor : Colors.white,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(14),
                 ),

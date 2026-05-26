@@ -148,6 +148,13 @@ class NotificationService {
     }
   }
 
+  static Future<void> cancelCapsuleReminder(int capsuleId) async {
+    try {
+      await initialize();
+      await _notifications.cancel(700000 + capsuleId);
+    } catch (_) {}
+  }
+
   static Future<void> openPendingCapsuleIfAny(
     GlobalKey<NavigatorState> navKey,
   ) async {

@@ -116,7 +116,7 @@ class _InkSplashScreenState extends State<InkSplashScreen>
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        _DiaryMark(theme: theme),
+                        _WeatherMark(theme: theme),
                         const SizedBox(height: 22),
                         Transform.scale(
                           scale: titleScale,
@@ -165,10 +165,10 @@ class _InkSplashScreenState extends State<InkSplashScreen>
   }
 }
 
-class _DiaryMark extends StatelessWidget {
+class _WeatherMark extends StatelessWidget {
   final ThemeState theme;
 
-  const _DiaryMark({required this.theme});
+  const _WeatherMark({required this.theme});
 
   @override
   Widget build(BuildContext context) {

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../utils/helpers.dart';
+import '../widgets/xq_empty_state.dart';
 import '../api/api_client.dart';
 import '../constants/mood.dart';
 import '../stores/theme_state.dart';
@@ -826,22 +827,13 @@ class _FriendsPageState extends State<FriendsPage> {
               border: Border.all(color: theme.borderColor.withAlpha(80)),
               boxShadow: [BoxShadow(color: Colors.black.withAlpha(theme.isDark ? 20 : 8), blurRadius: 12, offset: const Offset(0, 4))],
             ),
-            child: Column(children: [
-              Icon(Icons.people_outline, size: 48, color: theme.accentColor.withAlpha(80)),
-              const SizedBox(height: 12),
-              Text('还没有好友', style: TextStyle(color: theme.textPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
-              const SizedBox(height: 4),
-              Text('用手机号添加一个愿意分享心情的人', style: TextStyle(color: theme.textSecondary, fontSize: 12)),
-              const SizedBox(height: 16),
-              SizedBox(
-                width: 160, height: 40,
-                child: FilledButton(
-                  onPressed: _openAddFriendSheet,
-                  style: FilledButton.styleFrom(backgroundColor: theme.accentColor, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-                  child: const Text('添加好友', style: TextStyle(fontSize: 13)),
-                ),
-              ),
-            ]),
+            child: XqEmptyState(
+              icon: Icons.people_outline,
+              title: '还没有好友',
+              subtitle: '用手机号添加一个愿意分享心情的人',
+              actionLabel: '添加好友',
+              onAction: _openAddFriendSheet,
+            ),
           )
         else
           ListView.builder(

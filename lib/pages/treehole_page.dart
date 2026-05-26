@@ -1,5 +1,6 @@
 import '../widgets/xq_toast.dart';
 import '../widgets/xq_empty_state.dart';
+import '../utils/time_utils.dart';
 import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
@@ -879,21 +880,7 @@ class _TreeholePageState extends State<TreeholePage>
     return true;
   }
 
-  String _displayTime(String? raw) {
-    if (raw == null || raw.trim().isEmpty) return '刚刚';
-    final parsed = DateTime.tryParse(raw.trim());
-    if (parsed == null) return raw;
-    final local = parsed.toLocal();
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final targetDay = DateTime(local.year, local.month, local.day);
-    final diffDays = today.difference(targetDay).inDays;
-    final hh = local.hour.toString().padLeft(2, '0');
-    final mm = local.minute.toString().padLeft(2, '0');
-    if (diffDays == 0) return '$hh:$mm';
-    if (diffDays == 1) return '昨天 $hh:$mm';
-    return '${local.month}月${local.day}日 $hh:$mm';
-  }
+  String _displayTime(String? raw) => TimeUtils.relative(raw);
 
   String _dailyPrompt() {
     const prompts = [

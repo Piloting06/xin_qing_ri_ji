@@ -24,7 +24,6 @@ async function start() {
   app.use('/api/auth', require('./routes/auth'));
   app.use('/api/weather', require('./routes/weather'));
   app.use('/api/mood', require('./routes/mood'));
-  app.use('/api/diary', require('./routes/diary'));
   app.use('/api/checkin', require('./routes/checkin'));
   app.use('/api/friends', require('./routes/friends'));
   app.use('/api/treehole', require('./routes/treehole'));

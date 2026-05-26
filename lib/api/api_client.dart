@@ -242,50 +242,6 @@ class Api {
     return await _handle(res);
   }
 
-  // ── Diary ──
-  static Future<Map<String, dynamic>> saveDiary(
-    String date,
-    String title,
-    String content,
-    int? moodId,
-  ) async {
-    final res = await http
-        .post(
-          Uri.parse('$baseUrl/diary'),
-          headers: await _headers(),
-          body: json.encode({
-            'date': date,
-            'title': title,
-            'content': content,
-            'mood_id': moodId,
-          }),
-        )
-        .timeout(timeout);
-    return await _handle(res);
-  }
-
-  static Future<Map<String, dynamic>?> getDiary(String date) async {
-    final res = await http
-        .get(Uri.parse('$baseUrl/diary?date=$date'), headers: await _headers())
-        .timeout(timeout);
-    try {
-      return await _handle(res);
-    } on ApiException catch (e) {
-      if (e.statusCode == 404) return null;
-      rethrow;
-    }
-  }
-
-  static Future<Map<String, dynamic>> searchDiary(String query) async {
-    final res = await http
-        .get(
-          Uri.parse('$baseUrl/diary/search?q=$query'),
-          headers: await _headers(),
-        )
-        .timeout(timeout);
-    return await _handle(res);
-  }
-
   // ── Checkin ──
   static Future<Map<String, dynamic>> checkin() async {
     final res = await http

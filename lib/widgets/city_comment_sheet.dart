@@ -1,4 +1,5 @@
 import 'xq_toast.dart';
+import '../utils/time_utils.dart';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -223,13 +224,5 @@ class CityCommentSheet extends StatelessWidget {
     });
   }
 
-  String _fmt(String? iso) {
-    if (iso == null || iso.length < 16) return '';
-    final local = DateTime.parse(iso).toLocal();
-    final now = DateTime.now(); final diff = now.difference(local);
-    if (diff.inMinutes < 1) return '刚刚';
-    if (diff.inMinutes < 60) return '${diff.inMinutes} 分钟前';
-    if (diff.inHours < 24) return '${diff.inHours} 小时前';
-    return '${local.month}/${local.day} ${local.hour.toString().padLeft(2, '0')}:${local.minute.toString().padLeft(2, '0')}';
-  }
+  String _fmt(String? iso) => TimeUtils.relative(iso);
 }

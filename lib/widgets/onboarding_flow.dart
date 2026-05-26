@@ -47,7 +47,7 @@ class OnboardingFlow {
           child: Container(
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              color: theme.isDark ? const Color(0xFF1A1A1A) : Colors.white,
+              color: theme.cardColor,
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
                   color: theme.gold.withAlpha(60)),
@@ -149,7 +149,7 @@ class OnboardingFlow {
           child: Container(
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              color: theme.isDark ? const Color(0xFF1A1A1A) : Colors.white,
+              color: theme.cardColor,
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
                   color: theme.gold.withAlpha(60)),

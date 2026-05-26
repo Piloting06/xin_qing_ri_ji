@@ -99,16 +99,6 @@ async function init() {
       FOREIGN KEY (mood_id) REFERENCES moods(id),
       FOREIGN KEY (user_id) REFERENCES users(id)
     )`,
-    `CREATE TABLE IF NOT EXISTS diaries (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      user_id INTEGER NOT NULL,
-      date TEXT NOT NULL,
-      title TEXT,
-      content TEXT,
-      mood_id INTEGER,
-      created_at TEXT DEFAULT (datetime('now')),
-      FOREIGN KEY (user_id) REFERENCES users(id)
-    )`,
     `CREATE TABLE IF NOT EXISTS checkins (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       user_id INTEGER NOT NULL,

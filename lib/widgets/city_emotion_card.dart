@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:ui' as ui;
+import '../utils/time_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:path_provider/path_provider.dart';
@@ -384,18 +385,5 @@ class _CityEmotionCardState extends State<CityEmotionCard> {
     };
   }
 
-  String _formatTime(String? iso) {
-    if (iso == null || iso.isEmpty) return '';
-    try {
-      final dt = DateTime.parse(iso);
-      final now = DateTime.now();
-      final diff = now.difference(dt);
-      if (diff.inMinutes < 60) return '${diff.inMinutes} 分钟前';
-      if (diff.inHours < 24) return '${diff.inHours} 小时前';
-      if (diff.inDays < 7) return '${diff.inDays} 天前';
-      return '${dt.month}/${dt.day}';
-    } catch (_) {
-      return '';
-    }
-  }
+  String _formatTime(String? iso) => TimeUtils.relative(iso);
 }

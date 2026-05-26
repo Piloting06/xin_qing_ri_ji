@@ -1,5 +1,6 @@
 import 'xq_toast.dart';
 import 'dart:io';
+import 'dart:math' as math;
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -10,6 +11,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:provider/provider.dart';
 import '../stores/theme_state.dart';
 import '../constants/mood.dart';
+import '../utils/time_utils.dart';
 
 class MoodCardMaker extends StatefulWidget {
   final String date;
@@ -18,6 +20,10 @@ class MoodCardMaker extends StatefulWidget {
   final String text;
   final List<String> tags;
   final ThemeState theme;
+  final String? createdAt;
+  final String? weatherText;
+  final String? cityName;
+  final String? temperature;
 
   const MoodCardMaker({
     super.key,
@@ -27,11 +33,16 @@ class MoodCardMaker extends StatefulWidget {
     required this.text,
     required this.tags,
     required this.theme,
+    this.createdAt,
+    this.weatherText,
+    this.cityName,
+    this.temperature,
   });
 
   static void show(BuildContext context, {
     required String date, required String moodLabel, required int moodScore,
     required String text, required List<String> tags,
+    String? createdAt, String? weatherText, String? cityName, String? temperature,
   }) {
     final t = context.read<ThemeState>();
     showModalBottomSheet(
@@ -41,6 +52,8 @@ class MoodCardMaker extends StatefulWidget {
       builder: (_) => MoodCardMaker(
         date: date, moodLabel: moodLabel, moodScore: moodScore,
         text: text, tags: tags, theme: t,
+        createdAt: createdAt, weatherText: weatherText,
+        cityName: cityName, temperature: temperature,
       ),
     );
   }
@@ -85,6 +98,116 @@ class _MoodCardMakerState extends State<MoodCardMaker> {
   }
 
   String get _moodEmoji => moodEmojis[widget.moodScore] ?? '😌';
+
+  Widget _buildCard() {
+    final hasWeather = widget.weatherText != null && widget.weatherText!.isNotEmpty;
+    final timeStr = widget.createdAt != null
+        ? TimeUtils.short(widget.createdAt)
+        : widget.date;
+
+    return Container(
+      width: double.infinity,
+      constraints: const BoxConstraints(maxWidth: 420),
+      decoration: BoxDecoration(
+        color: _bgColor,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [BoxShadow(color: Colors.black.withAlpha(50), blurRadius: 24, offset: const Offset(0, 10))],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: Stack(
+          children: [
+            // Card content
+            AspectRatio(
+              aspectRatio: 16 / 9,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(22, 16, 22, 12),
+                child: Column(
+                  children: [
+                    // Top bar: time + branding
+                    Row(
+                      children: [
+                        Text(timeStr, style: TextStyle(color: _textColor.withAlpha(140), fontSize: 11)),
+                        const Spacer(),
+                        Text('XQ RJ', style: TextStyle(color: _accentColor.withAlpha(90), fontSize: 9, fontWeight: FontWeight.w700, letterSpacing: 1.2)),
+                      ],
+                    ),
+
+                    // Weather row (only if data available)
+                    if (hasWeather) ...[
+                      const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          Icon(Icons.wb_sunny_outlined, size: 10, color: _accentColor.withAlpha(150)),
+                          const SizedBox(width: 4),
+                          Text(
+                            '${widget.weatherText}${widget.cityName != null ? "  ${widget.cityName}" : ""}${widget.temperature != null ? " · ${widget.temperature}" : ""}',
+                            style: TextStyle(color: _textColor.withAlpha(150), fontSize: 10),
+                          ),
+                        ],
+                      ),
+                    ],
+
+                    const Spacer(),
+
+                    // Emoji (large, centered)
+                    Text(_moodEmoji, style: TextStyle(fontSize: 36, height: 1.2)),
+                    const SizedBox(height: 4),
+
+                    // Mood label
+                    Text(widget.moodLabel, style: TextStyle(color: _textColor, fontSize: 18, fontWeight: FontWeight.w600, height: 1.2)),
+
+                    const SizedBox(height: 8),
+
+                    // Text content
+                    if (widget.text.isNotEmpty)
+                      Text(
+                        widget.text,
+                        style: TextStyle(color: _textColor, fontSize: 14, height: 1.6),
+                        textAlign: TextAlign.center,
+                        maxLines: 3,
+                        overflow: TextOverflow.ellipsis,
+                      )
+                    else
+                      Text('写点什么吧', style: TextStyle(color: _textColor.withAlpha(80), fontSize: 13)),
+
+                    const SizedBox(height: 8),
+
+                    // Tags row
+                    if (widget.tags.isNotEmpty)
+                      Text(
+                        widget.tags.take(4).join(' · '),
+                        style: TextStyle(color: _accentColor, fontSize: 11),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+
+                    const Spacer(),
+
+                    // Bottom watermark
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text('心晴日记', style: TextStyle(color: _accentColor.withAlpha(90), fontSize: 9)),
+                        const SizedBox(width: 6),
+                        Text('记录天气，也记录你', style: TextStyle(color: _textColor.withAlpha(50), fontSize: 8)),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            // Theme-specific overlays
+            if (_cardTheme == 'warm') _WarmOverlay(),
+            if (_cardTheme == 'dark') _DarkOverlay(),
+            if (_cardTheme == 'mint') _MintOverlay(),
+            if (_cardTheme == 'blush') _BlushOverlay(accent: _accentColor),
+          ],
+        ),
+      ),
+    );
+  }
 
   Future<void> _save() async {
     setState(() => _saving = true);
@@ -152,7 +275,6 @@ class _MoodCardMakerState extends State<MoodCardMaker> {
 
   @override
   Widget build(BuildContext context) {
-    final emoji = _moodEmoji;
     final sheetTheme = widget.theme;
     final screenHeight = MediaQuery.of(context).size.height;
 
@@ -179,96 +301,14 @@ class _MoodCardMakerState extends State<MoodCardMaker> {
 
             const SizedBox(height: 16),
 
-            // Card preview — card stays compact, everything fits inside
+            // Card preview
             Expanded(
               child: SingleChildScrollView(
                 physics: const NeverScrollableScrollPhysics(),
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: RepaintBoundary(
                   key: _repaintKey,
-                  child: Container(
-                    width: double.infinity,
-                    constraints: const BoxConstraints(maxWidth: 420),
-                    decoration: BoxDecoration(
-                      color: _bgColor,
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: [BoxShadow(color: Colors.black.withAlpha(50), blurRadius: 24, offset: const Offset(0, 10))],
-                    ),
-                    child: AspectRatio(
-                      aspectRatio: 16 / 9,
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(22, 16, 22, 12),
-                        child: Column(
-                          children: [
-                            // Top bar
-                            Row(
-                              children: [
-                                Text(widget.date, style: TextStyle(color: _textColor.withAlpha(140), fontSize: 11)),
-                                const Spacer(),
-                                Icon(Icons.wb_sunny_outlined, size: 10, color: _accentColor.withAlpha(70)),
-                                const SizedBox(width: 3),
-                                Text('XINQING RIJI', style: TextStyle(color: _accentColor.withAlpha(80), fontSize: 8, fontWeight: FontWeight.w600, letterSpacing: 1.2)),
-                              ],
-                            ),
-
-                            const SizedBox(height: 10),
-
-                            // Emoji + label (compact)
-                            Row(
-                              children: [
-                                Text(emoji, style: const TextStyle(fontSize: 24)),
-                                const SizedBox(width: 8),
-                                Text(widget.moodLabel, style: TextStyle(color: _textColor, fontSize: 16, fontWeight: FontWeight.w700)),
-                                if (widget.tags.isNotEmpty) ...[
-                                  const SizedBox(width: 10),
-                                  Expanded(
-                                    child: Text(
-                                      widget.tags.take(3).join(' · '),
-                                      style: TextStyle(color: _accentColor, fontSize: 10),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                ],
-                              ],
-                            ),
-
-                            const SizedBox(height: 10),
-
-                            // Text content — THIS is the main element
-                            if (widget.text.isNotEmpty)
-                              Expanded(
-                                child: Center(
-                                  child: Text(
-                                    widget.text,
-                                    style: TextStyle(color: _textColor, fontSize: 15, height: 1.6),
-                                    textAlign: TextAlign.center,
-                                    maxLines: 4,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                              )
-                            else
-                              Expanded(
-                                child: Center(
-                                  child: Text('写点什么吧', style: TextStyle(color: _textColor.withAlpha(80), fontSize: 13)),
-                                ),
-                              ),
-
-                            // Bottom watermark
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Text('心晴日记', style: TextStyle(color: _accentColor.withAlpha(80), fontSize: 9)),
-                                const SizedBox(width: 6),
-                                Text('记录天气，也记录你', style: TextStyle(color: _textColor.withAlpha(50), fontSize: 8)),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
+                  child: _buildCard(),
                 ),
               ),
             ),
@@ -321,4 +361,131 @@ class _MoodCardMakerState extends State<MoodCardMaker> {
       ),
     );
   }
+}
+
+// ── Theme overlays ──
+
+class _WarmOverlay extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return CustomPaint(
+      size: Size.infinite,
+      painter: _PaperGrainPainter(),
+    );
+  }
+}
+
+class _PaperGrainPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final rng = math.Random(42);
+    final paint = Paint()..color = const Color(0xFFB8782C).withAlpha(6);
+    for (int i = 0; i < 200; i++) {
+      final x = rng.nextDouble() * size.width;
+      final y = rng.nextDouble() * size.height;
+      canvas.drawCircle(Offset(x, y), rng.nextDouble() * 0.8 + 0.2, paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+class _DarkOverlay extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        // Warm glow from top
+        Positioned(
+          top: 0, left: 0, right: 0, height: 120,
+          child: IgnorePointer(
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: RadialGradient(
+                  center: const Alignment(0, -0.8),
+                  radius: 1.2,
+                  colors: [
+                    const Color(0xFFFFD54F).withAlpha(12),
+                    Colors.transparent,
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+        // Star dots
+        CustomPaint(
+          size: Size.infinite,
+          painter: _StarDotsPainter(),
+        ),
+      ],
+    );
+  }
+}
+
+class _StarDotsPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final rng = math.Random(123);
+    final paint = Paint()..color = Colors.white.withAlpha(25);
+    for (int i = 0; i < 40; i++) {
+      final x = rng.nextDouble() * size.width;
+      final y = rng.nextDouble() * size.height * 0.7;
+      final r = rng.nextDouble() * 0.6 + 0.2;
+      canvas.drawCircle(Offset(x, y), r, paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+class _MintOverlay extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return IgnorePointer(
+      child: Container(
+        decoration: BoxDecoration(
+          border: Border.all(color: const Color(0xFF4D8C7A).withAlpha(20), width: 1),
+          borderRadius: BorderRadius.circular(20),
+        ),
+      ),
+    );
+  }
+}
+
+class _BlushOverlay extends StatelessWidget {
+  final Color accent;
+  const _BlushOverlay({required this.accent});
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomPaint(
+      size: Size.infinite,
+      painter: _VelvetNoisePainter(accent: accent),
+    );
+  }
+}
+
+class _VelvetNoisePainter extends CustomPainter {
+  final Color accent;
+  _VelvetNoisePainter({required this.accent});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final rng = math.Random(87);
+    final area = size.width * size.height;
+    final count = (area * 0.08).toInt();
+    for (int i = 0; i < count; i++) {
+      if (rng.nextDouble() > 0.5) continue;
+      final x = rng.nextDouble() * size.width;
+      final y = rng.nextDouble() * size.height;
+      final r = rng.nextDouble() * 1.2;
+      canvas.drawCircle(Offset(x, y), r, Paint()..color = accent.withAlpha(3));
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

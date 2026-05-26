@@ -9,8 +9,8 @@ import '../stores/theme_state.dart';
 import '../utils/weather_utils.dart';
 import '../utils/geo_utils.dart';
 import '../widgets/weather_summary_card.dart';
+import '../widgets/weather_card_carousel.dart';
 import 'capsule_page.dart';
-import 'diary_page.dart';
 import 'mood_page.dart';
 import 'treehole_page.dart';
 import 'weather_detail_page.dart';
@@ -118,7 +118,7 @@ class _HomePageState extends State<HomePage> {
     }
 
     final failures = <String>[];
-    for (final resolver in [_systemLocation, _cachedLocation, _ipLocation]) {
+    for (final resolver in [_cachedLocation, _systemLocation, _ipLocation]) {
       try {
         final location = await resolver();
         if (location == null) continue;
@@ -147,6 +147,17 @@ class _HomePageState extends State<HomePage> {
       }
       _weatherError = failures.isEmpty ? '定位失败，请手动选择城市' : failures.last;
     });
+
+    // Default fallback — Beijing
+    if (!hasCache && _weather == null && mounted) {
+      await _fetchWeatherFor(_WeatherLocation(
+        lat: 39.9042,
+        lon: 116.4074,
+        city: '北京',
+        status: '默认位置',
+        cacheable: false,
+      ));
+    }
   }
 
   Future<void> _fetchWeatherFor(_WeatherLocation location) async {
@@ -173,23 +184,22 @@ class _HomePageState extends State<HomePage> {
     double lon, {
     required String fallback,
   }) async {
-    final nearest = findNearestCity(lat, lon, maxKm: 100);
-    if (nearest != null) return '${nearest.name}，${nearest.province}，中国';
-
-    // ip-api 只取坐标，重新走内置列表匹配，不直接用英文文本
+    // Use IP geolocation city name directly — ip-api returns Chinese city names
     try {
       final loc = await Api.getLocation();
-      if (loc['lat'] != null && loc['lon'] != null) {
-        final ipNearest = findNearestCity(
-          (loc['lat'] as num).toDouble(),
-          (loc['lon'] as num).toDouble(),
-          maxKm: 200,
-        );
-        if (ipNearest != null) {
-          return '${ipNearest.name}，${ipNearest.province}，中国';
+      final ipCity = loc['city']?.toString() ?? '';
+      final ipRegion = loc['regionName']?.toString() ?? '';
+      if (ipCity.isNotEmpty && ipCity != '未知') {
+        if (ipRegion.isNotEmpty && ipRegion != '未知') {
+          return '$ipCity，$ipRegion，中国';
         }
+        return '$ipCity，中国';
       }
     } catch (_) {}
+
+    // Fallback to coordinate matching
+    final nearest = findNearestCity(lat, lon, maxKm: 100);
+    if (nearest != null) return '${nearest.name}，${nearest.province}，中国';
 
     return fallback;
   }
@@ -386,13 +396,6 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  void _openDiary() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => const DiaryPage()),
-    );
-  }
-
   void _openMood() {
     Navigator.push(
       context,
@@ -487,66 +490,19 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildMiniForecast(ThemeState theme) {
+    final today = weatherDay(_weather, key: 'today', index: 0);
     final tomorrow = weatherDay(_weather, key: 'tomorrow', index: 1);
     final dayAfter = weatherDay(_weather, key: 'day_after', index: 2);
-    if (tomorrow.isEmpty && dayAfter.isEmpty) return const SizedBox.shrink();
+    final days = <Map<String, dynamic>>[];
+    if (today.isNotEmpty) days.add(today);
+    if (tomorrow.isNotEmpty) days.add(tomorrow);
+    if (dayAfter.isNotEmpty) days.add(dayAfter);
+    if (days.isEmpty) return const SizedBox.shrink();
 
-    return Row(
-      children: [
-        if (tomorrow.isNotEmpty)
-          Expanded(child: _miniDayCard(theme, '明天', tomorrow)),
-        if (tomorrow.isNotEmpty && dayAfter.isNotEmpty)
-          const SizedBox(width: 10),
-        if (dayAfter.isNotEmpty)
-          Expanded(child: _miniDayCard(theme, '后天', dayAfter)),
-      ],
-    );
-  }
-
-  Widget _miniDayCard(ThemeState theme, String label, Map<String, dynamic> day) {
-    final w = day['weather']?.toString() ?? '--';
-    final code = weatherInt(day['weather_code']) ?? 0;
-    final high = weatherInt(day['temp_max']);
-    final low = weatherInt(day['temp_min']);
-    final rain = weatherInt(day['rain_prob']);
-
-    return GestureDetector(
+    return WeatherCardCarousel(
+      days: days,
+      cityName: _currentCity,
       onTap: _openWeatherDetail,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        decoration: BoxDecoration(
-          color: theme.cardColor.withAlpha(180),
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: theme.borderColor.withAlpha(80)),
-        ),
-        child: Row(
-          children: [
-            Icon(weatherIcon(code, w), color: theme.accentColor, size: 22),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(label, style: TextStyle(color: theme.textPrimary, fontSize: 13, fontWeight: FontWeight.w700)),
-                  const SizedBox(height: 2),
-                  Text(w, style: TextStyle(color: theme.textSecondary, fontSize: 11)),
-                ],
-              ),
-            ),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  high != null && low != null ? '$low° / $high°' : '--',
-                  style: TextStyle(color: theme.textPrimary, fontSize: 13, fontWeight: FontWeight.w600),
-                ),
-                if (rain != null && rain > 0)
-                  Text('降水 $rain%', style: TextStyle(color: theme.accentColor.withAlpha(180), fontSize: 10)),
-              ],
-            ),
-          ],
-        ),
-      ),
     );
   }
 
@@ -653,27 +609,53 @@ class _HomePageState extends State<HomePage> {
           ),
         ),
         const SizedBox(height: 12),
-        // Secondary row - diary and treehole side by side
-        Row(
-          children: [
-            Expanded(
-              child: _secondaryAction(
-                theme,
-                icon: Icons.edit_note_rounded,
-                title: '写日记',
-                onTap: _openDiary,
+        // Treehole - full-width card
+        InkWell(
+          borderRadius: BorderRadius.circular(22),
+          onTap: _openTreehole,
+          child: Container(
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  theme.cardElevated,
+                  theme.cardColor,
+                ],
               ),
+              borderRadius: BorderRadius.circular(22),
+              border: Border.all(color: theme.borderColor),
             ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: _secondaryAction(
-                theme,
-                icon: Icons.auto_awesome_outlined,
-                title: '留一句树洞',
-                onTap: _openTreehole,
-              ),
+            child: Row(
+              children: [
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: theme.accentColor.withAlpha(26),
+                    borderRadius: BorderRadius.circular(18),
+                  ),
+                  child: Icon(Icons.auto_awesome_rounded, color: theme.accentColor, size: 24),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '留一句树洞',
+                        style: TextStyle(color: theme.textPrimary, fontSize: 17, fontWeight: FontWeight.w700),
+                      ),
+                      const SizedBox(height: 2),
+                      Text('把想说的丢进树洞里', style: TextStyle(color: theme.textSecondary, fontSize: 13)),
+                    ],
+                  ),
+                ),
+                Icon(Icons.chevron_right_rounded, color: theme.accentColor, size: 22),
+              ],
             ),
-          ],
+          ),
         ),
         const SizedBox(height: 14),
         // Capsule - kept as before
@@ -744,40 +726,6 @@ class _HomePageState extends State<HomePage> {
           ),
         ),
       ],
-    );
-  }
-
-  Widget _secondaryAction(
-    ThemeState theme, {
-    required IconData icon,
-    required String title,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      borderRadius: BorderRadius.circular(18),
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
-        decoration: BoxDecoration(
-          color: theme.cardColor,
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: theme.borderColor.withAlpha(100)),
-        ),
-        child: Row(
-          children: [
-            Icon(icon, color: theme.accentColor, size: 18),
-            const SizedBox(width: 10),
-            Text(
-              title,
-              style: TextStyle(
-                color: theme.textPrimary,
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 

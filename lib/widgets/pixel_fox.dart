@@ -9,7 +9,6 @@ class PixelFox extends StatefulWidget {
   final int totalMoods;
   final int todayMood;
   final VoidCallback? onWriteDiary;
-  final VoidCallback? onListenWhiteNoise;
 
   const PixelFox({
     super.key,
@@ -17,7 +16,6 @@ class PixelFox extends StatefulWidget {
     this.totalMoods = 0,
     this.todayMood = 0,
     this.onWriteDiary,
-    this.onListenWhiteNoise,
   });
 
   @override
@@ -92,10 +90,6 @@ class _PixelFoxState extends State<PixelFox>
                   onWriteDiary: () {
                     setState(() => _showBubble = false);
                     widget.onWriteDiary?.call();
-                  },
-                  onWhiteNoise: () {
-                    setState(() => _showBubble = false);
-                    widget.onListenWhiteNoise?.call();
                   },
                   onDismiss: () => setState(() => _showBubble = false),
                 ),
@@ -386,14 +380,12 @@ class _BubbleMenu extends StatelessWidget {
   final int stage;
   final int mood;
   final VoidCallback onWriteDiary;
-  final VoidCallback onWhiteNoise;
   final VoidCallback onDismiss;
 
   const _BubbleMenu({
     required this.stage,
     required this.mood,
     required this.onWriteDiary,
-    required this.onWhiteNoise,
     required this.onDismiss,
   });
 
@@ -427,7 +419,6 @@ class _BubbleMenu extends StatelessWidget {
             ),
             const SizedBox(height: 6),
             _bubbleBtn('📝 写日记', onWriteDiary, theme.accentColor),
-            _bubbleBtn('🎧 听白噪音', onWhiteNoise, theme.accentColor),
           ],
         ),
       ),

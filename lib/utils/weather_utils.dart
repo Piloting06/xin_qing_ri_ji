@@ -82,7 +82,7 @@ String weatherCardPrompt(Map<String, dynamic>? weather) {
   final current = weatherCurrent(weather);
   final today = weatherDay(weather);
   final text = (current['weather'] ?? today['weather'] ?? '').toString();
-  if (text.contains('雨')) return '雨声是最好的白噪音。给自己倒杯热的，慢慢写。';
+  if (text.contains('雨')) return '下雨天，适合给自己倒杯热的，慢慢写。';
   if (text.contains('雪')) return '雪落下来的时候，世界变得很安静。写几句今天的感受吧。';
   if (text.contains('雷')) return '雷声很大也没关系，写下来比放在心里更安全。';
   if (text.contains('雾')) return '大雾天不适合赶路，适合坐一会儿，想想最想写的事。';

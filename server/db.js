@@ -86,7 +86,6 @@ async function init() {
       weather_temp_min REAL,
       weather_rain_prob INTEGER,
       ai_response TEXT,
-      poem_id INTEGER,
       created_at TEXT DEFAULT (datetime('now')),
       FOREIGN KEY (user_id) REFERENCES users(id)
     )`,
@@ -164,16 +163,6 @@ async function init() {
       is_opened INTEGER DEFAULT 0,
       created_at TEXT DEFAULT (datetime('now')),
       FOREIGN KEY (user_id) REFERENCES users(id)
-    )`,
-    `CREATE TABLE IF NOT EXISTS poems (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      title TEXT,
-      poet TEXT NOT NULL,
-      dynasty TEXT,
-      content TEXT NOT NULL,
-      emotion_type INTEGER,
-      weather_type TEXT,
-      quote_line TEXT
     )`,
     `CREATE TABLE IF NOT EXISTS push_cache (
       id INTEGER PRIMARY KEY AUTOINCREMENT,

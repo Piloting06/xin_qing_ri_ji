@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// 心晴日记 — 设计系统颜色 Token
+/// 拾晴日记 — 设计系统颜色 Token
 /// 浅色：奶油手账风 / 深色：深色羊皮纸风
 class XqColors {
   XqColors._();

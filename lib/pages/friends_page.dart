@@ -9,6 +9,7 @@ import '../stores/theme_state.dart';
 import '../theme/xq_typography.dart';
 import '../widgets/ink_writing_loader.dart';
 import '../theme/xq_decorations.dart';
+import '../widgets/xq_toast.dart';
 
 class FriendsPage extends StatefulWidget {
   const FriendsPage({super.key});
@@ -261,23 +262,17 @@ class _FriendsPageState extends State<FriendsPage> {
       await Api.addFriend(phone);
       if (mounted) {
         HapticFeedback.mediumImpact();
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('好友请求已发送')));
+        XqToast.success(context, '好友请求已发送');
       }
       return true;
     } on ApiException catch (e) {
       if (e.statusCode == 401) return false;
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(e.message)));
+        XqToast.error(context, e.message);
       }
     } catch (_) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('发送失败，请稍后重试')));
+        XqToast.error(context, '发送失败，请稍后重试');
       }
     }
     return false;
@@ -290,15 +285,11 @@ class _FriendsPageState extends State<FriendsPage> {
     } on ApiException catch (e) {
       if (e.statusCode == 401) return;
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(e.message)));
+        XqToast.error(context, e.message);
       }
     } catch (_) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('处理失败，请稍后重试')));
+        XqToast.error(context, '处理失败，请稍后重试');
       }
     }
   }
@@ -307,9 +298,7 @@ class _FriendsPageState extends State<FriendsPage> {
     final id = readInt(friend['id']);
     if (id == null) return;
     if (friend['can_view_mood'] != true) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('对方暂未开放心情记录')));
+      XqToast.info(context, '对方暂未开放心情记录');
       return;
     }
     Navigator.push(
@@ -350,7 +339,6 @@ class _FriendsPageState extends State<FriendsPage> {
             Future<void> send() async {
               final content = controller.text.trim();
               if (content.isEmpty || sending) return;
-              final messenger = ScaffoldMessenger.of(this.context);
               setSheetState(() => sending = true);
               try {
                 await Api.sendFriendNote(id, content);
@@ -358,20 +346,16 @@ class _FriendsPageState extends State<FriendsPage> {
                 Navigator.pop(context);
                 await _load();
                 if (!mounted) return;
-                messenger.showSnackBar(
-                  const SnackBar(content: Text('小纸条已经送出啦')),
-                );
+                XqToast.success(this.context, '小纸条已经送出啦');
               } on ApiException catch (e) {
                 if (e.statusCode == 401) return;
                 if (!context.mounted) return;
                 setSheetState(() => sending = false);
-                messenger.showSnackBar(SnackBar(content: Text(e.message)));
+                XqToast.error(this.context, e.message);
               } catch (_) {
                 if (!context.mounted) return;
                 setSheetState(() => sending = false);
-                messenger.showSnackBar(
-                  const SnackBar(content: Text('纸条发送失败，请稍后重试')),
-                );
+                XqToast.error(this.context, '纸条发送失败，请稍后重试');
               }
             }
 
@@ -438,7 +422,7 @@ class _FriendsPageState extends State<FriendsPage> {
                             color: theme.textSecondary.withAlpha(150),
                           ),
                           border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(20),
+                            borderRadius: BorderRadius.circular(14),
                           ),
                           contentPadding: const EdgeInsets.all(14),
                         ),
@@ -518,21 +502,15 @@ class _FriendsPageState extends State<FriendsPage> {
       if (!mounted) return;
       setState(() => _friends.removeWhere((row) => readInt(row['id']) == id));
       HapticFeedback.mediumImpact();
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('已删除好友')));
+      XqToast.success(context, '已删除好友');
     } on ApiException catch (e) {
       if (e.statusCode == 401) return;
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(e.message)));
+        XqToast.error(context, e.message);
       }
     } catch (_) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('删除失败，请稍后重试')));
+        XqToast.error(context, '删除失败，请稍后重试');
       }
     }
   }
@@ -569,9 +547,9 @@ class _FriendsPageState extends State<FriendsPage> {
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: theme.cardColor,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(XqDecorations.radiusCard),
         border: Border.all(color: theme.borderColor.withAlpha(80)),
-        boxShadow: [BoxShadow(color: Colors.black.withAlpha(theme.isDark ? 20 : 8), blurRadius: 12, offset: const Offset(0, 4))],
+        boxShadow: XqDecorations.shadowSubtle(dark: theme.isDark),
       ),
       child: Row(
         children: [
@@ -714,7 +692,7 @@ class _FriendsPageState extends State<FriendsPage> {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: theme.errorColor.withAlpha(18),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(XqDecorations.radiusCard),
         border: Border.all(color: theme.errorColor.withAlpha(70)),
       ),
       child: Row(
@@ -819,22 +797,12 @@ class _FriendsPageState extends State<FriendsPage> {
         _sectionTitle('${_friends.length} 位好友', theme),
         const SizedBox(height: 10),
         if (_friends.isEmpty)
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(32),
-            decoration: BoxDecoration(
-              color: theme.cardColor,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: theme.borderColor.withAlpha(80)),
-              boxShadow: [BoxShadow(color: Colors.black.withAlpha(theme.isDark ? 20 : 8), blurRadius: 12, offset: const Offset(0, 4))],
-            ),
-            child: XqEmptyState(
-              icon: Icons.people_outline,
-              title: '还没有好友',
-              subtitle: '用手机号添加一个愿意分享心情的人',
-              actionLabel: '添加好友',
-              onAction: _openAddFriendSheet,
-            ),
+          XqEmptyState(
+            icon: Icons.people_outline,
+            title: '还没有好友',
+            subtitle: '用手机号添加一个愿意分享心情的人',
+            actionLabel: '添加好友',
+            onAction: _openAddFriendSheet,
           )
         else
           ListView.builder(
@@ -862,35 +830,75 @@ class _FriendsPageState extends State<FriendsPage> {
       child: Material(
       color: Colors.transparent,
       child: InkWell(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(XqDecorations.radiusCard),
         onTap: () => _openFriend(friend),
         child: Container(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
             color: theme.cardColor,
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(XqDecorations.radiusCard),
             border: Border.all(color: theme.borderColor.withAlpha(80)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withAlpha(theme.isDark ? 20 : 8),
-                blurRadius: 12,
-                offset: const Offset(0, 4),
-              ),
-            ],
+            boxShadow: XqDecorations.shadowSubtle(dark: theme.isDark),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Avatar + popup
+              // Row 1: avatar + name + note button + more menu
               Row(
                 children: [
                   _avatar(theme, Icons.person_outline, mood),
-                  const Spacer(),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: theme.textPrimary,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          canView
+                              ? mood == null
+                                  ? '还没有心情记录'
+                                  : '${moodLabels[mood] ?? '心情'}${note.isEmpty ? '' : ' · $note'}'
+                              : '暂未开放心情',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: theme.textSecondary,
+                            fontSize: 12,
+                            height: 1.3,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  // Note button (independent)
+                  GestureDetector(
+                    onTap: () => _openFriendNoteSheet(friend),
+                    child: SizedBox(
+                      width: 44,
+                      height: 44,
+                      child: Icon(
+                        Icons.edit_note_rounded,
+                        size: 20,
+                        color: theme.accentColor.withAlpha(160),
+                      ),
+                    ),
+                  ),
+                  // More menu
                   PopupMenuButton<String>(
                     color: theme.cardColor,
                     icon: Icon(Icons.more_horiz, color: theme.textSecondary, size: 18),
                     padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(),
+                    constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
                     onSelected: (value) {
                       final id = readInt(friend['id']);
                       if (id == null) return;
@@ -918,61 +926,46 @@ class _FriendsPageState extends State<FriendsPage> {
                   ),
                 ],
               ),
-              const SizedBox(height: 10),
-              // Name
-              Text(
-                name,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  color: theme.textPrimary,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              const SizedBox(height: 6),
-              // Mood / status
-              Expanded(
-                child: Text(
-                  canView
-                      ? mood == null
-                          ? '还没有心情记录'
-                          : '${moodLabels[mood] ?? '心情'}${note.isEmpty ? '' : ' · $note'}'
-                      : '暂未开放心情',
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: theme.textSecondary,
-                    fontSize: 11,
-                    height: 1.4,
-                  ),
-                ),
-              ),
-              // Status chip
+              // Status dot
               const SizedBox(height: 8),
-              _friendStatusChip(
-                theme,
-                canView ? '已开放心情' : '未开放',
-                canView ? theme.accentColor : theme.textTertiary,
-                canView ? Icons.favorite_border : Icons.lock_outline,
+              Row(
+                children: [
+                  Container(
+                    width: 6,
+                    height: 6,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: canView ? theme.accentColor : theme.textTertiary,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    canView ? '已开放心情' : '未开放',
+                    style: TextStyle(
+                      color: canView ? theme.accentColor : theme.textTertiary,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
               ),
-              // Latest note
+              // Latest note (only if exists)
               if (latestNote.isNotEmpty) ...[
-                const SizedBox(height: 8),
+                const SizedBox(height: 6),
                 Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
                   decoration: BoxDecoration(
                     color: theme.surfaceAlpha,
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
                     '${latestNoteIsMine ? '你的纸条' : '对方纸条'} · $latestNote',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                      color: theme.textPrimary,
-                      fontSize: 10,
+                      color: theme.textSecondary,
+                      fontSize: 11,
                       height: 1.3,
                     ),
                   ),
@@ -982,37 +975,6 @@ class _FriendsPageState extends State<FriendsPage> {
           ),
         ),
       ),
-      ),
-    );
-  }
-
-  Widget _friendStatusChip(
-    ThemeState theme,
-    String label,
-    Color color,
-    IconData icon,
-  ) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
-      decoration: BoxDecoration(
-        color: color.withAlpha(18),
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: color.withAlpha(70)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 14, color: color),
-          const SizedBox(width: 4),
-          Text(
-            label,
-            style: TextStyle(
-              color: color,
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -1150,16 +1112,12 @@ class _FriendMoodPageState extends State<FriendMoodPage> {
       if (e.statusCode == 401) return;
       if (mounted) {
         setState(() => _commentsLoading = false);
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(e.message)));
+        XqToast.error(context, e.message);
       }
     } catch (_) {
       if (mounted) {
         setState(() => _commentsLoading = false);
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('评论加载失败，请稍后重试')));
+        XqToast.error(context, '评论加载失败，请稍后重试');
       }
     }
   }
@@ -1170,9 +1128,7 @@ class _FriendMoodPageState extends State<FriendMoodPage> {
     final content = _commentCtrl.text.trim();
     if (moodId == null || content.isEmpty || _sending) return;
     if (content.length > 200) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('评论最多 200 字')));
+      XqToast.info(context, '评论最多 200 字');
       return;
     }
     setState(() => _sending = true);
@@ -1186,15 +1142,11 @@ class _FriendMoodPageState extends State<FriendMoodPage> {
     } on ApiException catch (e) {
       if (e.statusCode == 401) return;
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(e.message)));
+        XqToast.error(context, e.message);
       }
     } catch (_) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('发送失败，请稍后重试')));
+        XqToast.error(context, '发送失败，请稍后重试');
       }
     } finally {
       if (mounted) setState(() => _sending = false);

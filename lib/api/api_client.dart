@@ -1,54 +1,31 @@
-import 'dart:convert';
-import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
-import '../constants/keys.dart';
+// Re-export all modules for backward compatibility.
+export 'api_base.dart' show ApiException;
+export 'auth_api.dart';
+export 'weather_api.dart';
+export 'mood_api.dart';
+export 'social_api.dart';
+export 'content_api.dart';
+export 'city_api.dart';
 
+import 'auth_api.dart';
+import 'weather_api.dart';
+import 'mood_api.dart';
+import 'social_api.dart';
+import 'content_api.dart';
+import 'city_api.dart';
+import 'api_base.dart';
+
+/// Facade that preserves the original `Api` static-method surface.
+/// All calls delegate to the corresponding module class.
 class Api {
-  static const String baseUrl = 'http://xqrj.glxgo.xin/api';
-  static const Duration timeout = Duration(seconds: 15);
-  static void Function()? onUnauthorized;
-  static void Function()? onAuthenticated;
-  static bool _notifyingUnauthorized = false;
-
-  static Future<Map<String, String>> _headers({bool auth = true}) async {
-    final headers = <String, String>{'Content-Type': 'application/json'};
-    if (auth) {
-      final prefs = await SharedPreferences.getInstance();
-      final t = prefs.getString(StorageKeys.token) ?? '';
-      if (t.isNotEmpty) headers['Authorization'] = 'Bearer $t';
-    }
-    return headers;
-  }
-
-  static Future<Map<String, dynamic>> _handle(http.Response res) async {
-    if (res.statusCode == 401) {
-      String msg = '登录已过期，请重新登录';
-      try {
-        final body = json.decode(res.body);
-        if (body is Map && body['message'] != null) msg = body['message'];
-      } catch (_) {}
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.remove(StorageKeys.token);
-      await prefs.remove(StorageKeys.phone);
-      await prefs.remove(StorageKeys.username);
-      await prefs.remove(StorageKeys.displayName);
-      if (!_notifyingUnauthorized) {
-        _notifyingUnauthorized = true;
-      }
-      onUnauthorized?.call();
-      throw ApiException(msg, 401);
-    }
-    if (res.statusCode >= 400) {
-      String msg = '请求失败';
-      try {
-        final body = json.decode(res.body);
-        if (body is Map && body['message'] != null) msg = body['message'];
-      } catch (_) {}
-      throw ApiException(msg, res.statusCode);
-    }
-    if (res.body.isEmpty) return {};
-    return Map<String, dynamic>.from(json.decode(res.body));
-  }
+  /// Forward the callbacks so existing wiring keeps working.
+  static String get baseUrl => ApiBase.baseUrl;
+  static Duration get timeout => ApiBase.timeout;
+  static void Function()? get onUnauthorized => ApiBase.onUnauthorized;
+  static set onUnauthorized(void Function()? fn) => ApiBase.onUnauthorized = fn;
+  static void Function()? get onAuthenticated => ApiBase.onAuthenticated;
+  static set onAuthenticated(void Function()? fn) =>
+      ApiBase.onAuthenticated = fn;
 
   // ── Auth ──
   static Future<Map<String, dynamic>> register(
@@ -57,147 +34,88 @@ class Api {
     String? questionType,
     String? question,
     String? answer,
-  }) async {
-    final res = await http
-        .post(
-          Uri.parse('$baseUrl/auth/register'),
-          headers: await _headers(auth: false),
-          body: json.encode({
-            'phone': phone,
-            'password': password,
-            'security_question_type': questionType,
-            'security_question': question,
-            'security_answer': answer,
-          }),
-        )
-        .timeout(timeout);
-    final data = await _handle(res);
-    if (data['token'] != null) {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(StorageKeys.token, data['token']);
-      await prefs.setString(StorageKeys.phone, phone);
-      if (data['display_name'] != null) {
-        await prefs.setString(StorageKeys.displayName, data['display_name']);
-      }
-      _notifyingUnauthorized = false;
-      onAuthenticated?.call();
-    }
-    return data;
-  }
+  }) =>
+      AuthApi.register(
+        phone,
+        password,
+        questionType: questionType,
+        question: question,
+        answer: answer,
+      );
 
   static Future<Map<String, dynamic>> login(
     String phone,
     String password,
-  ) async {
-    final res = await http
-        .post(
-          Uri.parse('$baseUrl/auth/login'),
-          headers: await _headers(auth: false),
-          body: json.encode({'phone': phone, 'password': password}),
-        )
-        .timeout(timeout);
-    final data = await _handle(res);
-    if (data['token'] != null) {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(StorageKeys.token, data['token']);
-      await prefs.setString(StorageKeys.phone, phone);
-      if (data['display_name'] != null) {
-        await prefs.setString(StorageKeys.displayName, data['display_name']);
-      }
-      _notifyingUnauthorized = false;
-      onAuthenticated?.call();
-    }
-    return data;
-  }
+  ) =>
+      AuthApi.login(phone, password);
 
   static Future<void> changePassword(
     String oldPassword,
     String newPassword,
-  ) async {
-    final res = await http
-        .post(
-          Uri.parse('$baseUrl/auth/change-password'),
-          headers: await _headers(),
-          body: json.encode({
-            'old_password': oldPassword,
-            'new_password': newPassword,
-          }),
-        )
-        .timeout(timeout);
-    await _handle(res);
-  }
+  ) =>
+      AuthApi.changePassword(oldPassword, newPassword);
 
-  static Future<void> deleteAccount() async {
-    final res = await http
-        .post(
-          Uri.parse('$baseUrl/auth/delete-account'),
-          headers: await _headers(),
-        )
-        .timeout(timeout);
-    await _handle(res);
-  }
+  static Future<void> deleteAccount() => AuthApi.deleteAccount();
 
-  // ── SMS & Password Reset ──
-  static Future<void> sendSmsCode(String phone) async {
-    final res = await http
-        .post(
-          Uri.parse('$baseUrl/auth/send-sms-code'),
-          headers: await _headers(auth: false),
-          body: json.encode({'phone': phone}),
-        )
-        .timeout(timeout);
-    await _handle(res);
-  }
+  static Future<void> sendSmsCode(String phone) =>
+      AuthApi.sendSmsCode(phone);
 
   static Future<void> resetPassword(
     String phone,
     String code,
     String newPassword,
-  ) async {
-    final res = await http
-        .post(
-          Uri.parse('$baseUrl/auth/reset-password'),
-          headers: await _headers(auth: false),
-          body: json.encode({
-            'phone': phone,
-            'code': code,
-            'new_password': newPassword,
-          }),
-        )
-        .timeout(timeout);
-    await _handle(res);
-  }
+  ) =>
+      AuthApi.resetPassword(phone, code, newPassword);
 
-  static Future<void> updateDisplayName(String name) async {
-    final prefs = await SharedPreferences.getInstance();
-    final res = await http
-        .post(
-          Uri.parse('$baseUrl/auth/change-username'),
-          headers: await _headers(),
-          body: json.encode({'username': name}),
-        )
-        .timeout(timeout);
-    await _handle(res);
-    await prefs.setString(StorageKeys.displayName, name);
-  }
+  static Future<void> updateDisplayName(String name) =>
+      AuthApi.updateDisplayName(name);
+
+  static Future<void> sendEmailCode(String email) =>
+      AuthApi.sendEmailCode(email);
+
+  static Future<Map<String, dynamic>> emailRegister(
+    String email,
+    String password,
+    String code,
+  ) =>
+      AuthApi.emailRegister(email, password, code);
+
+  static Future<Map<String, dynamic>> emailLogin(
+    String email,
+    String password,
+  ) =>
+      AuthApi.emailLogin(email, password);
+
+  static Future<Map<String, dynamic>> bindEmail(
+    String email,
+    String code,
+  ) =>
+      AuthApi.bindEmail(email, code);
+
+  static Future<Map<String, dynamic>> getProfile() => AuthApi.getProfile();
+
+  static Future<void> logout() => AuthApi.logout();
 
   // ── Weather ──
-  static Future<Map<String, dynamic>> getWeather(double lat, double lon) async {
-    final res = await http
-        .get(
-          Uri.parse('$baseUrl/weather?lat=$lat&lon=$lon'),
-          headers: await _headers(),
-        )
-        .timeout(timeout);
-    return await _handle(res);
-  }
+  static Future<Map<String, dynamic>> getWeather(double lat, double lon) =>
+      WeatherApi.getWeather(lat, lon);
 
-  static Future<Map<String, dynamic>> getLocation() async {
-    final res = await http
-        .get(Uri.parse('$baseUrl/weather/location'), headers: await _headers())
-        .timeout(timeout);
-    return await _handle(res);
-  }
+  static Future<Map<String, dynamic>> getLocation() => WeatherApi.getLocation();
+
+  static Future<void> sendWeatherFeedback({
+    required String type,
+    required String weather,
+    required String temp,
+    required String city,
+    String note = '',
+  }) =>
+      WeatherApi.sendWeatherFeedback(
+        type: type,
+        weather: weather,
+        temp: temp,
+        city: city,
+        note: note,
+      );
 
   // ── Mood ──
   static Future<Map<String, dynamic>> saveMood(
@@ -206,481 +124,126 @@ class Api {
     String text,
     List<String> tags,
     List<String> activities,
-  ) async {
-    final body = <String, dynamic>{
-      'date': date,
-      'emotion_type': score,
-      'emotion_tags': tags.join(','),
-      'notes': text,
-    };
-    final res = await http
-        .post(
-          Uri.parse('$baseUrl/mood'),
-          headers: await _headers(),
-          body: json.encode(body),
-        )
-        .timeout(timeout);
-    return await _handle(res);
-  }
+  ) =>
+      MoodApi.saveMood(date, score, text, tags, activities);
 
-  /// 获取某天所有心情记录
-  static Future<List<Map<String, dynamic>>> getMoodsByDate(String date) async {
-    final res = await http
-        .get(Uri.parse('$baseUrl/mood?date=$date'), headers: await _headers())
-        .timeout(timeout);
-    final data = await _handle(res);
-    return List<Map<String, dynamic>>.from(data['moods'] ?? []);
-  }
+  static Future<List<Map<String, dynamic>>> getMoodsByDate(String date) =>
+      MoodApi.getMoodsByDate(date);
 
-  /// 获取所有心情记录
-  static Future<Map<String, dynamic>> getAllMoods() async {
-    final res = await http
-        .get(Uri.parse('$baseUrl/mood/all'), headers: await _headers())
-        .timeout(timeout);
-    return await _handle(res);
-  }
+  static Future<Map<String, dynamic>> getAllMoods() => MoodApi.getAllMoods();
 
-  /// 删除单条心情记录
-  static Future<void> deleteMood(int id) async {
-    final res = await http
-        .delete(Uri.parse('$baseUrl/mood/$id'), headers: await _headers())
-        .timeout(timeout);
-    await _handle(res);
-  }
+  static Future<void> deleteMood(int id) => MoodApi.deleteMood(id);
 
-  // ── Checkin ──
-  static Future<Map<String, dynamic>> checkin() async {
-    final res = await http
-        .post(
-          Uri.parse('$baseUrl/checkin'),
-          headers: await _headers(),
-          body: '{}',
-        )
-        .timeout(timeout);
-    return await _handle(res);
-  }
+  // ── Social ──
+  static Future<Map<String, dynamic>> checkin() => SocialApi.checkin();
 
-  static Future<Map<String, dynamic>> getCheckinStatus() async {
-    final res = await http
-        .get(Uri.parse('$baseUrl/checkin/status'), headers: await _headers())
-        .timeout(timeout);
-    return await _handle(res);
-  }
+  static Future<Map<String, dynamic>> getCheckinStatus() =>
+      SocialApi.getCheckinStatus();
 
-  static Future<Map<String, dynamic>> getTodayCard() async {
-    final res = await http
-        .get(
-          Uri.parse('$baseUrl/checkin/card/today'),
-          headers: await _headers(),
-        )
-        .timeout(timeout);
-    return await _handle(res);
-  }
+  static Future<Map<String, dynamic>> getTodayCard() =>
+      SocialApi.getTodayCard();
 
-  // ── Friends ──
-  static Future<Map<String, dynamic>> addFriend(String phone) async {
-    final res = await http
-        .post(
-          Uri.parse('$baseUrl/friends/add'),
-          headers: await _headers(),
-          body: json.encode({'phone': phone}),
-        )
-        .timeout(timeout);
-    return await _handle(res);
-  }
+  static Future<Map<String, dynamic>> addFriend(String phone) =>
+      SocialApi.addFriend(phone);
 
-  static Future<Map<String, dynamic>> searchUser(String query) async {
-    final res = await http
-        .get(
-          Uri.parse('$baseUrl/friends/search?q=${Uri.encodeComponent(query)}'),
-          headers: await _headers(),
-        )
-        .timeout(timeout);
-    return await _handle(res);
-  }
+  static Future<Map<String, dynamic>> searchUser(String query) =>
+      SocialApi.searchUser(query);
 
-  static Future<Map<String, dynamic>> getFriendRequests() async {
-    final res = await http
-        .get(Uri.parse('$baseUrl/friends/requests'), headers: await _headers())
-        .timeout(timeout);
-    return await _handle(res);
-  }
+  static Future<Map<String, dynamic>> getFriendRequests() =>
+      SocialApi.getFriendRequests();
 
   static Future<void> respondFriend(
     int id,
     String status, {
     bool canViewMood = false,
-  }) async {
-    final res = await http
-        .post(
-          Uri.parse('$baseUrl/friends/respond'),
-          headers: await _headers(),
-          body: json.encode({
-            'id': id,
-            'status': status,
-            'can_view_mood': canViewMood,
-          }),
-        )
-        .timeout(timeout);
-    await _handle(res);
-  }
+  }) =>
+      SocialApi.respondFriend(id, status, canViewMood: canViewMood);
 
-  static Future<Map<String, dynamic>> getFriendList() async {
-    final res = await http
-        .get(Uri.parse('$baseUrl/friends/list'), headers: await _headers())
-        .timeout(timeout);
-    return await _handle(res);
-  }
+  static Future<Map<String, dynamic>> getFriendList() =>
+      SocialApi.getFriendList();
 
-  static Future<void> deleteFriend(int friendId) async {
-    final res = await http
-        .delete(
-          Uri.parse('$baseUrl/friends/$friendId'),
-          headers: await _headers(),
-        )
-        .timeout(timeout);
-    await _handle(res);
-  }
+  static Future<void> deleteFriend(int friendId) =>
+      SocialApi.deleteFriend(friendId);
 
-  static Future<void> sendFriendNote(int friendId, String content) async {
-    final res = await http
-        .post(
-          Uri.parse('$baseUrl/friends/$friendId/note'),
-          headers: await _headers(),
-          body: json.encode({'content': content}),
-        )
-        .timeout(timeout);
-    await _handle(res);
-  }
+  static Future<void> sendFriendNote(int friendId, String content) =>
+      SocialApi.sendFriendNote(friendId, content);
 
-  static Future<Map<String, dynamic>> getFriendMood(int friendId) async {
-    final res = await http
-        .get(
-          Uri.parse('$baseUrl/friends/$friendId/mood'),
-          headers: await _headers(),
-        )
-        .timeout(timeout);
-    return await _handle(res);
-  }
+  static Future<Map<String, dynamic>> getFriendMood(int friendId) =>
+      SocialApi.getFriendMood(friendId);
 
-  static Future<Map<String, dynamic>> getMoodComments(int moodId) async {
-    final res = await http
-        .get(
-          Uri.parse('$baseUrl/friends/moods/$moodId/comments'),
-          headers: await _headers(),
-        )
-        .timeout(timeout);
-    return await _handle(res);
-  }
+  static Future<Map<String, dynamic>> getMoodComments(int moodId) =>
+      SocialApi.getMoodComments(moodId);
 
-  static Future<void> postMoodComment(int moodId, String content) async {
-    final res = await http
-        .post(
-          Uri.parse('$baseUrl/friends/moods/$moodId/comments'),
-          headers: await _headers(),
-          body: json.encode({'content': content}),
-        )
-        .timeout(timeout);
-    await _handle(res);
-  }
+  static Future<void> postMoodComment(int moodId, String content) =>
+      SocialApi.postMoodComment(moodId, content);
 
-  // ── Treehole ──
-  static Future<Map<String, dynamic>> getTreeholeMessages({
-    int page = 1,
-  }) async {
-    final res = await http
-        .get(
-          Uri.parse('$baseUrl/treehole?page=$page'),
-          headers: await _headers(),
-        )
-        .timeout(timeout);
-    return await _handle(res);
-  }
+  // ── Content (Treehole + Capsule) ──
+  static Future<Map<String, dynamic>> getTreeholeMessages({int page = 1}) =>
+      ContentApi.getTreeholeMessages(page: page);
 
-  static Future<void> postTreehole(String content) async {
-    final res = await http
-        .post(
-          Uri.parse('$baseUrl/treehole'),
-          headers: await _headers(),
-          body: json.encode({'content': content}),
-        )
-        .timeout(timeout);
-    await _handle(res);
-  }
+  static Future<void> postTreehole(String content) =>
+      ContentApi.postTreehole(content);
 
   static Future<Map<String, dynamic>> interactTreehole(
     int messageId,
     String type,
-  ) async {
-    final res = await http
-        .post(
-          Uri.parse('$baseUrl/treehole/$messageId/interact'),
-          headers: await _headers(),
-          body: json.encode({'interaction_type': type}),
-        )
-        .timeout(timeout);
-    return await _handle(res);
-  }
+  ) =>
+      ContentApi.interactTreehole(messageId, type);
 
-  // ── Treehole comments ──
-  static Future<Map<String, dynamic>> getTreeholeComments(int messageId) async {
-    final res = await http
-        .get(
-          Uri.parse('$baseUrl/treehole/$messageId/comments'),
-          headers: await _headers(),
-        )
-        .timeout(timeout);
-    return await _handle(res);
-  }
+  static Future<Map<String, dynamic>> getTreeholeComments(int messageId) =>
+      ContentApi.getTreeholeComments(messageId);
 
   static Future<Map<String, dynamic>> postTreeholeComment(
     int messageId,
     String content,
-  ) async {
-    final res = await http
-        .post(
-          Uri.parse('$baseUrl/treehole/$messageId/comments'),
-          headers: await _headers(),
-          body: json.encode({'content': content}),
-        )
-        .timeout(timeout);
-    return await _handle(res);
-  }
+  ) =>
+      ContentApi.postTreeholeComment(messageId, content);
 
-  // ── Capsule ──
+  static Future<Map<String, dynamic>> deleteTreehole(int messageId) =>
+      ContentApi.deleteTreehole(messageId);
+
   static Future<Map<String, dynamic>> createCapsule(
     String content,
     String openDate,
-  ) async {
-    final res = await http
-        .post(
-          Uri.parse('$baseUrl/capsule'),
-          headers: await _headers(),
-          body: json.encode({'content': content, 'open_date': openDate}),
-        )
-        .timeout(timeout);
-    return await _handle(res);
-  }
+  ) =>
+      ContentApi.createCapsule(content, openDate);
 
-  static Future<Map<String, dynamic>> getCapsuleList() async {
-    final res = await http
-        .get(Uri.parse('$baseUrl/capsule/list'), headers: await _headers())
-        .timeout(timeout);
-    return await _handle(res);
-  }
+  static Future<Map<String, dynamic>> getCapsuleList() =>
+      ContentApi.getCapsuleList();
 
-  static Future<Map<String, dynamic>> openCapsule(int id) async {
-    final res = await http
-        .get(Uri.parse('$baseUrl/capsule/$id'), headers: await _headers())
-        .timeout(timeout);
-    return await _handle(res);
-  }
+  static Future<Map<String, dynamic>> openCapsule(int id) =>
+      ContentApi.openCapsule(id);
 
-  // ── City Map ──
-  static Future<Map<String, dynamic>> getCityStats() async {
-    final res = await http
-        .get(Uri.parse('$baseUrl/city/stats'), headers: await _headers())
-        .timeout(timeout);
-    return await _handle(res);
-  }
+  static Future<Map<String, dynamic>> deleteCapsule(int capsuleId) =>
+      ContentApi.deleteCapsule(capsuleId);
+
+  // ── City ──
+  static Future<Map<String, dynamic>> getCityStats() => CityApi.getCityStats();
 
   static Future<Map<String, dynamic>> getCityComments(
     String cityCode, {
     int page = 1,
-  }) async {
-    final res = await http
-        .get(
-          Uri.parse('$baseUrl/city/comments?city=$cityCode&page=$page'),
-          headers: await _headers(),
-        )
-        .timeout(timeout);
-    return await _handle(res);
-  }
+  }) =>
+      CityApi.getCityComments(cityCode, page: page);
 
   static Future<Map<String, dynamic>> postCityComment(
     String cityCode,
     String content,
-  ) async {
-    final res = await http
-        .post(
-          Uri.parse('$baseUrl/city/comments'),
-          headers: await _headers(),
-          body: json.encode({'city_code': cityCode, 'content': content}),
-        )
-        .timeout(timeout);
-    return await _handle(res);
-  }
+  ) =>
+      CityApi.postCityComment(cityCode, content);
 
-  static Future<Map<String, dynamic>> likeCityComment(int commentId) async {
-    final res = await http
-        .post(
-          Uri.parse('$baseUrl/city/comments/$commentId/like'),
-          headers: await _headers(),
-        )
-        .timeout(timeout);
-    return await _handle(res);
-  }
+  static Future<Map<String, dynamic>> likeCityComment(int commentId) =>
+      CityApi.likeCityComment(commentId);
 
-  static Future<Map<String, dynamic>> deleteCityComment(int commentId) async {
-    final res = await http
-        .delete(
-          Uri.parse('$baseUrl/city/comments/$commentId'),
-          headers: await _headers(),
-        )
-        .timeout(timeout);
-    return await _handle(res);
-  }
+  static Future<Map<String, dynamic>> deleteCityComment(int commentId) =>
+      CityApi.deleteCityComment(commentId);
 
-  static Future<Map<String, dynamic>> deleteTreehole(int messageId) async {
-    final res = await http
-        .delete(
-          Uri.parse('$baseUrl/treehole/$messageId'),
-          headers: await _headers(),
-        )
-        .timeout(timeout);
-    return await _handle(res);
-  }
-
-  static Future<Map<String, dynamic>> deleteCapsule(int capsuleId) async {
-    final res = await http
-        .delete(
-          Uri.parse('$baseUrl/capsule/$capsuleId'),
-          headers: await _headers(),
-        )
-        .timeout(timeout);
-    return await _handle(res);
-  }
-
-  static Future<Map<String, dynamic>> getCityReplies(int commentId) async {
-    final res = await http
-        .get(
-          Uri.parse('$baseUrl/city/comments/$commentId/replies'),
-          headers: await _headers(),
-        )
-        .timeout(timeout);
-    return await _handle(res);
-  }
+  static Future<Map<String, dynamic>> getCityReplies(int commentId) =>
+      CityApi.getCityReplies(commentId);
 
   static Future<Map<String, dynamic>> postCityReply(
     int commentId,
     String content,
-  ) async {
-    final res = await http
-        .post(
-          Uri.parse('$baseUrl/city/comments/$commentId/replies'),
-          headers: await _headers(),
-          body: json.encode({'content': content}),
-        )
-        .timeout(timeout);
-    return await _handle(res);
-  }
-
-  // ── Email auth ──
-  static Future<void> sendEmailCode(String email) async {
-    final res = await http
-        .post(
-          Uri.parse('$baseUrl/auth/send-email-code'),
-          headers: await _headers(auth: false),
-          body: json.encode({'email': email}),
-        )
-        .timeout(timeout);
-    await _handle(res);
-  }
-
-  static Future<Map<String, dynamic>> emailRegister(
-    String email,
-    String password,
-    String code,
-  ) async {
-    final res = await http
-        .post(
-          Uri.parse('$baseUrl/auth/email-register'),
-          headers: await _headers(auth: false),
-          body: json.encode({
-            'email': email,
-            'password': password,
-            'code': code,
-          }),
-        )
-        .timeout(timeout);
-    final data = await _handle(res);
-    if (data['token'] != null) {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(StorageKeys.token, data['token']);
-      if (data['display_name'] != null) {
-        await prefs.setString(StorageKeys.displayName, data['display_name']);
-      }
-      _notifyingUnauthorized = false;
-      onAuthenticated?.call();
-    }
-    return data;
-  }
-
-  static Future<Map<String, dynamic>> emailLogin(
-    String email,
-    String password,
-  ) async {
-    final res = await http
-        .post(
-          Uri.parse('$baseUrl/auth/email-login'),
-          headers: await _headers(auth: false),
-          body: json.encode({'email': email, 'password': password}),
-        )
-        .timeout(timeout);
-    final data = await _handle(res);
-    if (data['token'] != null) {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(StorageKeys.token, data['token']);
-      _notifyingUnauthorized = false;
-      onAuthenticated?.call();
-    }
-    return data;
-  }
-
-  static Future<Map<String, dynamic>> bindEmail(
-    String email,
-    String code,
-  ) async {
-    final res = await http
-        .post(
-          Uri.parse('$baseUrl/auth/bind-email'),
-          headers: await _headers(),
-          body: json.encode({'email': email, 'code': code}),
-        )
-        .timeout(timeout);
-    return await _handle(res);
-  }
-
-  // ── Weather feedback ──
-  static Future<void> sendWeatherFeedback({
-    required String type,
-    required String weather,
-    required String temp,
-    required String city,
-    String note = '',
-  }) async {
-    try {
-      await http
-          .post(
-            Uri.parse('$baseUrl/weather/feedback'),
-            headers: await _headers(),
-            body: json.encode({
-              'type': type,
-              'weather': weather,
-              'temp': temp,
-              'city': city,
-              'note': note,
-            }),
-          )
-          .timeout(timeout);
-    } catch (_) {}
-  }
-}
-
-class ApiException implements Exception {
-  final String message;
-  final int statusCode;
-  ApiException(this.message, this.statusCode);
-  @override
-  String toString() => message;
+  ) =>
+      CityApi.postCityReply(commentId, content);
 }

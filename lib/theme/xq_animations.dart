@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// 心晴日记 — 动画时间常量和曲线
+/// 拾晴日记 — 动画时间常量和曲线
 class XqAnimations {
   XqAnimations._();
 
@@ -12,7 +12,7 @@ class XqAnimations {
 
   // ── 曲线 ──
   static const curveDefault = Curves.easeOut;
-  static const curveBouncy = Curves.easeOutBack;
+  static const curveBouncy = Curves.easeOutQuart;
   static const curveSmooth = Curves.easeInOutCubic;
-  static const curveSpring = Curves.elasticOut;
+  static const curveSpring = Curves.easeOutQuart;
 }

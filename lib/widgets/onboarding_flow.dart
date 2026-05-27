@@ -6,6 +6,7 @@ import '../api/api_client.dart';
 import '../constants/keys.dart';
 import '../stores/app_state.dart';
 import '../stores/theme_state.dart';
+import '../theme/xq_typography.dart';
 
 class OnboardingFlow {
   static Future<void> checkAndShow(BuildContext context) async {
@@ -45,77 +46,94 @@ class OnboardingFlow {
         return Dialog(
           backgroundColor: Colors.transparent,
           insetPadding: const EdgeInsets.all(24),
-          child: Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: theme.cardColor,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: theme.gold.withAlpha(60)),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  '欢迎来到心晴日记',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w600,
-                    color: theme.gold,
-                  ),
+          child: TweenAnimationBuilder<double>(
+            tween: Tween<double>(begin: 0.92, end: 1.0),
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeOutCubic,
+            builder: (context, scale, child) {
+              return AnimatedScale(
+                scale: scale,
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeOutCubic,
+                child: AnimatedOpacity(
+                  opacity: scale,
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeOutCubic,
+                  child: child,
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  '先给自己起一个名字吧～',
-                  style: TextStyle(fontSize: 14, color: theme.textSecondary),
-                ),
-                const SizedBox(height: 20),
-                TextField(
-                  controller: ctrl,
-                  autofocus: true,
-                  style: TextStyle(color: theme.textPrimary, fontSize: 18),
-                  textAlign: TextAlign.center,
-                  cursorColor: theme.gold,
-                  decoration: InputDecoration(
-                    hintText: '你的名字',
-                    hintStyle: TextStyle(
-                      color: theme.textSecondary.withAlpha(120),
-                    ),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(14),
-                      borderSide: BorderSide(color: theme.gold, width: 1.5),
+              );
+            },
+            child: Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: theme.cardColor,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: theme.gold.withAlpha(60)),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    '欢迎来到拾晴日记',
+                    style: XqTypography.headlineMedium.copyWith(
+                      color: theme.gold,
                     ),
                   ),
-                ),
-                const SizedBox(height: 20),
-                SizedBox(
-                  width: double.infinity,
-                  height: 48,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      final name = ctrl.text.trim();
-                      if (name.isEmpty) return;
-                      Navigator.pop(ctx, name);
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: theme.gold,
-                      shape: RoundedRectangleBorder(
+                  const SizedBox(height: 8),
+                  Text(
+                    '先给自己起一个名字吧～',
+                    style: XqTypography.bodyMedium.copyWith(
+                      color: theme.textSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  TextField(
+                    controller: ctrl,
+                    autofocus: true,
+                    style: XqTypography.bodyLarge.copyWith(color: theme.textPrimary),
+                    textAlign: TextAlign.center,
+                    cursorColor: theme.gold,
+                    decoration: InputDecoration(
+                      hintText: '你的名字',
+                      hintStyle: TextStyle(
+                        color: theme.textSecondary.withAlpha(120),
+                      ),
+                      border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(14),
                       ),
-                    ),
-                    child: const Text(
-                      '确定',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                        letterSpacing: 2,
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: BorderSide(color: theme.gold, width: 1.5),
                       ),
                     ),
                   ),
-                ),
-              ],
+                  const SizedBox(height: 20),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 48,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        final name = ctrl.text.trim();
+                        if (name.isEmpty) return;
+                        Navigator.pop(ctx, name);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: theme.gold,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                      child: Text(
+                        '确定',
+                        style: XqTypography.headlineSmall.copyWith(
+                          color: Colors.white,
+                          letterSpacing: 2,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         );
@@ -152,100 +170,130 @@ class OnboardingFlow {
         return Dialog(
           backgroundColor: Colors.transparent,
           insetPadding: const EdgeInsets.all(20),
-          child: Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: theme.cardColor,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: theme.gold.withAlpha(60)),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Center(
-                  child: Text(
-                    '我们需要以下权限',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w600,
-                      color: theme.gold,
+          child: TweenAnimationBuilder<double>(
+            tween: Tween<double>(begin: 0.92, end: 1.0),
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeOutCubic,
+            builder: (context, scale, child) {
+              return AnimatedScale(
+                scale: scale,
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeOutCubic,
+                child: AnimatedOpacity(
+                  opacity: scale,
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeOutCubic,
+                  child: child,
+                ),
+              );
+            },
+            child: Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: theme.cardColor,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: theme.gold.withAlpha(60)),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Text(
+                      '我们需要以下权限',
+                      style: XqTypography.headlineMedium.copyWith(
+                        color: theme.gold,
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(height: 6),
-                Center(
-                  child: Text(
-                    '你的情绪数据只属于你自己',
-                    style: TextStyle(fontSize: 13, color: theme.textSecondary),
+                  const SizedBox(height: 6),
+                  Center(
+                    child: Text(
+                      '你的情绪数据只属于你自己',
+                      style: XqTypography.bodySmall.copyWith(
+                        color: theme.textSecondary,
+                      ),
+                    ),
                   ),
-                ),
-                const SizedBox(height: 20),
-                ...permissions.map(
-                  (p) => Padding(
-                    padding: const EdgeInsets.only(bottom: 14),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Icon(
-                          p['icon'] as IconData,
-                          size: 22,
-                          color: theme.gold,
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
+                  const SizedBox(height: 20),
+                  ...permissions.asMap().entries.map(
+                    (entry) {
+                      final index = entry.key;
+                      final p = entry.value;
+                      return TweenAnimationBuilder<double>(
+                        tween: Tween<double>(begin: 0.0, end: 1.0),
+                        duration: Duration(milliseconds: 300 + index * 100),
+                        curve: Curves.easeOutCubic,
+                        builder: (context, opacity, child) {
+                          return AnimatedOpacity(
+                            opacity: opacity,
+                            duration: const Duration(milliseconds: 300),
+                            child: child,
+                          );
+                        },
+                        child: Padding(
+                          padding: const EdgeInsets.only(bottom: 14),
+                          child: Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(
-                                p['title'] as String,
-                                style: TextStyle(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w500,
-                                  color: theme.textPrimary,
-                                ),
+                              Icon(
+                                p['icon'] as IconData,
+                                size: 22,
+                                color: theme.gold,
                               ),
-                              const SizedBox(height: 2),
-                              Text(
-                                p['desc'] as String,
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color: theme.textSecondary,
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      p['title'] as String,
+                                      style: XqTypography.bodyLarge.copyWith(
+                                        color: theme.textPrimary,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      p['desc'] as String,
+                                      style: XqTypography.bodySmall.copyWith(
+                                        color: theme.textSecondary,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
                             ],
                           ),
                         ),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                SizedBox(
-                  width: double.infinity,
-                  height: 48,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      HapticFeedback.mediumImpact();
-                      Navigator.pop(ctx, true);
+                      );
                     },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: theme.gold,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
+                  ),
+                  const SizedBox(height: 8),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 48,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        HapticFeedback.mediumImpact();
+                        Navigator.pop(ctx, true);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: theme.gold,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
                       ),
-                    ),
-                    child: const Text(
-                      '我知道了',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                        letterSpacing: 2,
+                      child: Text(
+                        '我知道了',
+                        style: XqTypography.headlineSmall.copyWith(
+                          color: Colors.white,
+                          letterSpacing: 2,
+                        ),
                       ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         );

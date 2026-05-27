@@ -34,7 +34,11 @@ class ProfilePage extends StatefulWidget {
 class _ProfilePageState extends State<ProfilePage> {
   static const _avatarFileKey = 'avatar_file';
   static const _legacyAvatarPathKey = 'avatar_path';
-  static const _avatarFileName = 'avatar.jpg';
+
+  String _avatarFileName() {
+    final phone = _phone.isNotEmpty ? _phone.replaceAll(RegExp(r'[^0-9]'), '') : 'default';
+    return 'avatar_$phone.jpg';
+  }
 
   final _nameCtrl = TextEditingController();
   final _oldPwCtrl = TextEditingController();
@@ -69,9 +73,22 @@ class _ProfilePageState extends State<ProfilePage> {
     if (mounted) {
       setState(() {
         _phone = prefs.getString(StorageKeys.phone) ?? '';
+        _boundEmail = prefs.getString(StorageKeys.email) ?? '';
         _capsuleNotify = prefs.getBool(StorageKeys.capsuleNotify) ?? true;
       });
     }
+    // Fetch from server to stay in sync
+    try {
+      final profile = await Api.getProfile();
+      if (mounted) {
+        final email = profile['email'] as String? ?? '';
+        setState(() => _boundEmail = email);
+        final prefs = await SharedPreferences.getInstance();
+        if (email.isNotEmpty) {
+          await prefs.setString(StorageKeys.email, email);
+        }
+      }
+    } catch (_) {}
   }
 
   Future<void> _loadCheckin() async {
@@ -89,6 +106,7 @@ class _ProfilePageState extends State<ProfilePage> {
   Future<void> _loadAvatar() async {
     final prefs = await SharedPreferences.getInstance();
     final dir = await getApplicationDocumentsDirectory();
+    final fileName = _avatarFileName();
     final storedFile = prefs.getString(_avatarFileKey);
     if (storedFile != null && storedFile.isNotEmpty) {
       final file = File(p.join(dir.path, storedFile));
@@ -99,15 +117,24 @@ class _ProfilePageState extends State<ProfilePage> {
       await prefs.remove(_avatarFileKey);
     }
 
+    // Try loading user-specific avatar
+    final userFile = File(p.join(dir.path, fileName));
+    if (userFile.existsSync()) {
+      await prefs.setString(_avatarFileKey, fileName);
+      if (mounted) setState(() => _avatarPath = userFile.path);
+      return;
+    }
+
+    // Legacy migration
     final legacyPath = prefs.getString(_legacyAvatarPathKey);
     if (legacyPath != null && legacyPath.isNotEmpty) {
       final legacyFile = File(legacyPath);
       if (legacyFile.existsSync()) {
-        final dest = File(p.join(dir.path, _avatarFileName));
+        final dest = File(p.join(dir.path, fileName));
         if (p.normalize(legacyFile.path) != p.normalize(dest.path)) {
           await legacyFile.copy(dest.path);
         }
-        await prefs.setString(_avatarFileKey, _avatarFileName);
+        await prefs.setString(_avatarFileKey, fileName);
         await prefs.remove(_legacyAvatarPathKey);
         if (mounted) setState(() => _avatarPath = dest.path);
         return;
@@ -127,10 +154,11 @@ class _ProfilePageState extends State<ProfilePage> {
       );
       if (img == null) return;
       final dir = await getApplicationDocumentsDirectory();
-      final dest = File(p.join(dir.path, _avatarFileName));
+      final fileName = _avatarFileName();
+      final dest = File(p.join(dir.path, fileName));
       await File(img.path).copy(dest.path);
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(_avatarFileKey, _avatarFileName);
+      await prefs.setString(_avatarFileKey, _avatarFileName());
       await prefs.remove(_legacyAvatarPathKey);
       if (!mounted) return;
       setState(() => _avatarPath = dest.path);
@@ -288,6 +316,7 @@ class _ProfilePageState extends State<ProfilePage> {
     await prefs.remove(StorageKeys.phone);
     await prefs.remove(StorageKeys.username);
     await prefs.remove(StorageKeys.displayName);
+    await prefs.remove(StorageKeys.email);
     if (!mounted) return;
     context.read<AppState>().clearUser();
     Navigator.pushAndRemoveUntil(
@@ -513,9 +542,10 @@ class _ProfilePageState extends State<ProfilePage> {
                                     emailCtrl.text.trim(),
                                     codeCtrl.text,
                                   );
-                                  setState(
-                                    () => _boundEmail = emailCtrl.text.trim(),
-                                  );
+                                  final email = emailCtrl.text.trim();
+                                  setState(() => _boundEmail = email);
+                                  final prefs = await SharedPreferences.getInstance();
+                                  await prefs.setString(StorageKeys.email, email);
                                   if (ctx.mounted) {
                                     Navigator.pop(ctx);
                                   }
@@ -608,7 +638,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
             const SizedBox(height: 32),
             Text(
-              '心晴日记 2.0.0',
+              '拾晴日记 2.0.0',
               textAlign: TextAlign.center,
               style: TextStyle(color: theme.textTertiary, fontSize: 11),
             ),
@@ -703,7 +733,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      '$name 的心晴档案',
+                      name,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: XqTypography.headlineMedium.copyWith(
@@ -742,32 +772,6 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
             ],
           ),
-          const SizedBox(height: 16),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-            decoration: BoxDecoration(
-              color: theme.surfaceAlpha.withAlpha(theme.isDark ? 140 : 210),
-              borderRadius: BorderRadius.circular(XqDecorations.radiusCard),
-              border: Border.all(color: theme.borderColor.withAlpha(80)),
-            ),
-            child: Row(
-              children: [
-                Icon(Icons.auto_stories_outlined, color: theme.gold, size: 18),
-                const SizedBox(width: 9),
-                Expanded(
-                  child: Text(
-                    '这里会收好你的天气、心情和写给未来的话。',
-                    style: TextStyle(
-                      color: theme.textSecondary,
-                      fontSize: 12,
-                      height: 1.35,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
         ],
       ),
     );
@@ -800,65 +804,55 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Widget _recordsGroup(ThemeState theme) {
-    return _card(
-      theme,
-      child: Column(
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: _overviewTile(
-                  theme,
-                  icon: _checkedIn
-                      ? Icons.check_circle_outline_rounded
-                      : Icons.local_fire_department_outlined,
-                  title: _checkedIn ? '今日已记录' : '今天还没记',
-                  subtitle: _checkedIn
-                      ? '连续 $_consecutive 天'
-                      : (_checkingIn ? '正在记录' : '轻点签到'),
-                  onTap: (_checkedIn || _checkingIn) ? null : _doCheckin,
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: _overviewTile(
-                  theme,
-                  icon: Icons.hourglass_empty_rounded,
-                  title: '时光胶囊',
-                  subtitle: _capsuleNotify ? '提醒已开启' : '提醒未开启',
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const CapsulePage()),
-                  ),
-                ),
-              ),
-            ],
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _sectionTitle('记录概览', theme),
+        const SizedBox(height: 8),
+        _listTile(
+          theme,
+          icon: _checkedIn
+              ? Icons.check_circle_outline_rounded
+              : Icons.local_fire_department_outlined,
+          iconColor: _checkedIn ? theme.successColor : theme.accentColor,
+          title: _checkedIn ? '今日已记录' : '今天还没记',
+          subtitle: _checkedIn
+              ? '连续 $_consecutive 天'
+              : (_checkingIn ? '正在记录' : '轻点签到'),
+          onTap: (_checkedIn || _checkingIn) ? null : _doCheckin,
+        ),
+        Divider(height: 1, color: theme.borderColor.withAlpha(80)),
+        _listTile(
+          theme,
+          icon: Icons.hourglass_empty_rounded,
+          iconColor: theme.accentColor,
+          title: '时光胶囊',
+          subtitle: _capsuleNotify ? '提醒已开启' : '提醒未开启',
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const CapsulePage()),
           ),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              Expanded(
-                child: _overviewTile(
-                  theme,
-                  icon: Icons.people_outline_rounded,
-                  title: '好友心情',
-                  subtitle: '看看朋友近况',
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const FriendsPage()),
-                  ),
-                ),
-              ),
-            ],
+        ),
+        Divider(height: 1, color: theme.borderColor.withAlpha(80)),
+        _listTile(
+          theme,
+          icon: Icons.people_outline_rounded,
+          iconColor: theme.accentColor,
+          title: '好友心情',
+          subtitle: '看看朋友近况',
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const FriendsPage()),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
-  Widget _overviewTile(
+  Widget _listTile(
     ThemeState theme, {
     required IconData icon,
+    required Color iconColor,
     required String title,
     required String subtitle,
     VoidCallback? onTap,
@@ -866,45 +860,48 @@ class _ProfilePageState extends State<ProfilePage> {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        borderRadius: BorderRadius.circular(XqDecorations.radiusCard),
         onTap: onTap,
-        child: Container(
-          height: 92,
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: theme.cardElevated.withAlpha(theme.isDark ? 130 : 210),
-            borderRadius: BorderRadius.circular(XqDecorations.radiusCard),
-            border: Border.all(color: theme.borderColor.withAlpha(90)),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 12),
+          child: Row(
             children: [
               Container(
-                width: 32,
-                height: 32,
+                width: 36,
+                height: 36,
                 decoration: BoxDecoration(
-                  color: theme.accentColor.withAlpha(22),
-                  borderRadius: BorderRadius.circular(12),
+                  color: iconColor.withAlpha(18),
+                  borderRadius: BorderRadius.circular(10),
                 ),
-                child: Icon(icon, color: theme.accentColor, size: 18),
+                child: Icon(icon, color: iconColor, size: 20),
               ),
-              const Spacer(),
-              Text(
-                title,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  color: theme.textPrimary,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w800,
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: TextStyle(
+                        color: theme.textPrimary,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      style: TextStyle(
+                        color: theme.textSecondary,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 3),
-              Text(
-                subtitle,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(color: theme.textSecondary, fontSize: 11),
+              Icon(
+                Icons.chevron_right,
+                color: theme.textTertiary,
+                size: 20,
               ),
             ],
           ),
@@ -1109,7 +1106,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                 ? colors[0]
                                 : _readableTextOn(colors[2]),
                             fontSize: 12,
-                            fontWeight: FontWeight.w800,
+                            fontWeight: FontWeight.w700,
                           ),
                         ),
                         const SizedBox(height: 2),
@@ -1219,7 +1216,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 style: TextStyle(
                   color: theme.errorColor,
                   fontSize: 14,
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
             ],
@@ -1609,7 +1606,7 @@ class _ProfilePageState extends State<ProfilePage> {
                           style: TextStyle(
                             color: _readableTextOn(colors[2]),
                             fontSize: 22,
-                            fontWeight: FontWeight.w800,
+                            fontWeight: FontWeight.w700,
                           ),
                         ),
                         const SizedBox(height: 4),
@@ -1776,7 +1773,7 @@ class _ProfilePageState extends State<ProfilePage> {
       await SharePlus.instance.share(
         ShareParams(
           files: [XFile(file.path)],
-          text: '心晴日记 · $name主题\n$name — 记录天气，也记录你',
+          text: '拾晴日记 · $name主题\n$name — 记录天气，也记录你',
         ),
       );
     } catch (e) {
@@ -1791,7 +1788,7 @@ class _ProfilePageState extends State<ProfilePage> {
         'creator':
             '我喜欢被阳光包裹的感觉。窗边那张桌子，一本摊开的日记本，笔尖在纸上沙沙地走，'
             '旁边一杯热茶冒着气。这种温暖不是燥热，是让人忍不住想跟自己说几句话的那种安宁。'
-            '这是我给心晴日记选的第一套颜色。',
+            '这是我给拾晴日记选的第一套颜色。',
         'title': '不只是一种颜色',
         'detail':
             '暖白色不是白色加了黄，是一种被时间浸润后的纸张色。'
@@ -1850,7 +1847,7 @@ class _ProfilePageState extends State<ProfilePage> {
           style: TextStyle(
             color: theme.textPrimary,
             fontSize: 17,
-            fontWeight: FontWeight.w800,
+            fontWeight: FontWeight.w700,
           ),
         ),
         if (subtitle != null) ...[
@@ -1925,7 +1922,7 @@ class _ProfilePageState extends State<ProfilePage> {
                       style: TextStyle(
                         color: theme.textPrimary,
                         fontSize: 14,
-                        fontWeight: FontWeight.w800,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
                     const SizedBox(height: 3),
@@ -1947,7 +1944,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 style: TextStyle(
                   color: onTap == null ? theme.textTertiary : theme.accentColor,
                   fontSize: 12,
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
               if (onTap != null) ...[

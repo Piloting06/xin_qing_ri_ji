@@ -60,7 +60,7 @@ class XinQingRiJiApp extends StatelessWidget {
         builder: (context, theme, _) {
           return MaterialApp(
             navigatorKey: appNavigatorKey,
-            title: '心晴日记',
+            title: '拾晴日记',
             debugShowCheckedModeBanner: false,
             theme: XqTheme.forMode(theme.themeMode),
             darkTheme: XqTheme.dark(),

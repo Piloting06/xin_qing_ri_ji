@@ -5,6 +5,7 @@ import '../api/api_client.dart';
 import '../stores/app_state.dart';
 import '../stores/theme_state.dart';
 import '../theme/xq_typography.dart';
+import '../theme/xq_decorations.dart';
 import '../widgets/auth_frame.dart';
 import '../widgets/main_scaffold.dart';
 import '../services/notification_service.dart';
@@ -204,7 +205,7 @@ class _LoginPageState extends State<LoginPage> {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        XqAuthHero(theme: theme, title: '心晴日记'),
+                        XqAuthHero(theme: theme, title: '拾晴日记'),
                         const SizedBox(height: 22),
                         XqAuthCard(
                           theme: theme,
@@ -220,9 +221,8 @@ class _LoginPageState extends State<LoginPage> {
                               const SizedBox(height: 6),
                               Text(
                                 '记录今天的天气，也记录今天的你。',
-                                style: TextStyle(
+                                style: XqTypography.bodySmall.copyWith(
                                   color: theme.textSecondary,
-                                  fontSize: 13,
                                 ),
                               ),
                               const SizedBox(height: 16),
@@ -254,21 +254,7 @@ class _LoginPageState extends State<LoginPage> {
                                               10,
                                             ),
                                             boxShadow: !_useEmail
-                                                ? [
-                                                    BoxShadow(
-                                                      color: Colors.black
-                                                          .withAlpha(
-                                                            theme.isDark
-                                                                ? 30
-                                                                : 10,
-                                                          ),
-                                                      blurRadius: 6,
-                                                      offset: const Offset(
-                                                        0,
-                                                        2,
-                                                      ),
-                                                    ),
-                                                  ]
+                                                ? XqDecorations.shadowSubtle(dark: theme.isDark)
                                                 : null,
                                           ),
                                           child: Row(
@@ -285,12 +271,10 @@ class _LoginPageState extends State<LoginPage> {
                                               const SizedBox(width: 6),
                                               Text(
                                                 '手机号',
-                                                style: TextStyle(
+                                                style: XqTypography.labelMedium.copyWith(
                                                   color: !_useEmail
                                                       ? theme.accentColor
                                                       : theme.textTertiary,
-                                                  fontSize: 13,
-                                                  fontWeight: FontWeight.w600,
                                                 ),
                                               ),
                                             ],
@@ -317,21 +301,7 @@ class _LoginPageState extends State<LoginPage> {
                                               10,
                                             ),
                                             boxShadow: _useEmail
-                                                ? [
-                                                    BoxShadow(
-                                                      color: Colors.black
-                                                          .withAlpha(
-                                                            theme.isDark
-                                                                ? 30
-                                                                : 10,
-                                                          ),
-                                                      blurRadius: 6,
-                                                      offset: const Offset(
-                                                        0,
-                                                        2,
-                                                      ),
-                                                    ),
-                                                  ]
+                                                ? XqDecorations.shadowSubtle(dark: theme.isDark)
                                                 : null,
                                           ),
                                           child: Row(
@@ -348,12 +318,10 @@ class _LoginPageState extends State<LoginPage> {
                                               const SizedBox(width: 6),
                                               Text(
                                                 '邮箱',
-                                                style: TextStyle(
+                                                style: XqTypography.labelMedium.copyWith(
                                                   color: _useEmail
                                                       ? theme.accentColor
                                                       : theme.textTertiary,
-                                                  fontSize: 13,
-                                                  fontWeight: FontWeight.w600,
                                                 ),
                                               ),
                                             ],
@@ -434,9 +402,8 @@ class _LoginPageState extends State<LoginPage> {
                                         child: Text(
                                           _error!,
                                           key: ValueKey(_error),
-                                          style: TextStyle(
+                                          style: XqTypography.bodySmall.copyWith(
                                             color: theme.errorColor,
-                                            fontSize: 13,
                                           ),
                                         ),
                                       ),
@@ -467,9 +434,8 @@ class _LoginPageState extends State<LoginPage> {
                                   ),
                                   child: Text(
                                     '忘记密码？',
-                                    style: TextStyle(
+                                    style: XqTypography.bodySmall.copyWith(
                                       color: theme.textSecondary,
-                                      fontSize: 13,
                                     ),
                                   ),
                                 ),
@@ -492,9 +458,8 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                           child: Text(
                             '还没有账号？创建一个',
-                            style: TextStyle(
+                            style: XqTypography.button.copyWith(
                               color: theme.accentColor,
-                              fontSize: 14,
                             ),
                           ),
                         ),

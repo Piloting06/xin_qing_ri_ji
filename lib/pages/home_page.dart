@@ -13,9 +13,8 @@ import '../theme/xq_paper_textures.dart';
 import '../utils/weather_utils.dart';
 import '../utils/geo_utils.dart';
 import '../widgets/weather_summary_card.dart';
+import '../widgets/main_scaffold.dart';
 import 'capsule_page.dart';
-import 'mood_page.dart';
-import 'treehole_page.dart';
 import 'weather_detail_page.dart';
 
 class HomePage extends StatefulWidget {
@@ -442,17 +441,11 @@ class _HomePageState extends State<HomePage> {
   }
 
   void _openMood() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => const MoodPage()),
-    );
+    MainScaffold.switchToTab(context, 1);
   }
 
-  void _openTreehole() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => const TreeholePage()),
-    );
+  void _openCityMap() {
+    MainScaffold.switchToTab(context, 2);
   }
 
   void _openCapsule() {
@@ -602,7 +595,7 @@ class _HomePageState extends State<HomePage> {
                                   style: TextStyle(
                                     color: theme.textPrimary,
                                     fontSize: 16.5,
-                                    fontWeight: FontWeight.w800,
+                                    fontWeight: FontWeight.w700,
                                     height: 1.2,
                                   ),
                                 ),
@@ -687,11 +680,11 @@ class _HomePageState extends State<HomePage> {
             Expanded(
               child: _quickActionCard(
                 theme,
-                icon: Icons.auto_awesome_rounded,
-                title: '树洞',
-                subtitle: '轻轻放一句话',
+                icon: Icons.explore_outlined,
+                title: '城迹',
+                subtitle: '看看城市情绪',
                 accent: theme.accentColor,
-                onTap: _openTreehole,
+                onTap: _openCityMap,
               ),
             ),
             const SizedBox(width: 12),

@@ -137,7 +137,7 @@ class NotificationService {
         preview,
         trigger,
         details,
-        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
         uiLocalNotificationDateInterpretation:
             UILocalNotificationDateInterpretation.absoluteTime,
         payload: jsonEncode({'type': 'capsule', 'capsuleId': capsuleId}),

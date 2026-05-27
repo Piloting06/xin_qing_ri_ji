@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'xq_colors.dart';
 import 'xq_typography.dart';
 
-/// 心晴日记 — ThemeData 构建器
+/// 拾晴日记 — ThemeData 构建器
 /// 按主题模式动态生成 ThemeData，确保输入框/按钮/AppBar 等 M3 组件跟随主题变色
 class XqTheme {
   XqTheme._();

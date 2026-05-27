@@ -225,4 +225,14 @@ router.post('/bind-email', auth, (req, res) => {
   }
 });
 
+router.get('/profile', auth, (req, res) => {
+  try {
+    const user = db.prepare('SELECT phone, email, username FROM users WHERE id = ?').get(req.userId);
+    if (!user) return res.status(404).json({ message: '用户不存在' });
+    res.json({ phone: user.phone, email: user.email, display_name: user.username });
+  } catch (e) {
+    res.status(500).json({ message: '获取失败' });
+  }
+});
+
 module.exports = router;

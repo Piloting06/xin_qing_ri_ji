@@ -154,10 +154,8 @@ class XqAuthInput extends StatelessWidget {
       children: [
         Text(
           label,
-          style: TextStyle(
+          style: XqTypography.labelMedium.copyWith(
             color: theme.textSecondary,
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
           ),
         ),
         const SizedBox(height: 7),
@@ -168,7 +166,7 @@ class XqAuthInput extends StatelessWidget {
           inputFormatters: inputFormatters,
           maxLength: keyboardType == TextInputType.phone ? 11 : null,
           onSubmitted: onSubmitted,
-          style: TextStyle(color: theme.textPrimary, fontSize: 15),
+          style: XqTypography.bodyLarge.copyWith(color: theme.textPrimary),
           cursorColor: theme.accentColor,
           decoration: InputDecoration(
             counterText: '',
@@ -209,7 +207,7 @@ class XqAuthButton extends StatelessWidget {
           foregroundColor: theme.textOnAccent,
           disabledBackgroundColor: theme.borderColor,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(XqDecorations.radiusMedium),
           ),
         ),
         child: loading
@@ -223,10 +221,7 @@ class XqAuthButton extends StatelessWidget {
               )
             : Text(
                 label,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                ),
+                style: XqTypography.headlineSmall,
               ),
       ),
     );

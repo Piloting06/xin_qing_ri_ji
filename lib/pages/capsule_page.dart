@@ -210,9 +210,9 @@ class _CapsulePageState extends State<CapsulePage> {
           content: Text(
             '提醒卡暂时没能安排上。\n\n'
             '如果你用的是 OPPO 或 vivo 手机，可以检查这几个设置：\n'
-            '1. 系统设置 → 应用 → 心晴日记 → 通知 → 打开\n'
-            '2. 系统设置 → 应用 → 心晴日记 → 电池 → 不优化\n'
-            '3. 系统设置 → 应用 → 心晴日记 → 自启动 → 打开\n\n'
+            '1. 系统设置 → 应用 → 拾晴日记 → 通知 → 打开\n'
+            '2. 系统设置 → 应用 → 拾晴日记 → 电池 → 不优化\n'
+            '3. 系统设置 → 应用 → 拾晴日记 → 自启动 → 打开\n\n'
             '设置好后，下次创建胶囊就能正常提醒啦。',
             style: TextStyle(color: theme.textSecondary, height: 1.5),
           ),

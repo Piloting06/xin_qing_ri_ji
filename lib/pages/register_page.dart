@@ -306,7 +306,7 @@ class _RegisterPageState extends State<RegisterPage> {
                     constraints: const BoxConstraints(maxWidth: 440),
                     child: Column(
                       children: [
-                        XqAuthHero(theme: theme, title: '欢迎来到心晴日记', size: 58),
+                        XqAuthHero(theme: theme, title: '欢迎来到拾晴日记', size: 58),
                         const SizedBox(height: 20),
                         XqAuthCard(
                           theme: theme,
@@ -324,9 +324,8 @@ class _RegisterPageState extends State<RegisterPage> {
                                 _useEmail
                                     ? '用邮箱注册，保存你的心情和天气日记。'
                                     : '用一个手机号保存你的心情、天气和友人关系。',
-                                style: TextStyle(
+                                style: XqTypography.bodySmall.copyWith(
                                   color: theme.textSecondary,
-                                  fontSize: 13,
                                 ),
                               ),
                               const SizedBox(height: 16),
@@ -389,11 +388,10 @@ class _RegisterPageState extends State<RegisterPage> {
                                               const SizedBox(width: 6),
                                               Text(
                                                 '手机号',
-                                                style: TextStyle(
+                                                style: XqTypography.bodySmall.copyWith(
                                                   color: !_useEmail
                                                       ? theme.accentColor
                                                       : theme.textTertiary,
-                                                  fontSize: 13,
                                                   fontWeight: FontWeight.w600,
                                                 ),
                                               ),
@@ -452,11 +450,10 @@ class _RegisterPageState extends State<RegisterPage> {
                                               const SizedBox(width: 6),
                                               Text(
                                                 '邮箱',
-                                                style: TextStyle(
+                                                style: XqTypography.bodySmall.copyWith(
                                                   color: _useEmail
                                                       ? theme.accentColor
                                                       : theme.textTertiary,
-                                                  fontSize: 13,
                                                   fontWeight: FontWeight.w600,
                                                 ),
                                               ),
@@ -524,9 +521,7 @@ class _RegisterPageState extends State<RegisterPage> {
                                           child: _codeCountdown > 0
                                               ? Text(
                                                   '${_codeCountdown}s',
-                                                  style: const TextStyle(
-                                                    fontSize: 13,
-                                                  ),
+                                                  style: XqTypography.bodySmall,
                                                 )
                                               : _sendingCode
                                               ? const SizedBox(
@@ -539,9 +534,7 @@ class _RegisterPageState extends State<RegisterPage> {
                                                 )
                                               : const Text(
                                                   '发送验证码',
-                                                  style: TextStyle(
-                                                    fontSize: 12,
-                                                  ),
+                                                  style: XqTypography.button,
                                                 ),
                                         ),
                                       ),
@@ -607,9 +600,8 @@ class _RegisterPageState extends State<RegisterPage> {
                                         child: Text(
                                           _error!,
                                           key: ValueKey(_error),
-                                          style: TextStyle(
+                                          style: XqTypography.bodySmall.copyWith(
                                             color: theme.errorColor,
-                                            fontSize: 13,
                                           ),
                                         ),
                                       ),
@@ -634,9 +626,8 @@ class _RegisterPageState extends State<RegisterPage> {
                           ),
                           child: Text(
                             '已有账号？去登录',
-                            style: TextStyle(
+                            style: XqTypography.button.copyWith(
                               color: theme.accentColor,
-                              fontSize: 14,
                             ),
                           ),
                         ),
@@ -665,18 +656,16 @@ class _RegisterPageState extends State<RegisterPage> {
         children: [
           Text(
             '安全问题',
-            style: TextStyle(
+            style: XqTypography.bodyMedium.copyWith(
               color: theme.textPrimary,
-              fontSize: 14,
               fontWeight: FontWeight.w700,
             ),
           ),
           const SizedBox(height: 4),
           Text(
             '用于以后找回账号，请选择一个自己记得住的答案。',
-            style: TextStyle(
+            style: XqTypography.bodySmall.copyWith(
               color: theme.textSecondary,
-              fontSize: 12,
               height: 1.35,
             ),
           ),
@@ -694,7 +683,7 @@ class _RegisterPageState extends State<RegisterPage> {
           if (_questionType == 'choice') ...[
             Text(
               _choiceQuestions[0],
-              style: TextStyle(color: theme.textPrimary, fontSize: 14),
+              style: XqTypography.bodyMedium.copyWith(color: theme.textPrimary),
             ),
             Slider(
               value: _choiceAnswer.toDouble(),
@@ -709,7 +698,7 @@ class _RegisterPageState extends State<RegisterPage> {
           ] else if (_questionType == 'date') ...[
             Text(
               _dateQuestions[0],
-              style: TextStyle(color: theme.textPrimary, fontSize: 14),
+              style: XqTypography.bodyMedium.copyWith(color: theme.textPrimary),
             ),
             const SizedBox(height: 8),
             OutlinedButton.icon(
@@ -766,9 +755,8 @@ class _RegisterPageState extends State<RegisterPage> {
         ),
         child: Text(
           label,
-          style: TextStyle(
+          style: XqTypography.labelMedium.copyWith(
             color: active ? theme.accentColor : theme.textSecondary,
-            fontSize: 12,
             fontWeight: FontWeight.w600,
           ),
         ),

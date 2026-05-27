@@ -10,7 +10,7 @@ import 'package:gal/gal.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:provider/provider.dart';
 import '../stores/theme_state.dart';
-import '../utils/time_utils.dart';
+import '../theme/xq_decorations.dart';
 
 class MoodCardMaker extends StatefulWidget {
   final String date;
@@ -78,8 +78,42 @@ class _MoodCardMakerState extends State<MoodCardMaker> {
   final _repaintKey = GlobalKey();
   bool _saving = false;
   late String _cardTheme;
+  bool _editMode = false;
+  bool _squareCard = false; // false=圆角(温润), true=方形(方寸)
+
+  // Edit options
+  String _dateStyle = 'cn_full'; // cn_full | en_full | slash | dot
+  String _watermark = 'en'; // cn | en | sq | sqrj | xiaoqing
+  String _username = '';
+  int? _overrideMoodScore;
+  final List<String> _overrideTags = [];
+  bool _showEmojiPicker = false;
+  bool _showTagPicker = false;
 
   static const _cardThemes = ['warm', 'dark', 'mint', 'blush'];
+  static const _allMoodEmojis = {1: '🎉', 2: '😌', 3: '😔', 4: '😤', 5: '😰', 6: '😴', 7: '🌟', 8: '💭'};
+  static const _allMoodLabels = {1: '开心', 2: '平静', 3: '低落', 4: '生气', 5: '焦虑', 6: '疲惫', 7: '期待', 8: '想念'};
+  static const _allTags = [
+    '达成目标', '学习进步', '运动健身', '美食享受', '旅行出游',
+    '朋友聚会', '家人陪伴', '独处时光', '工作顺利', '创作表达',
+    '自然风景', '音乐电影', '购物开心', '睡眠充足', '小确幸',
+  ];
+
+  int get _activeMoodScore => _overrideMoodScore ?? widget.moodScore;
+  List<String> get _activeTags => _overrideTags.isNotEmpty ? _overrideTags : widget.tags;
+
+  String get _formattedDate {
+    final d = DateTime.tryParse(widget.date) ?? DateTime.now();
+    final weekdays = ['星期一', '星期二', '星期三', '星期四', '星期五', '星期六', '星期日'];
+    final enWeekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    final enMonths = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return switch (_dateStyle) {
+      'en_full' => '${enMonths[d.month]} ${d.day}, ${d.year} ${enWeekdays[d.weekday - 1]}',
+      'slash' => '${d.month}/${d.day}',
+      'dot' => '${d.month.toString().padLeft(2, '0')}.${d.day.toString().padLeft(2, '0')}',
+      _ => '${d.year}年${d.month}月${d.day}日 ${weekdays[d.weekday - 1]}',
+    };
+  }
 
   @override
   void initState() {
@@ -119,18 +153,6 @@ class _MoodCardMakerState extends State<MoodCardMaker> {
         : const Color(0xFF2F2118);
   }
 
-  String get _moodEnglish => switch (widget.moodScore) {
-    1 => 'JOY',
-    2 => 'CALM',
-    3 => 'LOW',
-    4 => 'ANGER',
-    5 => 'ANXIETY',
-    6 => 'TIRED',
-    7 => 'HOPE',
-    8 => 'MISSING',
-    _ => 'MOOD',
-  };
-
   String get _themeLabel => switch (_cardTheme) {
     'dark' => 'NIGHT NOTE',
     'mint' => 'MINT NOTE',
@@ -141,44 +163,35 @@ class _MoodCardMakerState extends State<MoodCardMaker> {
   Widget _buildCard() {
     final hasWeather =
         widget.weatherText != null && widget.weatherText!.isNotEmpty;
-    final timeStr = widget.createdAt != null
-        ? TimeUtils.short(widget.createdAt)
-        : widget.date;
 
+    final br = _squareCard ? 0.0 : 20.0;
     return Container(
       width: double.infinity,
       constraints: const BoxConstraints(maxWidth: 420),
       decoration: BoxDecoration(
         color: _bgColor,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(br),
         border: Border.all(
           color: _accentColor.withAlpha(_cardTheme == 'dark' ? 34 : 22),
-          width: 0.6,
+          width: 0.5,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withAlpha(38),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
-          ),
-        ],
+        boxShadow: XqDecorations.shadowStrong(),
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(br),
         child: Stack(
           children: [
-            // Card content — fixed height, text as primary element
             SizedBox(
               height: 216,
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(16, 10, 16, 8),
                 child: Column(
                   children: [
-                    // Top bar: time + branding
+                    // Top bar: date + theme branding
                     Row(
                       children: [
                         Text(
-                          timeStr,
+                          _formattedDate,
                           style: TextStyle(
                             color: _textColor.withAlpha(140),
                             fontSize: 11,
@@ -197,7 +210,6 @@ class _MoodCardMakerState extends State<MoodCardMaker> {
                       ],
                     ),
 
-                    // Weather row
                     if (hasWeather) ...[
                       const SizedBox(height: 3),
                       Row(
@@ -240,7 +252,7 @@ class _MoodCardMakerState extends State<MoodCardMaker> {
                             borderRadius: BorderRadius.circular(999),
                             border: Border.all(
                               color: _accentColor.withAlpha(30),
-                              width: 0.6,
+                              width: 0.5,
                             ),
                           ),
                           child: Text(
@@ -248,14 +260,14 @@ class _MoodCardMakerState extends State<MoodCardMaker> {
                             style: TextStyle(
                               color: _accentColor.withAlpha(145),
                               fontSize: 7.2,
-                              fontWeight: FontWeight.w800,
+                              fontWeight: FontWeight.w700,
                               letterSpacing: 1.0,
                             ),
                           ),
                         ),
                         const SizedBox(width: 7),
                         Text(
-                          _moodEnglish,
+                          _moodEnglishFor(_activeMoodScore),
                           style: TextStyle(
                             color: _accentColor.withAlpha(118),
                             fontSize: 11,
@@ -290,10 +302,10 @@ class _MoodCardMakerState extends State<MoodCardMaker> {
                     // Tags + watermark row
                     Row(
                       children: [
-                        if (widget.tags.isNotEmpty)
+                        if (_activeTags.isNotEmpty)
                           Expanded(
                             child: Text(
-                              widget.tags.take(3).join(' · '),
+                              _activeTags.take(3).join(' · '),
                               style: TextStyle(
                                 color: _accentColor.withAlpha(96),
                                 fontSize: 9,
@@ -302,16 +314,68 @@ class _MoodCardMakerState extends State<MoodCardMaker> {
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
-                        if (widget.tags.isEmpty) const Spacer(),
-                        Text(
-                          'XQ JOURNAL',
-                          style: TextStyle(
-                            color: _accentColor.withAlpha(82),
-                            fontSize: 8.2,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: 1.15,
+                        if (_activeTags.isEmpty) const Spacer(),
+                        if (_watermark == 'cn')
+                          Text(
+                            '拾晴日记',
+                            style: TextStyle(
+                              color: _accentColor.withAlpha(82),
+                              fontSize: 8.2,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 1.15,
+                            ),
+                          )
+                        else if (_watermark == 'en')
+                          Text(
+                            'SHI QING',
+                            style: TextStyle(
+                              color: _accentColor.withAlpha(82),
+                              fontSize: 8.2,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 1.15,
+                            ),
+                          )
+                        else if (_watermark == 'sq')
+                          Text(
+                            'sq.',
+                            style: TextStyle(
+                              color: _accentColor.withAlpha(82),
+                              fontSize: 8.5,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 0.8,
+                            ),
+                          )
+                        else if (_watermark == 'sqrj')
+                          Text(
+                            's q r j',
+                            style: TextStyle(
+                              color: _accentColor.withAlpha(82),
+                              fontSize: 8.2,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 1.5,
+                            ),
+                          )
+                        else if (_watermark == 'xiaoqing')
+                          Text(
+                            '小晴',
+                            style: TextStyle(
+                              color: _accentColor.withAlpha(82),
+                              fontSize: 8.2,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 1.15,
+                            ),
                           ),
-                        ),
+                        if (_username.isNotEmpty) ...[
+                          if (_activeTags.isNotEmpty || _watermark.isNotEmpty)
+                            const SizedBox(width: 8),
+                          Text(
+                            _username,
+                            style: TextStyle(
+                              color: _accentColor.withAlpha(70),
+                              fontSize: 8,
+                            ),
+                          ),
+                        ],
                       ],
                     ),
                   ],
@@ -319,7 +383,6 @@ class _MoodCardMakerState extends State<MoodCardMaker> {
               ),
             ),
 
-            // Theme-specific overlays
             if (_cardTheme == 'warm') _WarmOverlay(),
             if (_cardTheme == 'dark') _DarkOverlay(),
             if (_cardTheme == 'mint') _MintOverlay(),
@@ -329,6 +392,18 @@ class _MoodCardMakerState extends State<MoodCardMaker> {
       ),
     );
   }
+
+  String _moodEnglishFor(int score) => switch (score) {
+    1 => 'JOY',
+    2 => 'CALM',
+    3 => 'LOW',
+    4 => 'ANGER',
+    5 => 'ANXIETY',
+    6 => 'TIRED',
+    7 => 'HOPE',
+    8 => 'MISSING',
+    _ => 'MOOD',
+  };
 
   Future<void> _save() async {
     setState(() => _saving = true);
@@ -376,11 +451,71 @@ class _MoodCardMakerState extends State<MoodCardMaker> {
         ShareParams(
           files: [XFile(file.path)],
           text:
-              '心晴日记 · ${widget.date}\n${widget.moodLabel} — ${widget.text.isNotEmpty ? widget.text : "记录天气，也记录你"}',
+              '拾晴日记 · ${widget.date}\n${widget.moodLabel} — ${widget.text.isNotEmpty ? widget.text : "记录天气，也记录你"}',
         ),
       );
       if (mounted) Navigator.pop(context);
     } catch (_) {}
+  }
+
+  Widget _buildEditRow(String label, List<Widget> chips) {
+    return Row(
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            color: widget.theme.textSecondary,
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: chips.isNotEmpty
+              ? Row(children: chips.map((c) => Padding(padding: const EdgeInsets.only(right: 6), child: c)).toList())
+              : const SizedBox.shrink(),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildChip(String text, String value) {
+    bool isActive = false;
+    if (value == 'cn_full' || value == 'en_full' || value == 'slash' || value == 'dot') {
+      isActive = _dateStyle == value;
+    } else if (value == 'cn' || value == 'en' || value == 'sq' || value == 'sqrj' || value == 'xiaoqing') {
+      isActive = _watermark == value;
+    }
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          if (value == 'cn_full' || value == 'en_full' || value == 'slash' || value == 'dot') {
+            _dateStyle = value;
+          } else if (value == 'cn' || value == 'en' || value == 'sq' || value == 'sqrj' || value == 'xiaoqing') {
+            _watermark = value;
+          }
+        });
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+        decoration: BoxDecoration(
+          color: isActive ? _accentColor.withAlpha(20) : Colors.transparent,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: isActive ? _accentColor : widget.theme.borderColor,
+            width: isActive ? 1.2 : 0.8,
+          ),
+        ),
+        child: Text(
+          text,
+          style: TextStyle(
+            fontSize: 11,
+            color: isActive ? _accentColor : widget.theme.textSecondary,
+            fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
+          ),
+        ),
+      ),
+    );
   }
 
   Widget _themeDot(String mode) {
@@ -412,8 +547,8 @@ class _MoodCardMakerState extends State<MoodCardMaker> {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 240),
         curve: Curves.easeOutCubic,
-        width: active ? 48 : 38,
-        height: active ? 48 : 38,
+        width: active ? 48 : 44,
+        height: active ? 48 : 44,
         margin: const EdgeInsets.symmetric(horizontal: 10),
         decoration: BoxDecoration(
           shape: BoxShape.circle,
@@ -435,13 +570,55 @@ class _MoodCardMakerState extends State<MoodCardMaker> {
     );
   }
 
+  Widget _buildStyleToggle(ThemeState theme) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        _buildStylePill(theme, '温润', false),
+        const SizedBox(width: 8),
+        _buildStylePill(theme, '方寸', true),
+      ],
+    );
+  }
+
+  Widget _buildStylePill(ThemeState theme, String label, bool square) {
+    final isActive = _squareCard == square;
+    return GestureDetector(
+      onTap: () => setState(() => _squareCard = square),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeOutCubic,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
+        decoration: BoxDecoration(
+          color: isActive ? _accentColor.withAlpha(22) : Colors.transparent,
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(
+            color: isActive ? _accentColor.withAlpha(120) : theme.borderColor,
+            width: isActive ? 1.2 : 0.8,
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
+            color: isActive ? _accentColor : theme.textSecondary,
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final sheetTheme = widget.theme;
     final screenHeight = MediaQuery.of(context).size.height;
+    final sheetHeight = _editMode ? screenHeight * 0.85 : screenHeight * 0.72;
 
-    return Container(
-      height: screenHeight * 0.60,
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 250),
+      curve: Curves.easeOutCubic,
+      height: sheetHeight,
       decoration: BoxDecoration(
         color: sheetTheme.cardColor,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
@@ -479,6 +656,18 @@ class _MoodCardMakerState extends State<MoodCardMaker> {
                 SizedBox(
                   width: 48,
                   child: IconButton(
+                    onPressed: () => setState(() => _editMode = !_editMode),
+                    icon: Icon(
+                      _editMode ? Icons.check : Icons.edit_outlined,
+                      color: _editMode ? _accentColor : sheetTheme.textSecondary,
+                      size: 22,
+                    ),
+                    padding: EdgeInsets.zero,
+                  ),
+                ),
+                SizedBox(
+                  width: 48,
+                  child: IconButton(
                     onPressed: () => Navigator.pop(context),
                     icon: Icon(
                       Icons.close,
@@ -492,23 +681,173 @@ class _MoodCardMakerState extends State<MoodCardMaker> {
             ),
             const SizedBox(height: 6),
             Text(
-              '点击色块切换风格',
+              _editMode ? '编辑卡片内容' : '点击色块切换风格',
               style: TextStyle(color: sheetTheme.textTertiary, fontSize: 12),
             ),
             const SizedBox(height: 12),
 
-            // Theme picker
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: _cardThemes.map(_themeDot).toList(),
-            ),
+            // Theme picker (non-edit mode)
+            if (!_editMode) ...[
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: _cardThemes.map(_themeDot).toList(),
+              ),
+              const SizedBox(height: 10),
+              _buildStyleToggle(sheetTheme),
+            ],
+
+            // Edit panel (scrollable when expanded)
+            if (_editMode)
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Column(
+                    children: [
+                      _buildStyleToggle(sheetTheme),
+                      const SizedBox(height: 10),
+                      // Date format
+                      _buildEditRow('日期格式', [
+                        _buildChip('2026年5月28日', 'cn_full'),
+                        _buildChip('May 28', 'en_full'),
+                        _buildChip('5/28', 'slash'),
+                        _buildChip('05.28', 'dot'),
+                      ]),
+                      const SizedBox(height: 10),
+                      // Watermark
+                      _buildEditRow('水印', [
+                        _buildChip('拾晴日记', 'cn'),
+                        _buildChip('SHI QING', 'en'),
+                        _buildChip('s q r j', 'sqrj'),
+                        _buildChip('小晴', 'xiaoqing'),
+                      ]),
+                      const SizedBox(height: 10),
+                      // Username
+                      _buildEditRow('用户名', []),
+                      const SizedBox(height: 4),
+                      TextField(
+                        onChanged: (v) => setState(() => _username = v),
+                        style: TextStyle(color: sheetTheme.textPrimary, fontSize: 13),
+                        decoration: InputDecoration(
+                          labelText: '用户名',
+                          hintText: '可选，留空则不显示',
+                          labelStyle: TextStyle(color: sheetTheme.textTertiary, fontSize: 12),
+                          hintStyle: TextStyle(color: sheetTheme.textTertiary, fontSize: 12),
+                          isDense: true,
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(XqDecorations.radiusSmall),
+                            borderSide: BorderSide(color: sheetTheme.borderColor),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(XqDecorations.radiusSmall),
+                            borderSide: BorderSide(color: sheetTheme.borderColor),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      // Emoji picker (mutually exclusive with tag picker)
+                      GestureDetector(
+                        onTap: () => setState(() {
+                          _showEmojiPicker = !_showEmojiPicker;
+                          if (_showEmojiPicker) _showTagPicker = false;
+                        }),
+                        child: _buildEditRow('情绪', [
+                          Text(
+                            '${_allMoodEmojis[_activeMoodScore] ?? ''} ${_allMoodLabels[_activeMoodScore] ?? ''}',
+                            style: TextStyle(color: _accentColor, fontSize: 13, fontWeight: FontWeight.w500),
+                          ),
+                          Icon(_showEmojiPicker ? Icons.expand_less : Icons.expand_more, size: 18, color: sheetTheme.textTertiary),
+                        ]),
+                      ),
+                      if (_showEmojiPicker) ...[
+                        const SizedBox(height: 6),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 6,
+                          children: _allMoodEmojis.entries.map((e) {
+                            final isActive = e.key == _activeMoodScore;
+                            return GestureDetector(
+                              onTap: () => setState(() {
+                                _overrideMoodScore = e.key;
+                                _showEmojiPicker = false;
+                              }),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                decoration: BoxDecoration(
+                                  color: isActive ? _accentColor.withAlpha(20) : Colors.transparent,
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                    color: isActive ? _accentColor : sheetTheme.borderColor,
+                                    width: isActive ? 1.2 : 0.8,
+                                  ),
+                                ),
+                                child: Text('${e.value} ${_allMoodLabels[e.key]}', style: const TextStyle(fontSize: 12)),
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                      ],
+                      const SizedBox(height: 10),
+                      // Tag picker (mutually exclusive with emoji picker)
+                      GestureDetector(
+                        onTap: () => setState(() {
+                          _showTagPicker = !_showTagPicker;
+                          if (_showTagPicker) _showEmojiPicker = false;
+                        }),
+                        child: _buildEditRow('标签', [
+                          Text(
+                            _activeTags.isEmpty ? '点击选择' : _activeTags.take(2).join(' · '),
+                            style: TextStyle(
+                              color: _activeTags.isEmpty ? sheetTheme.textTertiary : _accentColor,
+                              fontSize: 12,
+                            ),
+                          ),
+                          Icon(_showTagPicker ? Icons.expand_less : Icons.expand_more, size: 18, color: sheetTheme.textTertiary),
+                        ]),
+                      ),
+                      if (_showTagPicker) ...[
+                        const SizedBox(height: 6),
+                        Wrap(
+                          spacing: 6,
+                          runSpacing: 6,
+                          children: _allTags.map((tag) {
+                            final isActive = _overrideTags.contains(tag);
+                            return GestureDetector(
+                              onTap: () => setState(() {
+                                if (isActive) {
+                                  _overrideTags.remove(tag);
+                                } else {
+                                  _overrideTags.add(tag);
+                                }
+                              }),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                                decoration: BoxDecoration(
+                                  color: isActive ? _accentColor.withAlpha(20) : Colors.transparent,
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                    color: isActive ? _accentColor : sheetTheme.borderColor,
+                                    width: isActive ? 1.2 : 0.8,
+                                  ),
+                                ),
+                                child: Text(tag, style: TextStyle(fontSize: 11, color: isActive ? _accentColor : sheetTheme.textSecondary)),
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                      ],
+                      const SizedBox(height: 12),
+                    ],
+                  ),
+                ),
+              ),
 
             const SizedBox(height: 10),
 
-            // Card preview
-            Expanded(
-              child: SingleChildScrollView(
-                physics: const NeverScrollableScrollPhysics(),
+            // Card preview (fixed height, not Expanded)
+            SizedBox(
+              height: 216,
+              child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: RepaintBoundary(key: _repaintKey, child: _buildCard()),
               ),

@@ -1,9 +1,11 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:geolocator/geolocator.dart';
 import '../api/api_client.dart';
+import '../constants/keys.dart';
 import '../utils/geo_utils.dart';
 import '../models/city.dart';
 
@@ -605,11 +607,38 @@ class MapState extends ChangeNotifier {
     try {
       final prefs = await SharedPreferences.getInstance();
       _introPlayed = prefs.getBool('mapFirstOpen') ?? false;
+
+      // 1. 加载缓存
+      final cachedJson = prefs.getString(StorageKeys.mapStatsCache);
+      if (cachedJson != null) {
+        try {
+          final cached = jsonDecode(cachedJson) as Map<String, dynamic>;
+          final timestamp = cached['timestamp'] as int? ?? 0;
+          if (DateTime.now().millisecondsSinceEpoch - timestamp < 30 * 60 * 1000) {
+            final stats = cached['data'] as Map<String, dynamic>?;
+            if (stats != null) {
+              for (final e in stats.entries) {
+                final d = e.value as Map<String, dynamic>?;
+                if (d == null) continue;
+                _cityCommentCounts[e.key] = d['count'] as int? ?? 0;
+                _cityMoods[e.key] = d['mood'] as String? ?? '';
+                _cityMoodScore[e.key] = (d['mood_score'] as num?)?.toDouble() ?? 0.0;
+              }
+              _loading = false;
+              notifyListeners();
+              await _locate();
+              _pollStats(); // 后台刷新
+              return;
+            }
+          }
+        } catch (_) {}
+      }
     } catch (_) {}
 
     _loading = false;
     notifyListeners();
     await _locate();
+    _pollStats();
   }
 
   /// 强制刷新（下拉刷新用）
@@ -886,6 +915,15 @@ class MapState extends ChangeNotifier {
         if (s != null) _cityMoodScore[e.key] = s;
       }
       if (changed) notifyListeners();
+
+      // 保存缓存
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString(StorageKeys.mapStatsCache, jsonEncode({
+          'timestamp': DateTime.now().millisecondsSinceEpoch,
+          'data': data['stats'],
+        }));
+      } catch (_) {}
     } catch (_) {}
   }
 

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'xq_colors.dart';
 
-/// 心晴日记 — 装饰常量：圆角、阴影、边框、卡片样式
+/// 拾晴日记 — 装饰常量：圆角、阴影、边框、卡片样式
 class XqDecorations {
   XqDecorations._();
 

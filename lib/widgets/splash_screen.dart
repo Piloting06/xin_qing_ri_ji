@@ -54,10 +54,11 @@ class _InkSplashScreenState extends State<InkSplashScreen>
         builder: (context, _) {
           final cloud = _phase(0.0, 0.36, Curves.easeOutCubic);
           final reveal = _phase(0.34, 0.66, Curves.easeOutCubic);
+          final reveal2 = _phase(0.34 + 0.15, 0.66 + 0.15, Curves.easeOutCubic);
           final exit = _phase(0.80, 1.0, Curves.easeInCubic);
           final cardOpacity = (reveal * (1 - exit)).clamp(0.0, 1.0);
           final cardDy = (1 - reveal) * 12 - exit * 12;
-          final titleScale = 0.98 + reveal * 0.02 - exit * 0.02;
+          final titleScale = 0.92 + reveal * 0.02 - exit * 0.02;
 
           return Stack(
             fit: StackFit.expand,
@@ -121,7 +122,7 @@ class _InkSplashScreenState extends State<InkSplashScreen>
                         Transform.scale(
                           scale: titleScale,
                           child: Text(
-                            '心晴日记',
+                            '拾晴日记',
                             style: XqTypography.splashTitle.copyWith(
                               color: theme.isDark
                                   ? theme.textPrimary
@@ -133,22 +134,20 @@ class _InkSplashScreenState extends State<InkSplashScreen>
                         const SizedBox(height: 8),
                         Text(
                           '记录天气，也记录你',
-                          style: TextStyle(
+                          style: XqTypography.bodySmall.copyWith(
                             color: theme.textSecondary.withAlpha(
-                              (170 * (1 - exit)).round().clamp(0, 170),
+                              (170 * reveal * (1 - exit)).round().clamp(0, 170),
                             ),
-                            fontSize: 13,
                             letterSpacing: 1.5,
                           ),
                         ),
                         const SizedBox(height: 4),
                         Text(
                           '每一座城市都有它的情绪',
-                          style: TextStyle(
+                          style: XqTypography.labelSmall.copyWith(
                             color: theme.textTertiary.withAlpha(
-                              (140 * (1 - exit)).round().clamp(0, 140),
+                              (140 * reveal2 * (1 - exit)).round().clamp(0, 140),
                             ),
-                            fontSize: 11,
                             letterSpacing: 1,
                           ),
                         ),

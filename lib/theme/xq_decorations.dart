@@ -10,31 +10,36 @@ class XqDecorations {
   static const radiusMedium = 14.0;
   static const radiusLarge = 20.0;
   static const radiusXL = 24.0;
+  static const radiusHero = 28.0;
+  static const radiusSheet = 28.0;
+  static const radiusPill = 999.0;
 
   // ── 阴影（浅色模式）──
   static List<BoxShadow> shadowSubtle({bool dark = false}) => [
     BoxShadow(
       color: (dark ? Colors.black : XqColors.lightInk).withAlpha(dark ? 4 : 8),
-      blurRadius: 8, offset: const Offset(0, 2),
+      blurRadius: 8,
+      offset: const Offset(0, 2),
     ),
   ];
   static List<BoxShadow> shadowMedium({bool dark = false}) => [
     BoxShadow(
       color: (dark ? Colors.black : XqColors.lightInk).withAlpha(dark ? 8 : 15),
-      blurRadius: 16, offset: const Offset(0, 4),
+      blurRadius: 16,
+      offset: const Offset(0, 4),
     ),
   ];
   static List<BoxShadow> shadowStrong({bool dark = false}) => [
     BoxShadow(
-      color: (dark ? Colors.black : XqColors.lightInk).withAlpha(dark ? 12 : 25),
-      blurRadius: 24, offset: const Offset(0, 6),
+      color: (dark ? Colors.black : XqColors.lightInk).withAlpha(
+        dark ? 12 : 25,
+      ),
+      blurRadius: 24,
+      offset: const Offset(0, 6),
     ),
   ];
   static List<BoxShadow> shadowGlow(Color accent) => [
-    BoxShadow(
-      color: accent.withAlpha(20),
-      blurRadius: 16, spreadRadius: 2,
-    ),
+    BoxShadow(color: accent.withAlpha(20), blurRadius: 16, spreadRadius: 2),
   ];
 
   // ── 边框 ──
@@ -52,30 +57,88 @@ class XqDecorations {
   // ═══════════════════════════════════════
 
   /// 标准内容卡片
-  static BoxDecoration paperCard(Color card, Color border, {bool dark = false}) =>
-      BoxDecoration(
-        color: card,
-        borderRadius: BorderRadius.circular(radiusMedium),
-        border: borderThin(border),
-        boxShadow: shadowSubtle(dark: dark),
-      );
+  static BoxDecoration paperCard(
+    Color card,
+    Color border, {
+    bool dark = false,
+  }) => BoxDecoration(
+    color: card,
+    borderRadius: BorderRadius.circular(radiusMedium),
+    border: borderThin(border),
+    boxShadow: shadowSubtle(dark: dark),
+  );
 
   /// 高级卡片（天气、语录）
-  static BoxDecoration elevatedCard(Color cardElevated, Color accent, {bool dark = false}) =>
-      BoxDecoration(
-        color: cardElevated,
-        borderRadius: BorderRadius.circular(radiusLarge),
-        border: borderAccent(accent),
-        boxShadow: [...shadowMedium(dark: dark), ...shadowGlow(accent)],
-      );
+  static BoxDecoration elevatedCard(
+    Color cardElevated,
+    Color accent, {
+    bool dark = false,
+  }) => BoxDecoration(
+    color: cardElevated,
+    borderRadius: BorderRadius.circular(radiusLarge),
+    border: borderAccent(accent),
+    boxShadow: [
+      ...shadowMedium(dark: dark),
+      ...shadowGlow(accent),
+    ],
+  );
+
+  static BoxDecoration heroCard(
+    Color start,
+    Color end,
+    Color border, {
+    bool dark = false,
+    Color? glow,
+  }) => BoxDecoration(
+    gradient: LinearGradient(
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+      colors: [start, end],
+    ),
+    borderRadius: BorderRadius.circular(radiusHero),
+    border: borderMedium(border),
+    boxShadow: glow == null
+        ? shadowMedium(dark: dark)
+        : [...shadowMedium(dark: dark), ...shadowGlow(glow)],
+  );
+
+  static BoxDecoration actionCard(
+    Color card,
+    Color border, {
+    bool dark = false,
+    Color? accent,
+  }) => BoxDecoration(
+    color: card,
+    borderRadius: BorderRadius.circular(radiusLarge),
+    border: borderThin(accent == null ? border : accent.withAlpha(55)),
+    boxShadow: shadowSubtle(dark: dark),
+  );
+
+  static BoxDecoration sheetSurface(
+    Color card,
+    Color border, {
+    bool dark = false,
+  }) => BoxDecoration(
+    color: card,
+    borderRadius: const BorderRadius.vertical(
+      top: Radius.circular(radiusSheet),
+    ),
+    border: Border(top: BorderSide(color: border.withAlpha(120), width: 0.5)),
+    boxShadow: shadowStrong(dark: dark),
+  );
+
+  static BoxDecoration insetField(Color surface, Color border) => BoxDecoration(
+    color: surface,
+    borderRadius: BorderRadius.circular(radiusMedium),
+    border: borderThin(border),
+  );
 
   /// 浮动面板（毛玻璃效果需配合 BackdropFilter）
-  static BoxDecoration glassCard(Color card, Color border) =>
-      BoxDecoration(
-        color: card.withAlpha(200),
-        borderRadius: BorderRadius.circular(radiusMedium),
-        border: borderThin(border),
-      );
+  static BoxDecoration glassCard(Color card, Color border) => BoxDecoration(
+    color: card.withAlpha(200),
+    borderRadius: BorderRadius.circular(radiusMedium),
+    border: borderThin(border),
+  );
 
   /// 便利贴（树洞留言）
   static BoxDecoration postItCard(Color washi, {double rotation = 0}) =>

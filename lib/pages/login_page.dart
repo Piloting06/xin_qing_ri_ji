@@ -5,6 +5,7 @@ import '../api/api_client.dart';
 import '../stores/app_state.dart';
 import '../stores/theme_state.dart';
 import '../theme/xq_typography.dart';
+import '../widgets/auth_frame.dart';
 import '../widgets/main_scaffold.dart';
 import '../services/notification_service.dart';
 import '../main.dart';
@@ -61,7 +62,9 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   bool get _phoneValid => _isValidPhone(_phoneCtrl.text.trim());
-  bool get _emailValid => _emailCtrl.text.trim().contains('@') && _emailCtrl.text.trim().contains('.');
+  bool get _emailValid =>
+      _emailCtrl.text.trim().contains('@') &&
+      _emailCtrl.text.trim().contains('.');
   bool get _formValid => _useEmail
       ? _emailValid && _emailPwCtrl.text.isNotEmpty
       : _phoneValid && _pwCtrl.text.isNotEmpty;
@@ -69,13 +72,61 @@ class _LoginPageState extends State<LoginPage> {
   bool _isValidPhone(String phone) {
     if (!RegExp(r'^1\d{10}$').hasMatch(phone)) return false;
     const validPrefixes = {
-      '130','131','132','133','134','135','136','137','138','139',
-      '145','146','147','148','149',
-      '150','151','152','153','155','156','157','158','159',
-      '162','165','166','167',
-      '170','171','172','173','174','175','176','177','178',
-      '180','181','182','183','184','185','186','187','188','189',
-      '190','191','193','195','196','197','198','199',
+      '130',
+      '131',
+      '132',
+      '133',
+      '134',
+      '135',
+      '136',
+      '137',
+      '138',
+      '139',
+      '145',
+      '146',
+      '147',
+      '148',
+      '149',
+      '150',
+      '151',
+      '152',
+      '153',
+      '155',
+      '156',
+      '157',
+      '158',
+      '159',
+      '162',
+      '165',
+      '166',
+      '167',
+      '170',
+      '171',
+      '172',
+      '173',
+      '174',
+      '175',
+      '176',
+      '177',
+      '178',
+      '180',
+      '181',
+      '182',
+      '183',
+      '184',
+      '185',
+      '186',
+      '187',
+      '188',
+      '189',
+      '190',
+      '191',
+      '193',
+      '195',
+      '196',
+      '197',
+      '198',
+      '199',
     };
     return validPrefixes.contains(phone.substring(0, 3));
   }
@@ -113,12 +164,12 @@ class _LoginPageState extends State<LoginPage> {
               const MainScaffold(),
           transitionsBuilder: (context, animation, secondaryAnimation, child) =>
               FadeTransition(
-            opacity: CurvedAnimation(
-              parent: animation,
-              curve: Curves.easeOutCubic,
-            ),
-            child: child,
-          ),
+                opacity: CurvedAnimation(
+                  parent: animation,
+                  curve: Curves.easeOutCubic,
+                ),
+                child: child,
+              ),
         ),
       );
       NotificationService.openPendingCapsuleIfAny(appNavigatorKey);
@@ -141,7 +192,7 @@ class _LoginPageState extends State<LoginPage> {
           onTap: () => FocusScope.of(context).unfocus(),
           child: Stack(
             children: [
-              _AuthBackdrop(theme: theme),
+              XqAuthBackdrop(theme: theme),
               Center(
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.symmetric(
@@ -153,9 +204,9 @@ class _LoginPageState extends State<LoginPage> {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        _AuthHero(theme: theme, title: '心晴日记'),
+                        XqAuthHero(theme: theme, title: '心晴日记'),
                         const SizedBox(height: 22),
-                        _AuthCard(
+                        XqAuthCard(
                           theme: theme,
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -186,23 +237,62 @@ class _LoginPageState extends State<LoginPage> {
                                   children: [
                                     Expanded(
                                       child: GestureDetector(
-                                        onTap: () => setState(() => _useEmail = false),
+                                        onTap: () =>
+                                            setState(() => _useEmail = false),
                                         child: AnimatedContainer(
-                                          duration: const Duration(milliseconds: 200),
-                                          padding: const EdgeInsets.symmetric(vertical: 10),
+                                          duration: const Duration(
+                                            milliseconds: 200,
+                                          ),
+                                          padding: const EdgeInsets.symmetric(
+                                            vertical: 10,
+                                          ),
                                           decoration: BoxDecoration(
-                                            color: !_useEmail ? theme.cardColor : Colors.transparent,
-                                            borderRadius: BorderRadius.circular(10),
+                                            color: !_useEmail
+                                                ? theme.cardColor
+                                                : Colors.transparent,
+                                            borderRadius: BorderRadius.circular(
+                                              10,
+                                            ),
                                             boxShadow: !_useEmail
-                                                ? [BoxShadow(color: Colors.black.withAlpha(theme.isDark ? 30 : 10), blurRadius: 6, offset: const Offset(0, 2))]
+                                                ? [
+                                                    BoxShadow(
+                                                      color: Colors.black
+                                                          .withAlpha(
+                                                            theme.isDark
+                                                                ? 30
+                                                                : 10,
+                                                          ),
+                                                      blurRadius: 6,
+                                                      offset: const Offset(
+                                                        0,
+                                                        2,
+                                                      ),
+                                                    ),
+                                                  ]
                                                 : null,
                                           ),
                                           child: Row(
-                                            mainAxisAlignment: MainAxisAlignment.center,
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
                                             children: [
-                                              Icon(Icons.phone_iphone_rounded, size: 16, color: !_useEmail ? theme.accentColor : theme.textTertiary),
+                                              Icon(
+                                                Icons.phone_iphone_rounded,
+                                                size: 16,
+                                                color: !_useEmail
+                                                    ? theme.accentColor
+                                                    : theme.textTertiary,
+                                              ),
                                               const SizedBox(width: 6),
-                                              Text('手机号', style: TextStyle(color: !_useEmail ? theme.accentColor : theme.textTertiary, fontSize: 13, fontWeight: FontWeight.w600)),
+                                              Text(
+                                                '手机号',
+                                                style: TextStyle(
+                                                  color: !_useEmail
+                                                      ? theme.accentColor
+                                                      : theme.textTertiary,
+                                                  fontSize: 13,
+                                                  fontWeight: FontWeight.w600,
+                                                ),
+                                              ),
                                             ],
                                           ),
                                         ),
@@ -210,23 +300,62 @@ class _LoginPageState extends State<LoginPage> {
                                     ),
                                     Expanded(
                                       child: GestureDetector(
-                                        onTap: () => setState(() => _useEmail = true),
+                                        onTap: () =>
+                                            setState(() => _useEmail = true),
                                         child: AnimatedContainer(
-                                          duration: const Duration(milliseconds: 200),
-                                          padding: const EdgeInsets.symmetric(vertical: 10),
+                                          duration: const Duration(
+                                            milliseconds: 200,
+                                          ),
+                                          padding: const EdgeInsets.symmetric(
+                                            vertical: 10,
+                                          ),
                                           decoration: BoxDecoration(
-                                            color: _useEmail ? theme.cardColor : Colors.transparent,
-                                            borderRadius: BorderRadius.circular(10),
+                                            color: _useEmail
+                                                ? theme.cardColor
+                                                : Colors.transparent,
+                                            borderRadius: BorderRadius.circular(
+                                              10,
+                                            ),
                                             boxShadow: _useEmail
-                                                ? [BoxShadow(color: Colors.black.withAlpha(theme.isDark ? 30 : 10), blurRadius: 6, offset: const Offset(0, 2))]
+                                                ? [
+                                                    BoxShadow(
+                                                      color: Colors.black
+                                                          .withAlpha(
+                                                            theme.isDark
+                                                                ? 30
+                                                                : 10,
+                                                          ),
+                                                      blurRadius: 6,
+                                                      offset: const Offset(
+                                                        0,
+                                                        2,
+                                                      ),
+                                                    ),
+                                                  ]
                                                 : null,
                                           ),
                                           child: Row(
-                                            mainAxisAlignment: MainAxisAlignment.center,
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
                                             children: [
-                                              Icon(Icons.email_outlined, size: 16, color: _useEmail ? theme.accentColor : theme.textTertiary),
+                                              Icon(
+                                                Icons.email_outlined,
+                                                size: 16,
+                                                color: _useEmail
+                                                    ? theme.accentColor
+                                                    : theme.textTertiary,
+                                              ),
                                               const SizedBox(width: 6),
-                                              Text('邮箱', style: TextStyle(color: _useEmail ? theme.accentColor : theme.textTertiary, fontSize: 13, fontWeight: FontWeight.w600)),
+                                              Text(
+                                                '邮箱',
+                                                style: TextStyle(
+                                                  color: _useEmail
+                                                      ? theme.accentColor
+                                                      : theme.textTertiary,
+                                                  fontSize: 13,
+                                                  fontWeight: FontWeight.w600,
+                                                ),
+                                              ),
                                             ],
                                           ),
                                         ),
@@ -237,7 +366,7 @@ class _LoginPageState extends State<LoginPage> {
                               ),
                               const SizedBox(height: 16),
                               if (_useEmail) ...[
-                                _AuthInput(
+                                XqAuthInput(
                                   controller: _emailCtrl,
                                   label: '邮箱',
                                   hint: '请输入邮箱地址',
@@ -245,23 +374,27 @@ class _LoginPageState extends State<LoginPage> {
                                   keyboardType: TextInputType.emailAddress,
                                 ),
                                 const SizedBox(height: 14),
-                                _AuthInput(
+                                XqAuthInput(
                                   controller: _emailPwCtrl,
                                   label: '密码',
                                   hint: '请输入密码',
                                   icon: Icons.lock_outline_rounded,
                                   obscure: _emailObscure,
                                   suffix: IconButton(
-                                    onPressed: () => setState(() => _emailObscure = !_emailObscure),
+                                    onPressed: () => setState(
+                                      () => _emailObscure = !_emailObscure,
+                                    ),
                                     icon: Icon(
-                                      _emailObscure ? Icons.visibility_off_rounded : Icons.visibility_rounded,
+                                      _emailObscure
+                                          ? Icons.visibility_off_rounded
+                                          : Icons.visibility_rounded,
                                       color: theme.textSecondary,
                                     ),
                                   ),
                                   onSubmitted: (_) => _login(),
                                 ),
                               ] else ...[
-                                _AuthInput(
+                                XqAuthInput(
                                   controller: _phoneCtrl,
                                   label: '手机号',
                                   hint: '请输入 11 位手机号',
@@ -273,7 +406,7 @@ class _LoginPageState extends State<LoginPage> {
                                   error: _phoneError,
                                 ),
                                 const SizedBox(height: 14),
-                                _AuthInput(
+                                XqAuthInput(
                                   controller: _pwCtrl,
                                   label: '密码',
                                   hint: '请输入密码',
@@ -309,7 +442,7 @@ class _LoginPageState extends State<LoginPage> {
                                       ),
                               ),
                               const SizedBox(height: 10),
-                              _AuthButton(
+                              XqAuthButton(
                                 label: '登录',
                                 loading: _loading,
                                 active: _formValid,
@@ -322,12 +455,12 @@ class _LoginPageState extends State<LoginPage> {
                                   onPressed: _loading
                                       ? null
                                       : () => Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder: (_) =>
-                                                  const ResetPasswordPage(),
-                                            ),
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (_) =>
+                                                const ResetPasswordPage(),
                                           ),
+                                        ),
                                   style: TextButton.styleFrom(
                                     minimumSize: const Size(44, 44),
                                     padding: EdgeInsets.zero,
@@ -349,11 +482,11 @@ class _LoginPageState extends State<LoginPage> {
                           onPressed: _loading
                               ? null
                               : () => Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (_) => const RegisterPage(),
-                                    ),
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => const RegisterPage(),
                                   ),
+                                ),
                           style: TextButton.styleFrom(
                             minimumSize: const Size(44, 44),
                           ),
@@ -373,238 +506,6 @@ class _LoginPageState extends State<LoginPage> {
             ],
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _AuthBackdrop extends StatelessWidget {
-  final ThemeState theme;
-
-  const _AuthBackdrop({required this.theme});
-
-  @override
-  Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        Positioned(
-          top: -80,
-          right: -70,
-          child: _Glow(
-            size: 220,
-            color: theme.accentColor.withAlpha(theme.isDark ? 42 : 30),
-          ),
-        ),
-        Positioned(
-          left: -80,
-          bottom: 80,
-          child: _Glow(
-            size: 180,
-            color: theme.gold.withAlpha(theme.isDark ? 30 : 24),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _Glow extends StatelessWidget {
-  final double size;
-  final Color color;
-
-  const _Glow({required this.size, required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        gradient: RadialGradient(colors: [color, Colors.transparent]),
-      ),
-    );
-  }
-}
-
-class _AuthHero extends StatelessWidget {
-  final ThemeState theme;
-  final String title;
-
-  const _AuthHero({required this.theme, required this.title});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Container(
-          width: 72,
-          height: 72,
-          decoration: BoxDecoration(
-            color: theme.cardColor.withAlpha(220),
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: theme.borderColor),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withAlpha(theme.isDark ? 40 : 12),
-                blurRadius: 18,
-                offset: const Offset(0, 8),
-              ),
-            ],
-          ),
-          child: Icon(
-            theme.isDark ? Icons.nightlight_round : Icons.wb_sunny_outlined,
-            color: theme.gold,
-            size: 34,
-          ),
-        ),
-        const SizedBox(height: 13),
-        Text(
-          title,
-          style: XqTypography.headlineLarge.copyWith(
-            color: theme.textPrimary,
-            letterSpacing: 2,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _AuthCard extends StatelessWidget {
-  final ThemeState theme;
-  final Widget child;
-
-  const _AuthCard({required this.theme, required this.child});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: theme.cardColor.withAlpha(theme.isDark ? 238 : 245),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: theme.borderColor),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withAlpha(theme.isDark ? 48 : 14),
-            blurRadius: 24,
-            offset: const Offset(0, 12),
-          ),
-        ],
-      ),
-      child: child,
-    );
-  }
-}
-
-class _AuthInput extends StatelessWidget {
-  final TextEditingController controller;
-  final String label;
-  final String hint;
-  final IconData icon;
-  final bool obscure;
-  final TextInputType keyboardType;
-  final List<TextInputFormatter>? inputFormatters;
-  final Widget? suffix;
-  final void Function(String)? onSubmitted;
-  final String? error;
-
-  const _AuthInput({
-    required this.controller,
-    required this.label,
-    required this.hint,
-    required this.icon,
-    this.obscure = false,
-    this.keyboardType = TextInputType.text,
-    this.inputFormatters,
-    this.suffix,
-    this.onSubmitted,
-    this.error,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = context.watch<ThemeState>();
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: TextStyle(
-            color: theme.textSecondary,
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        const SizedBox(height: 7),
-        TextField(
-          controller: controller,
-          obscureText: obscure,
-          keyboardType: keyboardType,
-          inputFormatters: inputFormatters,
-          maxLength: keyboardType == TextInputType.phone ? 11 : null,
-          onSubmitted: onSubmitted,
-          style: TextStyle(color: theme.textPrimary, fontSize: 15),
-          cursorColor: theme.accentColor,
-          decoration: InputDecoration(
-            counterText: '',
-            prefixIcon: Icon(icon, color: theme.accentColor, size: 20),
-            suffixIcon: suffix,
-            hintText: hint,
-            errorText: error,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _AuthButton extends StatelessWidget {
-  final String label;
-  final bool loading;
-  final bool active;
-  final VoidCallback onTap;
-
-  const _AuthButton({
-    required this.label,
-    required this.loading,
-    required this.active,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = context.watch<ThemeState>();
-    return SizedBox(
-      height: 50,
-      child: FilledButton(
-        onPressed: active && !loading ? onTap : null,
-        style: FilledButton.styleFrom(
-          backgroundColor: theme.accentColor,
-          foregroundColor: theme.textOnAccent,
-          disabledBackgroundColor: theme.borderColor,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-        ),
-        child: loading
-            ? SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  color: theme.textOnAccent,
-                ),
-              )
-            : Text(
-                label,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
       ),
     );
   }

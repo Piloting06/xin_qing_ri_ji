@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import '../stores/theme_state.dart';
 import '../theme/xq_decorations.dart';
 import '../utils/weather_utils.dart';
-import 'weather_card_carousel.dart';
+import 'weather_illustration.dart';
 
 class WeatherSummaryCard extends StatelessWidget {
   final bool loading;
@@ -55,7 +55,8 @@ class WeatherSummaryCard extends StatelessWidget {
           Row(
             children: [
               Container(
-                width: 40, height: 40,
+                width: 40,
+                height: 40,
                 decoration: BoxDecoration(
                   color: theme.accentColor.withAlpha(18),
                   borderRadius: BorderRadius.circular(14),
@@ -81,7 +82,10 @@ class WeatherSummaryCard extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(
                       '会优先使用系统定位，失败后自动尝试缓存和 IP 定位。',
-                      style: TextStyle(color: theme.textSecondary, fontSize: 12),
+                      style: TextStyle(
+                        color: theme.textSecondary,
+                        fontSize: 12,
+                      ),
                     ),
                   ],
                 ),
@@ -165,22 +169,26 @@ class WeatherSummaryCard extends StatelessWidget {
     final today = weatherDay(weather);
     final weatherText = (current['weather'] ?? today['weather'] ?? '未知天气')
         .toString();
-    final code = weatherInt(current['weather_code']) ??
+    final code =
+        weatherInt(current['weather_code']) ??
         weatherInt(today['weather_code']) ??
         0;
-    final currentTemp = weatherInt(current['temp_current']) ??
+    final currentTemp =
+        weatherInt(current['temp_current']) ??
         weatherInt(today['temp_current']);
     final high = weatherInt(today['temp_max']);
     final low = weatherInt(today['temp_min']);
-    final humidity = weatherInt(current['humidity']) ?? weatherInt(today['humidity']);
+    final humidity =
+        weatherInt(current['humidity']) ?? weatherInt(today['humidity']);
     final feelsLike = weatherInt(current['feels_like']);
-    final wind = weatherInt(current['wind_current']) ?? weatherInt(today['wind']);
+    final wind =
+        weatherInt(current['wind_current']) ?? weatherInt(today['wind']);
     final prompt = weatherCardPrompt(weather);
 
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(XqDecorations.radiusHero),
         onTap: onOpenDetail,
         child: _shell(
           theme,
@@ -190,15 +198,31 @@ class WeatherSummaryCard extends StatelessWidget {
               Row(
                 children: [
                   Expanded(
-                    child: Text(
-                      cityName.isEmpty ? '城市待确认' : cityName,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: theme.textPrimary,
-                        fontSize: 23,
-                        fontWeight: FontWeight.w700,
-                      ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          cityName.isEmpty ? '城市待确认' : cityName,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: theme.textPrimary,
+                            fontSize: 21,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          locationStatus,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: theme.textSecondary,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                   Container(
@@ -211,7 +235,7 @@ class WeatherSummaryCard extends StatelessWidget {
                       borderRadius: BorderRadius.circular(999),
                     ),
                     child: Text(
-                      '查看详情',
+                      '详情',
                       style: TextStyle(
                         color: theme.accentColor,
                         fontSize: 12,
@@ -221,18 +245,9 @@ class WeatherSummaryCard extends StatelessWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 4),
-              Text(
-                locationStatus,
-                style: TextStyle(
-                  color: theme.textSecondary,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              const SizedBox(height: 18),
+              const SizedBox(height: 12),
               Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Expanded(
                     child: Column(
@@ -240,13 +255,15 @@ class WeatherSummaryCard extends StatelessWidget {
                       children: [
                         Text(
                           weatherText,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                           style: TextStyle(
                             color: theme.textPrimary,
-                            fontSize: 28,
+                            fontSize: 22,
                             fontWeight: FontWeight.w700,
                           ),
                         ),
-                        const SizedBox(height: 6),
+                        const SizedBox(height: 4),
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
@@ -257,91 +274,81 @@ class WeatherSummaryCard extends StatelessWidget {
                                   currentTemp == null ? '--°' : '$currentTemp°',
                                   style: TextStyle(
                                     color: theme.textPrimary,
-                                    fontSize: 44,
+                                    fontSize: 42,
+                                    height: 1,
                                     fontWeight: FontWeight.w300,
                                   ),
                                 ),
                               ),
                             ),
-                            const SizedBox(width: 10),
-                            Flexible(
-                              child: Padding(
-                                padding: const EdgeInsets.only(bottom: 8),
-                                child: Text(
-                                  '今日 ${low == null ? '--' : '$low°'} / ${high == null ? '--' : '$high°'}',
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: TextStyle(
-                                    color: theme.textSecondary,
-                                    fontSize: 13,
-                                  ),
+                            const SizedBox(width: 8),
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 5),
+                              child: Text(
+                                '${low == null ? '--' : '$low°'} / ${high == null ? '--' : '$high°'}',
+                                style: TextStyle(
+                                  color: theme.textSecondary,
+                                  fontSize: 12,
                                 ),
                               ),
                             ),
                           ],
                         ),
-                        const SizedBox(height: 12),
+                        const SizedBox(height: 10),
                         Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
+                          spacing: 7,
+                          runSpacing: 7,
                           children: [
                             if (feelsLike != null)
                               _metricPill(theme, '体感', '$feelsLike°'),
                             if (humidity != null)
                               _metricPill(theme, '湿度', '$humidity%'),
-                            if (wind != null)
-                              _metricPill(theme, '风速', '$wind km/h'),
+                            if (wind != null) _metricPill(theme, '风', '$wind'),
                           ],
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: 10),
                   Container(
-                    width: 118,
-                    height: 128,
-                    padding: const EdgeInsets.all(10),
+                    width: 94,
+                    height: 94,
+                    padding: const EdgeInsets.all(8),
+                    clipBehavior: Clip.antiAlias,
                     decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [
-                          theme.cardElevated.withAlpha(theme.isDark ? 230 : 250),
-                          theme.cardElevated.withAlpha(theme.isDark ? 180 : 220),
-                        ],
+                      color: theme.cardColor.withAlpha(
+                        theme.isDark ? 150 : 180,
                       ),
-                      borderRadius: BorderRadius.circular(22),
-                      border: Border.all(color: theme.borderColor.withAlpha(80)),
-                      boxShadow: [
-                        BoxShadow(
-                          color: theme.accentColor.withAlpha(theme.isDark ? 8 : 12),
-                          blurRadius: 16,
-                          offset: const Offset(0, 6),
-                        ),
-                      ],
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: theme.borderColor.withAlpha(80),
+                      ),
                     ),
                     child: Column(
                       children: [
                         Expanded(
-                          child: CustomPaint(
-                            size: const Size(92, 70),
-                            painter: WeatherIllustrationPainter(
-                              code: code,
-                              inkColor: theme.ink,
-                              accentColor: theme.gold,
+                          child: Center(
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(14),
+                              child: AnimatedWeatherIllustration(
+                                code: code,
+                                inkColor: theme.ink,
+                                accentColor: theme.gold,
+                                size: const Size(72, 50),
+                              ),
                             ),
                           ),
                         ),
-                        const SizedBox(height: 4),
+                        const SizedBox(height: 2),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Icon(
                               weatherIcon(code, weatherText),
                               color: theme.accentColor,
-                              size: 15,
+                              size: 14,
                             ),
-                            const SizedBox(width: 4),
+                            const SizedBox(width: 3),
                             Flexible(
                               child: Text(
                                 weatherText,
@@ -349,7 +356,7 @@ class WeatherSummaryCard extends StatelessWidget {
                                 overflow: TextOverflow.ellipsis,
                                 style: TextStyle(
                                   color: theme.textSecondary,
-                                  fontSize: 11,
+                                  fontSize: 10,
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
@@ -361,73 +368,64 @@ class WeatherSummaryCard extends StatelessWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 9,
+                ),
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.centerLeft,
-                    end: Alignment.centerRight,
-                    colors: [
-                      theme.gold.withAlpha(theme.isDark ? 12 : 16),
-                      theme.gold.withAlpha(theme.isDark ? 4 : 6),
-                    ],
-                  ),
-                  borderRadius: BorderRadius.circular(18),
+                  color: theme.gold.withAlpha(theme.isDark ? 10 : 14),
+                  borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: theme.gold.withAlpha(theme.isDark ? 30 : 25),
+                    color: theme.gold.withAlpha(theme.isDark ? 24 : 22),
                   ),
                 ),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Container(
-                      width: 32, height: 32,
-                      decoration: BoxDecoration(
-                        color: theme.gold.withAlpha(22),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Icon(
-                        Icons.auto_awesome_outlined,
-                        size: 17,
-                        color: theme.gold,
-                      ),
+                    Icon(
+                      Icons.auto_awesome_outlined,
+                      size: 15,
+                      color: theme.gold,
                     ),
-                    const SizedBox(width: 10),
+                    const SizedBox(width: 8),
                     Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.only(top: 4),
-                        child: Text(
-                          prompt,
-                          style: TextStyle(
-                            color: theme.textPrimary,
-                            fontSize: 13,
-                            height: 1.55,
-                            fontWeight: FontWeight.w500,
-                          ),
+                      child: Text(
+                        prompt,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: theme.textPrimary,
+                          fontSize: 12,
+                          height: 1.45,
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 9),
               Row(
                 children: [
-                  Icon(Icons.schedule, size: 15, color: theme.textSecondary),
+                  Icon(Icons.schedule, size: 14, color: theme.textSecondary),
                   const SizedBox(width: 5),
                   Text(
                     weatherUpdatedText(updatedAt),
-                    style: TextStyle(color: theme.textSecondary, fontSize: 12),
+                    style: TextStyle(color: theme.textSecondary, fontSize: 11),
                   ),
                   if (statusText != null) ...[
-                    const SizedBox(width: 10),
+                    const SizedBox(width: 8),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 7,
+                        vertical: 2,
+                      ),
                       decoration: BoxDecoration(
                         color: refreshing
                             ? theme.accentColor.withAlpha(20)
-                            : theme.textSecondary.withAlpha(20),
+                            : theme.textSecondary.withAlpha(18),
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Row(
@@ -435,10 +433,10 @@ class WeatherSummaryCard extends StatelessWidget {
                         children: [
                           if (refreshing)
                             SizedBox(
-                              width: 10,
-                              height: 10,
+                              width: 9,
+                              height: 9,
                               child: CircularProgressIndicator(
-                                strokeWidth: 1.5,
+                                strokeWidth: 1.4,
                                 color: theme.accentColor,
                               ),
                             ),
@@ -446,8 +444,10 @@ class WeatherSummaryCard extends StatelessWidget {
                           Text(
                             statusText!,
                             style: TextStyle(
-                              color: refreshing ? theme.accentColor : theme.textSecondary,
-                              fontSize: 11,
+                              color: refreshing
+                                  ? theme.accentColor
+                                  : theme.textSecondary,
+                              fontSize: 10,
                             ),
                           ),
                         ],
@@ -465,17 +465,17 @@ class WeatherSummaryCard extends StatelessWidget {
 
   Widget _metricPill(ThemeState theme, String label, String value) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
       decoration: BoxDecoration(
-        color: theme.accentColor.withAlpha(14),
+        color: theme.accentColor.withAlpha(13),
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: theme.accentColor.withAlpha(40)),
+        border: Border.all(color: theme.accentColor.withAlpha(35)),
       ),
       child: Text(
         '$label $value',
         style: TextStyle(
           color: theme.textPrimary,
-          fontSize: 11,
+          fontSize: 10,
           fontWeight: FontWeight.w600,
         ),
       ),
@@ -486,18 +486,13 @@ class WeatherSummaryCard extends StatelessWidget {
     return Container(
       key: ValueKey('${loading}_${error}_$cityName'),
       width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: theme.isDark
-              ? [theme.cardColor, theme.cardElevated]
-              : [theme.cardElevated, theme.cardColor],
-        ),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: theme.borderColor),
-        boxShadow: XqDecorations.shadowMedium(dark: theme.isDark),
+      padding: const EdgeInsets.all(16),
+      decoration: XqDecorations.heroCard(
+        theme.isDark ? theme.cardColor : theme.cardElevated,
+        theme.isDark ? theme.cardElevated : theme.cardColor,
+        theme.borderColor,
+        dark: theme.isDark,
+        glow: theme.accentColor,
       ),
       child: child,
     );

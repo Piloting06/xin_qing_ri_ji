@@ -5,6 +5,7 @@ import '../theme/xq_decorations.dart';
 import '../utils/weather_utils.dart';
 import '../widgets/weather_card_carousel.dart';
 import '../widgets/weather_feedback_bar.dart';
+import '../widgets/weather_illustration.dart';
 
 enum WeatherDetailAction { relocate, chooseCity }
 
@@ -31,16 +32,20 @@ class WeatherDetailPage extends StatelessWidget {
     final dayAfter = weatherDay(weather, key: 'day_after', index: 2);
     final weatherText = (current['weather'] ?? today['weather'] ?? '未知天气')
         .toString();
-    final code = weatherInt(current['weather_code']) ??
+    final code =
+        weatherInt(current['weather_code']) ??
         weatherInt(today['weather_code']) ??
         0;
-    final currentTemp = weatherInt(current['temp_current']) ??
+    final currentTemp =
+        weatherInt(current['temp_current']) ??
         weatherInt(today['temp_current']);
     final high = weatherInt(today['temp_max']);
     final low = weatherInt(today['temp_min']);
-    final humidity = weatherInt(current['humidity']) ?? weatherInt(today['humidity']);
+    final humidity =
+        weatherInt(current['humidity']) ?? weatherInt(today['humidity']);
     final feelsLike = weatherInt(current['feels_like']);
-    final wind = weatherInt(current['wind_current']) ?? weatherInt(today['wind']);
+    final wind =
+        weatherInt(current['wind_current']) ?? weatherInt(today['wind']);
     final rain = weatherInt(today['rain_prob']);
 
     return Scaffold(
@@ -75,107 +80,144 @@ class WeatherDetailPage extends StatelessWidget {
             ),
             const SizedBox(height: 10),
             Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: theme.isDark
-                      ? [theme.cardColor, theme.cardElevated]
-                      : [theme.cardElevated, theme.cardColor],
-                ),
-                borderRadius: BorderRadius.circular(26),
-                border: Border.all(color: theme.borderColor),
-                boxShadow: XqDecorations.shadowMedium(dark: theme.isDark),
+              padding: const EdgeInsets.all(18),
+              decoration: XqDecorations.heroCard(
+                theme.isDark ? theme.cardColor : theme.cardElevated,
+                theme.isDark ? theme.cardElevated : theme.cardColor,
+                theme.borderColor,
+                dark: theme.isDark,
+                glow: theme.accentColor,
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    cityName.isEmpty ? '当前位置' : cityName,
-                    style: TextStyle(
-                      color: theme.textPrimary,
-                      fontSize: 24,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '$locationStatus · ${weatherUpdatedText(updatedAt)}',
-                    style: TextStyle(
-                      color: theme.textSecondary,
-                      fontSize: 13,
-                    ),
-                  ),
-                  const SizedBox(height: 18),
-                  // 天气插画 — 全宽
-                  SizedBox(
-                    height: 120,
-                    child: CustomPaint(
-                      size: const Size(double.infinity, 100),
-                      painter: WeatherIllustrationPainter(
-                        code: code,
-                        inkColor: theme.ink,
-                        accentColor: theme.gold,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  // 温度信息 — 下方独立区域
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  Row(
                     children: [
-                      Text(
-                        weatherText,
-                        style: TextStyle(
-                          color: theme.textPrimary,
-                          fontSize: 28,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Flexible(
-                            child: FittedBox(
-                              fit: BoxFit.scaleDown,
-                              child: Text(
-                                currentTemp == null ? '--°' : '$currentTemp°',
-                                style: TextStyle(
-                                  color: theme.textPrimary,
-                                  fontSize: 54,
-                                  fontWeight: FontWeight.w300,
-                                ),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              cityName.isEmpty ? '当前位置' : cityName,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                color: theme.textPrimary,
+                                fontSize: 23,
+                                fontWeight: FontWeight.w700,
                               ),
                             ),
-                          ),
-                          const SizedBox(width: 10),
-                          Padding(
-                            padding: const EdgeInsets.only(bottom: 10),
-                            child: Text(
-                              '今日 ${low == null ? '--' : '$low°'} / ${high == null ? '--' : '$high°'}',
+                            const SizedBox(height: 4),
+                            Text(
+                              '$locationStatus · ${weatherUpdatedText(updatedAt)}',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                               style: TextStyle(
                                 color: theme.textSecondary,
-                                fontSize: 14,
+                                fontSize: 12,
                               ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                      const SizedBox(height: 10),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: [
-                          if (feelsLike != null) _badge(theme, '体感 $feelsLike°'),
-                          if (humidity != null) _badge(theme, '湿度 $humidity%'),
-                          if (wind != null) _badge(theme, '风速 $wind km/h'),
-                        ],
+                      Icon(
+                        Icons.keyboard_arrow_down_rounded,
+                        color: theme.textTertiary,
                       ),
                     ],
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 14),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              weatherText,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                color: theme.textPrimary,
+                                fontSize: 26,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                Flexible(
+                                  child: FittedBox(
+                                    fit: BoxFit.scaleDown,
+                                    child: Text(
+                                      currentTemp == null
+                                          ? '--°'
+                                          : '$currentTemp°',
+                                      style: TextStyle(
+                                        color: theme.textPrimary,
+                                        fontSize: 52,
+                                        height: 1,
+                                        fontWeight: FontWeight.w300,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                Padding(
+                                  padding: const EdgeInsets.only(bottom: 7),
+                                  child: Text(
+                                    '${low == null ? '--' : '$low°'} / ${high == null ? '--' : '$high°'}',
+                                    style: TextStyle(
+                                      color: theme.textSecondary,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 10),
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
+                              children: [
+                                if (feelsLike != null)
+                                  _badge(theme, '体感 $feelsLike°'),
+                                if (humidity != null)
+                                  _badge(theme, '湿度 $humidity%'),
+                                if (wind != null) _badge(theme, '风速 $wind'),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Container(
+                        width: 118,
+                        height: 112,
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: theme.cardColor.withAlpha(
+                            theme.isDark ? 145 : 175,
+                          ),
+                          borderRadius: BorderRadius.circular(22),
+                          border: Border.all(
+                            color: theme.borderColor.withAlpha(80),
+                          ),
+                        ),
+                        child: Center(
+                          child: AnimatedWeatherIllustration(
+                            code: code,
+                            inkColor: theme.ink,
+                            accentColor: theme.gold,
+                            size: const Size(102, 74),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
                   Row(
                     children: [
                       Expanded(
@@ -184,13 +226,14 @@ class WeatherDetailPage extends StatelessWidget {
                             context,
                             WeatherDetailAction.relocate,
                           ),
-                          icon: const Icon(Icons.my_location, size: 18),
+                          icon: const Icon(Icons.my_location, size: 17),
                           label: const Text('重新定位'),
                           style: OutlinedButton.styleFrom(
                             foregroundColor: theme.accentColor,
                             side: BorderSide(
                               color: theme.accentColor.withAlpha(90),
                             ),
+                            visualDensity: VisualDensity.compact,
                           ),
                         ),
                       ),
@@ -201,11 +244,12 @@ class WeatherDetailPage extends StatelessWidget {
                             context,
                             WeatherDetailAction.chooseCity,
                           ),
-                          icon: const Icon(Icons.search, size: 18),
+                          icon: const Icon(Icons.search, size: 17),
                           label: const Text('手动城市'),
                           style: OutlinedButton.styleFrom(
                             foregroundColor: theme.gold,
                             side: BorderSide(color: theme.gold.withAlpha(90)),
+                            visualDensity: VisualDensity.compact,
                           ),
                         ),
                       ),
@@ -267,7 +311,10 @@ class WeatherDetailPage extends StatelessWidget {
             if (rain != null) ...[
               const SizedBox(height: 10),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 12,
+                ),
                 decoration: BoxDecoration(
                   color: theme.cardColor,
                   borderRadius: BorderRadius.circular(18),
@@ -347,71 +394,6 @@ class WeatherDetailPage extends StatelessWidget {
     );
   }
 
-  Widget _dayCard(ThemeState theme, String title, Map<String, dynamic> day, {VoidCallback? onTap}) {
-    final weatherText = day['weather']?.toString() ?? '暂无数据';
-    final high = weatherInt(day['temp_max']);
-    final low = weatherInt(day['temp_min']);
-    final rain = weatherInt(day['rain_prob']);
-    final wind = weatherInt(day['wind']);
-    final code = weatherInt(day['weather_code']) ?? 0;
-
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(20),
-        onTap: onTap,
-        child: Ink(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                theme.cardElevated.withAlpha(theme.isDark ? 230 : 240),
-                theme.cardColor.withAlpha(200),
-              ],
-            ),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: theme.borderColor.withAlpha(100)),
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 52, height: 52,
-                decoration: BoxDecoration(
-                  color: theme.accentColor.withAlpha(20),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Icon(weatherIcon(code, weatherText), color: theme.accentColor, size: 26),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(title, style: TextStyle(color: theme.textPrimary, fontSize: 15, fontWeight: FontWeight.w700)),
-                    const SizedBox(height: 4),
-                    Text('$weatherText · ${low == null ? '--' : '$low°'} / ${high == null ? '--' : '$high°'}',
-                        style: TextStyle(color: theme.textSecondary, fontSize: 13)),
-                  ],
-                ),
-              ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  if (rain != null) Text('降水 $rain%', style: TextStyle(color: theme.textSecondary, fontSize: 12)),
-                  if (wind != null) Text('风 $wind km/h', style: TextStyle(color: theme.textSecondary, fontSize: 12)),
-                  const SizedBox(height: 4),
-                  Icon(Icons.chevron_right, size: 18, color: theme.textTertiary),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
   Widget _badge(ThemeState theme, String text) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
@@ -427,141 +409,6 @@ class WeatherDetailPage extends StatelessWidget {
           fontWeight: FontWeight.w600,
         ),
       ),
-    );
-  }
-
-  void _showDayDialog(BuildContext context, ThemeState theme, String title, Map<String, dynamic> day) {
-    final w = day['weather']?.toString() ?? '--';
-    final code = weatherInt(day['weather_code']) ?? 0;
-    final high = weatherInt(day['temp_max']);
-    final low = weatherInt(day['temp_min']);
-    final rain = weatherInt(day['rain_prob']);
-    final wind = weatherInt(day['wind']);
-    final feels = weatherInt(day['feels_like']);
-    final prompt = weatherCardPrompt({title == '明天' ? 'tomorrow' : 'day_after': day, 'current': day});
-
-    final barColors = _weatherBarColors(code);
-
-    showDialog(
-      context: context,
-      builder: (ctx) => Dialog(
-        backgroundColor: Colors.transparent,
-        insetPadding: const EdgeInsets.all(20),
-        child: AnimatedScale(
-          scale: 1.0,
-          duration: const Duration(milliseconds: 280),
-          curve: Curves.easeOutCubic,
-          child: Container(
-            width: MediaQuery.sizeOf(context).width - 48,
-            constraints: const BoxConstraints(maxWidth: 400),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(24),
-              color: theme.cardColor,
-              boxShadow: [
-                BoxShadow(color: Colors.black.withAlpha(60), blurRadius: 24, offset: const Offset(0, 12)),
-              ],
-            ),
-            clipBehavior: Clip.antiAlias,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Color header
-                Stack(
-                  children: [
-                    Container(
-                      height: 56,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: barColors,
-                        ),
-                      ),
-                      child: Center(
-                        child: Icon(weatherIcon(code, w), color: Colors.white, size: 32),
-                      ),
-                    ),
-                    Positioned(
-                      right: 4, top: 4,
-                      child: IconButton(
-                        icon: const Icon(Icons.close, color: Colors.white, size: 20),
-                        onPressed: () => Navigator.pop(ctx),
-                      ),
-                    ),
-                  ],
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(22),
-                  child: Column(
-                    children: [
-                      // Weather icon
-                      CustomPaint(
-                        size: const Size(80, 60),
-                        painter: WeatherIllustrationPainter(code: code, inkColor: theme.ink, accentColor: theme.gold),
-                      ),
-                      const SizedBox(height: 8),
-                      Text('$low° / $high°',
-                          style: TextStyle(color: theme.textPrimary, fontSize: 48, fontWeight: FontWeight.w300, height: 1)),
-                      const SizedBox(height: 4),
-                      Text(w, style: TextStyle(color: theme.textSecondary, fontSize: 16)),
-                      const SizedBox(height: 18),
-                      // Metric pills
-                      Wrap(spacing: 8, runSpacing: 8, children: [
-                        if (feels != null) _metricPill(theme, '体感', '$feels°'),
-                        if (rain != null) _metricPill(theme, '降水', '$rain%'),
-                        if (wind != null) _metricPill(theme, '风速', '$wind km/h'),
-                      ]),
-                      const SizedBox(height: 20),
-                      SizedBox(
-                        width: double.infinity, height: 44,
-                        child: FilledButton(
-                          onPressed: () => Navigator.pop(ctx),
-                          style: FilledButton.styleFrom(
-                            backgroundColor: barColors[0],
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                          ),
-                          child: const Text('知道了'),
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      // Tip
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(14),
-                        decoration: BoxDecoration(
-                          color: theme.accentColor.withAlpha(10),
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                        child: Text(prompt, style: TextStyle(color: theme.textSecondary, fontSize: 12, height: 1.5)),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  List<Color> _weatherBarColors(int code) {
-    if (code <= 1) return const [Color(0xFFF5A623), Color(0xFFD4891A)]; // sunny
-    if (code <= 3) return const [Color(0xFF8899AA), Color(0xFF667788)]; // cloudy
-    if (code <= 48) return const [Color(0xFF99AABB), Color(0xFF778899)]; // fog
-    if (code <= 67 || (code >= 80 && code <= 82)) return const [Color(0xFF6B8FAA), Color(0xFF4A6D8A)]; // rain
-    if (code >= 71 && code <= 86) return const [Color(0xFFAABBCC), Color(0xFF8899BB)]; // snow
-    return const [Color(0xFF8899AA), Color(0xFF667788)];
-  }
-
-  Widget _metricPill(ThemeState theme, String label, String value) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: theme.accentColor.withAlpha(14),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Text('$label $value',
-          style: TextStyle(color: theme.textPrimary, fontSize: 12, fontWeight: FontWeight.w600)),
     );
   }
 }

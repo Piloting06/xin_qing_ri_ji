@@ -7,6 +7,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../api/api_client.dart';
 import '../stores/app_state.dart';
 import '../stores/theme_state.dart';
+import '../theme/xq_decorations.dart';
+import '../theme/xq_hand_drawn.dart';
+import '../theme/xq_paper_textures.dart';
 import '../utils/weather_utils.dart';
 import '../utils/geo_utils.dart';
 import '../widgets/weather_summary_card.dart';
@@ -58,9 +61,7 @@ class _HomePageState extends State<HomePage> {
 
     if (lat != null && lon != null && city != null && dataStr != null) {
       try {
-        final data = Map<String, dynamic>.from(
-          json.decode(dataStr) as Map,
-        );
+        final data = Map<String, dynamic>.from(json.decode(dataStr) as Map);
         if (mounted) {
           setState(() {
             _weather = data;
@@ -150,13 +151,15 @@ class _HomePageState extends State<HomePage> {
 
     // Default fallback — Beijing
     if (!hasCache && _weather == null && mounted) {
-      await _fetchWeatherFor(_WeatherLocation(
-        lat: 39.9042,
-        lon: 116.4074,
-        city: '北京',
-        status: '默认位置',
-        cacheable: false,
-      ));
+      await _fetchWeatherFor(
+        _WeatherLocation(
+          lat: 39.9042,
+          lon: 116.4074,
+          city: '北京',
+          status: '默认位置',
+          cacheable: false,
+        ),
+      );
     }
   }
 
@@ -194,7 +197,9 @@ class _HomePageState extends State<HomePage> {
       final ipCity = loc['city']?.toString() ?? '';
       final ipRegion = loc['regionName']?.toString() ?? '';
       if (ipCity.isNotEmpty && ipCity != '未知') {
-        if (ipRegion.isNotEmpty && ipRegion != '未知') return '$ipCity，$ipRegion，中国';
+        if (ipRegion.isNotEmpty && ipRegion != '未知') {
+          return '$ipCity，$ipRegion，中国';
+        }
         return '$ipCity，中国';
       }
     } catch (_) {}
@@ -206,9 +211,16 @@ class _HomePageState extends State<HomePage> {
     final text = city.trim();
     if (text.isEmpty) return true;
     const generics = {
-      '当前位置', '上次位置', '定位城市', '手动城市',
-      'GPS定位', 'IP 定位', 'IP 定位城市', '正在定位',
-      '使用上次位置', '城市待确认',
+      '当前位置',
+      '上次位置',
+      '定位城市',
+      '手动城市',
+      'GPS定位',
+      'IP 定位',
+      'IP 定位城市',
+      '正在定位',
+      '使用上次位置',
+      '城市待确认',
     };
     if (generics.contains(text)) return true;
     if (!RegExp(r'[一-鿿]').hasMatch(text)) return true;
@@ -295,7 +307,12 @@ class _HomePageState extends State<HomePage> {
   /// 直接从客户端调用 ip-api.com，获取手机真实 IP 对应的城市
   Future<Map<String, dynamic>> _clientIpLocation() async {
     try {
-      final res = await http.get(Uri.parse('http://ip-api.com/json/?fields=status,lat,lon,city,regionName,country'))
+      final res = await http
+          .get(
+            Uri.parse(
+              'http://ip-api.com/json/?fields=status,lat,lon,city,regionName,country',
+            ),
+          )
           .timeout(const Duration(seconds: 5));
       final j = json.decode(res.body) as Map<String, dynamic>;
       if (j['status'] == 'success') return j;
@@ -305,7 +322,9 @@ class _HomePageState extends State<HomePage> {
 
   Future<_WeatherLocation?> _ipLocation() async {
     final loc = await _clientIpLocation();
-    if (loc['status'] != 'success' || loc['lat'] == null || loc['lon'] == null) {
+    if (loc['status'] != 'success' ||
+        loc['lat'] == null ||
+        loc['lon'] == null) {
       throw Exception('IP 定位失败');
     }
     final ipLat = (loc['lat'] as num).toDouble();
@@ -319,9 +338,17 @@ class _HomePageState extends State<HomePage> {
           : '$ipCity，中国';
     } else {
       final nearest = findNearestCity(ipLat, ipLng, maxKm: 200);
-      city = nearest != null ? '${nearest.name}，${nearest.province}，中国' : 'IP 定位城市';
+      city = nearest != null
+          ? '${nearest.name}，${nearest.province}，中国'
+          : 'IP 定位城市';
     }
-    return _WeatherLocation(lat: ipLat, lon: ipLng, city: city, status: 'IP 定位', cacheable: true);
+    return _WeatherLocation(
+      lat: ipLat,
+      lon: ipLng,
+      city: city,
+      status: 'IP 定位',
+      cacheable: true,
+    );
   }
 
   Future<void> _cacheLocation(
@@ -351,13 +378,17 @@ class _HomePageState extends State<HomePage> {
     final results = searchCityLocally(q);
     if (mounted) {
       setState(() {
-        _cityResults = results.map((c) => {
-          'name': c.name,
-          'admin1': c.province,
-          'country': '中国',
-          'latitude': c.lat,
-          'longitude': c.lng,
-        }).toList();
+        _cityResults = results
+            .map(
+              (c) => {
+                'name': c.name,
+                'admin1': c.province,
+                'country': '中国',
+                'latitude': c.lat,
+                'longitude': c.lng,
+              },
+            )
+            .toList();
       });
     }
   }
@@ -471,7 +502,7 @@ class _HomePageState extends State<HomePage> {
                   ),
                 ],
               ),
-              const SizedBox(height: 18),
+              const SizedBox(height: 16),
               WeatherSummaryCard(
                 loading: _loading,
                 refreshing: _refreshing,
@@ -485,9 +516,12 @@ class _HomePageState extends State<HomePage> {
                 onChooseCity: _openCitySearch,
                 onOpenDetail: _openWeatherDetail,
               ),
-              if (_weather != null && !_loading)
-                const SizedBox(height: 14),
-              if (_showCitySearch) _buildCitySearch(theme),
+              if (_weather != null && !_loading) const SizedBox(height: 12),
+              if (_showCitySearch) ...[
+                _buildCitySearch(theme),
+                const SizedBox(height: 12),
+              ],
+              _buildMoodPaperHero(theme, appState),
               const SizedBox(height: 18),
               _buildTodayDashboard(theme),
             ],
@@ -497,226 +531,240 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildTodayDashboard(ThemeState theme) {
+  Widget _buildMoodPaperHero(ThemeState theme, AppState appState) {
     final prompt = dashboardPrompt(_weather);
+    final name = appState.displayName.isNotEmpty ? appState.displayName : '朋友';
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(XqDecorations.radiusHero),
+        onTap: _openMood,
+        child: Container(
+          decoration: XqDecorations.heroCard(
+            theme.cardElevated,
+            theme.cardColor,
+            theme.borderColor,
+            dark: theme.isDark,
+            glow: theme.accentColor,
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(XqDecorations.radiusHero),
+            child: Stack(
+              children: [
+                Positioned.fill(
+                  child: IgnorePointer(
+                    child: CustomPaint(
+                      painter: PaperTexturePainter(
+                        dotColor: theme.accentColor.withAlpha(
+                          theme.isDark ? 8 : 10,
+                        ),
+                        seed: DateTime.now().day,
+                      ),
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            width: 40,
+                            height: 40,
+                            decoration: BoxDecoration(
+                              color: theme.accentColor.withAlpha(20),
+                              borderRadius: BorderRadius.circular(15),
+                              border: Border.all(
+                                color: theme.accentColor.withAlpha(38),
+                              ),
+                            ),
+                            child: Icon(
+                              Icons.favorite_rounded,
+                              color: theme.accentColor,
+                              size: 20,
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  '$name，今天想怎么被记住？',
+                                  style: TextStyle(
+                                    color: theme.textPrimary,
+                                    fontSize: 16.5,
+                                    fontWeight: FontWeight.w800,
+                                    height: 1.2,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  prompt,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    color: theme.textSecondary,
+                                    fontSize: 11.5,
+                                    height: 1.35,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: SizedBox(
+                              height: 42,
+                              child: FilledButton.icon(
+                                onPressed: _openMood,
+                                icon: const Icon(
+                                  Icons.edit_note_rounded,
+                                  size: 16,
+                                ),
+                                label: const Text('记录此刻'),
+                                style: FilledButton.styleFrom(
+                                  backgroundColor: theme.accentColor,
+                                  foregroundColor: theme.textOnAccent,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(14),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          SizedBox(
+                            width: 32,
+                            height: 32,
+                            child: CustomPaint(
+                              painter: InkDotPainter(
+                                inkColor: theme.accentColor.withAlpha(90),
+                                radius: 4,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTodayDashboard(ThemeState theme) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const SizedBox(height: 4),
-        // Prompt bar - lighter
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                theme.accentColor.withAlpha(theme.isDark ? 8 : 14),
-                theme.accentColor.withAlpha(theme.isDark ? 2 : 5),
-              ],
-            ),
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(
-              color: theme.accentColor.withAlpha(theme.isDark ? 25 : 30),
-            ),
+        Text(
+          '也可以顺手',
+          style: TextStyle(
+            color: theme.textPrimary,
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
           ),
-          child: Row(
+        ),
+        const SizedBox(height: 10),
+        Row(
+          children: [
+            Expanded(
+              child: _quickActionCard(
+                theme,
+                icon: Icons.auto_awesome_rounded,
+                title: '树洞',
+                subtitle: '轻轻放一句话',
+                accent: theme.accentColor,
+                onTap: _openTreehole,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _quickActionCard(
+                theme,
+                icon: Icons.hourglass_top_rounded,
+                title: '胶囊',
+                subtitle: '写给未来的自己',
+                accent: theme.gold,
+                onTap: _openCapsule,
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _quickActionCard(
+    ThemeState theme, {
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required Color accent,
+    required VoidCallback onTap,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(XqDecorations.radiusLarge),
+        onTap: onTap,
+        child: Container(
+          constraints: const BoxConstraints(minHeight: 118),
+          padding: const EdgeInsets.all(14),
+          decoration: XqDecorations.actionCard(
+            theme.cardColor,
+            theme.borderColor,
+            dark: theme.isDark,
+            accent: accent,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                width: 30, height: 30,
+                width: 38,
+                height: 38,
                 decoration: BoxDecoration(
-                  color: theme.gold.withAlpha(28),
-                  borderRadius: BorderRadius.circular(9),
+                  color: accent.withAlpha(22),
+                  borderRadius: BorderRadius.circular(14),
                 ),
-                child: Icon(Icons.auto_awesome_outlined, color: theme.gold, size: 16),
+                child: Icon(icon, color: accent, size: 21),
               ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  prompt,
-                  style: TextStyle(
-                    color: theme.textPrimary.withAlpha(220),
-                    fontSize: 12,
-                    height: 1.5,
-                    fontWeight: FontWeight.w500,
-                  ),
+              const SizedBox(height: 13),
+              Text(
+                title,
+                style: TextStyle(
+                  color: theme.textPrimary,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: 3),
+              Text(
+                subtitle,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: theme.textSecondary,
+                  fontSize: 12,
+                  height: 1.35,
                 ),
               ),
             ],
           ),
         ),
-        const SizedBox(height: 14),
-        // Primary: mood recording - full width, more visual weight
-        InkWell(
-          borderRadius: BorderRadius.circular(22),
-          onTap: _openMood,
-          child: Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  theme.accentColor.withAlpha(22),
-                  theme.cardColor,
-                ],
-              ),
-              borderRadius: BorderRadius.circular(22),
-              border: Border.all(color: theme.accentColor.withAlpha(50)),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    color: theme.accentColor.withAlpha(26),
-                    borderRadius: BorderRadius.circular(18),
-                  ),
-                  child: Icon(Icons.favorite_rounded, color: theme.accentColor, size: 24),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '记录心情',
-                        style: TextStyle(
-                          color: theme.textPrimary,
-                          fontSize: 17,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        '看看今天的自己',
-                        style: TextStyle(color: theme.textSecondary, fontSize: 13),
-                      ),
-                    ],
-                  ),
-                ),
-                Icon(Icons.chevron_right_rounded, color: theme.accentColor, size: 22),
-              ],
-            ),
-          ),
-        ),
-        const SizedBox(height: 12),
-        // Treehole - full-width card
-        InkWell(
-          borderRadius: BorderRadius.circular(22),
-          onTap: _openTreehole,
-          child: Container(
-            padding: const EdgeInsets.all(18),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  theme.cardElevated,
-                  theme.cardColor,
-                ],
-              ),
-              borderRadius: BorderRadius.circular(22),
-              border: Border.all(color: theme.borderColor),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    color: theme.accentColor.withAlpha(26),
-                    borderRadius: BorderRadius.circular(18),
-                  ),
-                  child: Icon(Icons.auto_awesome_rounded, color: theme.accentColor, size: 24),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '留一句树洞',
-                        style: TextStyle(color: theme.textPrimary, fontSize: 17, fontWeight: FontWeight.w700),
-                      ),
-                      const SizedBox(height: 2),
-                      Text('把想说的丢进树洞里', style: TextStyle(color: theme.textSecondary, fontSize: 13)),
-                    ],
-                  ),
-                ),
-                Icon(Icons.chevron_right_rounded, color: theme.accentColor, size: 22),
-              ],
-            ),
-          ),
-        ),
-        const SizedBox(height: 14),
-        // Capsule - kept as before
-        InkWell(
-          borderRadius: BorderRadius.circular(22),
-          onTap: _openCapsule,
-          child: Container(
-            padding: const EdgeInsets.all(18),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  theme.cardElevated,
-                  theme.cardColor,
-                ],
-              ),
-              borderRadius: BorderRadius.circular(22),
-              border: Border.all(color: theme.borderColor),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  width: 46,
-                  height: 46,
-                  decoration: BoxDecoration(
-                    color: theme.gold.withAlpha(22),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Icon(
-                    Icons.hourglass_top_rounded,
-                    color: theme.gold,
-                    size: 22,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '时光胶囊',
-                        style: TextStyle(
-                          color: theme.textPrimary,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        '写给几天后的自己，到了那天会回来提醒你。',
-                        style: TextStyle(
-                          color: theme.textSecondary,
-                          fontSize: 13,
-                          height: 1.45,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Icon(
-                  Icons.chevron_right_rounded,
-                  color: theme.textSecondary,
-                  size: 22,
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
+      ),
     );
   }
 

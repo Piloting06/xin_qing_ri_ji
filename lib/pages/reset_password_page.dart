@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../api/api_client.dart';
 import '../stores/theme_state.dart';
 import '../theme/xq_typography.dart';
+import '../widgets/auth_frame.dart';
 import 'login_page.dart';
 
 class ResetPasswordPage extends StatefulWidget {
@@ -38,13 +39,61 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
   bool _isValidPhone(String phone) {
     if (!RegExp(r'^1\d{10}$').hasMatch(phone)) return false;
     const validPrefixes = {
-      '130','131','132','133','134','135','136','137','138','139',
-      '145','146','147','148','149',
-      '150','151','152','153','155','156','157','158','159',
-      '162','165','166','167',
-      '170','171','172','173','174','175','176','177','178',
-      '180','181','182','183','184','185','186','187','188','189',
-      '190','191','193','195','196','197','198','199',
+      '130',
+      '131',
+      '132',
+      '133',
+      '134',
+      '135',
+      '136',
+      '137',
+      '138',
+      '139',
+      '145',
+      '146',
+      '147',
+      '148',
+      '149',
+      '150',
+      '151',
+      '152',
+      '153',
+      '155',
+      '156',
+      '157',
+      '158',
+      '159',
+      '162',
+      '165',
+      '166',
+      '167',
+      '170',
+      '171',
+      '172',
+      '173',
+      '174',
+      '175',
+      '176',
+      '177',
+      '178',
+      '180',
+      '181',
+      '182',
+      '183',
+      '184',
+      '185',
+      '186',
+      '187',
+      '188',
+      '189',
+      '190',
+      '191',
+      '193',
+      '195',
+      '196',
+      '197',
+      '198',
+      '199',
     };
     return validPrefixes.contains(phone.substring(0, 3));
   }
@@ -108,9 +157,9 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
         _pwCtrl.text,
       );
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('密码已重置，请登录')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('密码已重置，请登录')));
       Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(builder: (_) => const LoginPage()),
@@ -134,7 +183,11 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios_new, color: theme.textPrimary, size: 18),
+          icon: Icon(
+            Icons.arrow_back_ios_new,
+            color: theme.textPrimary,
+            size: 18,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -143,19 +196,26 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
           onTap: () => FocusScope.of(context).unfocus(),
           child: Stack(
             children: [
-              _AuthBackdrop(theme: theme),
+              XqAuthBackdrop(theme: theme),
               Center(
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 24),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 22,
+                    vertical: 24,
+                  ),
                   child: ConstrainedBox(
                     constraints: const BoxConstraints(maxWidth: 420),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         const SizedBox(height: 16),
-                        _AuthHero(theme: theme, title: '重置密码'),
+                        XqAuthHero(
+                          theme: theme,
+                          title: '重置密码',
+                          icon: Icons.lock_reset_outlined,
+                        ),
                         const SizedBox(height: 22),
-                        _AuthCard(
+                        XqAuthCard(
                           theme: theme,
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -179,7 +239,9 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                               Container(
                                 padding: const EdgeInsets.all(10),
                                 decoration: BoxDecoration(
-                                  color: theme.gold.withAlpha(theme.isDark ? 15 : 20),
+                                  color: theme.gold.withAlpha(
+                                    theme.isDark ? 15 : 20,
+                                  ),
                                   borderRadius: BorderRadius.circular(10),
                                   border: Border.all(
                                     color: theme.gold.withAlpha(40),
@@ -187,8 +249,11 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                                 ),
                                 child: Row(
                                   children: [
-                                    Icon(Icons.info_outline,
-                                        size: 16, color: theme.gold),
+                                    Icon(
+                                      Icons.info_outline,
+                                      size: 16,
+                                      color: theme.gold,
+                                    ),
                                     const SizedBox(width: 8),
                                     Expanded(
                                       child: Text(
@@ -205,7 +270,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                                 ),
                               ),
                               const SizedBox(height: 16),
-                              _AuthInput(
+                              XqAuthInput(
                                 controller: _phoneCtrl,
                                 label: '手机号',
                                 hint: '请输入 11 位手机号',
@@ -220,7 +285,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                                 children: [
                                   Expanded(
                                     flex: 3,
-                                    child: _AuthInput(
+                                    child: XqAuthInput(
                                       controller: _codeCtrl,
                                       label: '验证码',
                                       hint: '6位数字',
@@ -242,24 +307,28 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                                         child: OutlinedButton(
                                           onPressed:
                                               (_countdown > 0 || _sending)
-                                                  ? null
-                                                  : _sendCode,
+                                              ? null
+                                              : _sendCode,
                                           style: OutlinedButton.styleFrom(
                                             foregroundColor: theme.accentColor,
                                             side: BorderSide(
-                                              color: theme.accentColor.withAlpha(100),
+                                              color: theme.accentColor
+                                                  .withAlpha(100),
                                             ),
                                             shape: RoundedRectangleBorder(
-                                              borderRadius: BorderRadius.circular(14),
+                                              borderRadius:
+                                                  BorderRadius.circular(14),
                                             ),
                                           ),
                                           child: Text(
                                             _countdown > 0
                                                 ? '${_countdown}s'
                                                 : _sending
-                                                    ? '发送中'
-                                                    : '获取验证码',
-                                            style: const TextStyle(fontSize: 12),
+                                                ? '发送中'
+                                                : '获取验证码',
+                                            style: const TextStyle(
+                                              fontSize: 12,
+                                            ),
                                           ),
                                         ),
                                       ),
@@ -268,7 +337,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                                 ],
                               ),
                               const SizedBox(height: 14),
-                              _AuthInput(
+                              XqAuthInput(
                                 controller: _pwCtrl,
                                 label: '新密码',
                                 hint: '至少 6 位',
@@ -286,7 +355,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                                 ),
                               ),
                               const SizedBox(height: 14),
-                              _AuthInput(
+                              XqAuthInput(
                                 controller: _pw2Ctrl,
                                 label: '确认新密码',
                                 hint: '再次输入新密码',
@@ -333,7 +402,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                                       ),
                               ),
                               const SizedBox(height: 10),
-                              _AuthButton(
+                              XqAuthButton(
                                 label: '重置密码',
                                 loading: _loading,
                                 active: _formValid,
@@ -350,227 +419,6 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
             ],
           ),
         ),
-      ),
-    );
-  }
-}
-
-// Re-use the same Auth widgets from login_page
-class _AuthBackdrop extends StatelessWidget {
-  final ThemeState theme;
-  const _AuthBackdrop({required this.theme});
-
-  @override
-  Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        Positioned(
-          top: -80,
-          right: -70,
-          child: _Glow(
-            size: 220,
-            color: theme.accentColor.withAlpha(theme.isDark ? 42 : 30),
-          ),
-        ),
-        Positioned(
-          left: -80,
-          bottom: 80,
-          child: _Glow(
-            size: 180,
-            color: theme.gold.withAlpha(theme.isDark ? 30 : 24),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _Glow extends StatelessWidget {
-  final double size;
-  final Color color;
-  const _Glow({required this.size, required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        gradient: RadialGradient(colors: [color, Colors.transparent]),
-      ),
-    );
-  }
-}
-
-class _AuthHero extends StatelessWidget {
-  final ThemeState theme;
-  final String title;
-  const _AuthHero({required this.theme, required this.title});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Container(
-          width: 72,
-          height: 72,
-          decoration: BoxDecoration(
-            color: theme.cardColor.withAlpha(220),
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: theme.borderColor),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withAlpha(theme.isDark ? 40 : 12),
-                blurRadius: 18,
-                offset: const Offset(0, 8),
-              ),
-            ],
-          ),
-          child: Icon(
-            Icons.lock_reset_outlined,
-            color: theme.gold,
-            size: 34,
-          ),
-        ),
-        const SizedBox(height: 13),
-        Text(
-          title,
-          style: XqTypography.headlineLarge.copyWith(
-            color: theme.textPrimary,
-            letterSpacing: 2,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _AuthCard extends StatelessWidget {
-  final ThemeState theme;
-  final Widget child;
-  const _AuthCard({required this.theme, required this.child});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: theme.cardColor.withAlpha(theme.isDark ? 238 : 245),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: theme.borderColor),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withAlpha(theme.isDark ? 48 : 14),
-            blurRadius: 24,
-            offset: const Offset(0, 12),
-          ),
-        ],
-      ),
-      child: child,
-    );
-  }
-}
-
-class _AuthInput extends StatelessWidget {
-  final TextEditingController controller;
-  final String label;
-  final String hint;
-  final IconData icon;
-  final bool obscure;
-  final TextInputType keyboardType;
-  final List<TextInputFormatter>? inputFormatters;
-  final Widget? suffix;
-
-  const _AuthInput({
-    required this.controller,
-    required this.label,
-    required this.hint,
-    required this.icon,
-    this.obscure = false,
-    this.keyboardType = TextInputType.text,
-    this.inputFormatters,
-    this.suffix,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = context.watch<ThemeState>();
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: TextStyle(
-            color: theme.textSecondary,
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        const SizedBox(height: 7),
-        TextField(
-          controller: controller,
-          obscureText: obscure,
-          keyboardType: keyboardType,
-          inputFormatters: inputFormatters,
-          style: TextStyle(color: theme.textPrimary, fontSize: 15),
-          cursorColor: theme.accentColor,
-          decoration: InputDecoration(
-            prefixIcon: Icon(icon, color: theme.accentColor, size: 20),
-            suffixIcon: suffix,
-            hintText: hint,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _AuthButton extends StatelessWidget {
-  final String label;
-  final bool loading;
-  final bool active;
-  final VoidCallback onTap;
-
-  const _AuthButton({
-    required this.label,
-    required this.loading,
-    required this.active,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = context.watch<ThemeState>();
-    return SizedBox(
-      height: 50,
-      child: FilledButton(
-        onPressed: active && !loading ? onTap : null,
-        style: FilledButton.styleFrom(
-          backgroundColor: theme.accentColor,
-          foregroundColor: theme.textOnAccent,
-          disabledBackgroundColor: theme.borderColor,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-        ),
-        child: loading
-            ? SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  color: theme.textOnAccent,
-                ),
-              )
-            : Text(
-                label,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
       ),
     );
   }

@@ -6,6 +6,7 @@ import '../api/api_client.dart';
 import '../stores/app_state.dart';
 import '../stores/theme_state.dart';
 import '../theme/xq_typography.dart';
+import '../widgets/auth_frame.dart';
 import '../widgets/main_scaffold.dart';
 import '../services/notification_service.dart';
 import '../main.dart';
@@ -86,30 +87,86 @@ class _RegisterPageState extends State<RegisterPage> {
   bool _isValidPhone(String phone) {
     if (!RegExp(r'^1\d{10}$').hasMatch(phone)) return false;
     const validPrefixes = {
-      '130','131','132','133','134','135','136','137','138','139',
-      '145','146','147','148','149',
-      '150','151','152','153','155','156','157','158','159',
-      '162','165','166','167',
-      '170','171','172','173','174','175','176','177','178',
-      '180','181','182','183','184','185','186','187','188','189',
-      '190','191','193','195','196','197','198','199',
+      '130',
+      '131',
+      '132',
+      '133',
+      '134',
+      '135',
+      '136',
+      '137',
+      '138',
+      '139',
+      '145',
+      '146',
+      '147',
+      '148',
+      '149',
+      '150',
+      '151',
+      '152',
+      '153',
+      '155',
+      '156',
+      '157',
+      '158',
+      '159',
+      '162',
+      '165',
+      '166',
+      '167',
+      '170',
+      '171',
+      '172',
+      '173',
+      '174',
+      '175',
+      '176',
+      '177',
+      '178',
+      '180',
+      '181',
+      '182',
+      '183',
+      '184',
+      '185',
+      '186',
+      '187',
+      '188',
+      '189',
+      '190',
+      '191',
+      '193',
+      '195',
+      '196',
+      '197',
+      '198',
+      '199',
     };
     return validPrefixes.contains(phone.substring(0, 3));
   }
 
-  bool get _emailValid => _emailCtrl.text.trim().contains('@') && _emailCtrl.text.trim().contains('.');
+  bool get _emailValid =>
+      _emailCtrl.text.trim().contains('@') &&
+      _emailCtrl.text.trim().contains('.');
   bool get _formValid {
     if (_useEmail) {
-      final passwordOk = _pwCtrl.text.length >= 6 && _pwCtrl.text == _pw2Ctrl.text;
+      final passwordOk =
+          _pwCtrl.text.length >= 6 && _pwCtrl.text == _pw2Ctrl.text;
       final questionOk = _questionType == 'custom'
-          ? _customQuestionCtrl.text.trim().isNotEmpty && _customAnswerCtrl.text.trim().isNotEmpty
+          ? _customQuestionCtrl.text.trim().isNotEmpty &&
+                _customAnswerCtrl.text.trim().isNotEmpty
           : _questionType == 'date'
           ? _dateAnswer != null
           : true;
-      return _emailValid && _emailCodeCtrl.text.trim().isNotEmpty && passwordOk && questionOk;
+      return _emailValid &&
+          _emailCodeCtrl.text.trim().isNotEmpty &&
+          passwordOk &&
+          questionOk;
     }
     final phoneOk = _isValidPhone(_phoneCtrl.text.trim());
-    final passwordOk = _pwCtrl.text.length >= 6 && _pwCtrl.text == _pw2Ctrl.text;
+    final passwordOk =
+        _pwCtrl.text.length >= 6 && _pwCtrl.text == _pw2Ctrl.text;
     final questionOk = _questionType == 'custom'
         ? _customQuestionCtrl.text.trim().isNotEmpty &&
               _customAnswerCtrl.text.trim().isNotEmpty
@@ -234,7 +291,7 @@ class _RegisterPageState extends State<RegisterPage> {
       backgroundColor: theme.backgroundColor,
       body: Stack(
         children: [
-          _RegisterBackdrop(theme: theme),
+          XqAuthBackdrop(theme: theme),
           SafeArea(
             child: GestureDetector(
               onTap: () => FocusScope.of(context).unfocus(),
@@ -248,9 +305,9 @@ class _RegisterPageState extends State<RegisterPage> {
                     constraints: const BoxConstraints(maxWidth: 440),
                     child: Column(
                       children: [
-                        _RegisterHero(theme: theme),
+                        XqAuthHero(theme: theme, title: '欢迎来到心晴日记', size: 58),
                         const SizedBox(height: 20),
-                        _RegisterCard(
+                        XqAuthCard(
                           theme: theme,
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -263,7 +320,9 @@ class _RegisterPageState extends State<RegisterPage> {
                               ),
                               const SizedBox(height: 6),
                               Text(
-                                _useEmail ? '用邮箱注册，保存你的心情和天气日记。' : '用一个手机号保存你的心情、天气和友人关系。',
+                                _useEmail
+                                    ? '用邮箱注册，保存你的心情和天气日记。'
+                                    : '用一个手机号保存你的心情、天气和友人关系。',
                                 style: TextStyle(
                                   color: theme.textSecondary,
                                   fontSize: 13,
@@ -281,39 +340,127 @@ class _RegisterPageState extends State<RegisterPage> {
                                   children: [
                                     Expanded(
                                       child: GestureDetector(
-                                        onTap: () => setState(() => _useEmail = false),
+                                        onTap: () =>
+                                            setState(() => _useEmail = false),
                                         child: AnimatedContainer(
-                                          duration: const Duration(milliseconds: 200),
-                                          padding: const EdgeInsets.symmetric(vertical: 10),
-                                          decoration: BoxDecoration(
-                                            color: !_useEmail ? theme.cardColor : Colors.transparent,
-                                            borderRadius: BorderRadius.circular(10),
-                                            boxShadow: !_useEmail ? [BoxShadow(color: Colors.black.withAlpha(theme.isDark ? 30 : 10), blurRadius: 6, offset: const Offset(0, 2))] : null,
+                                          duration: const Duration(
+                                            milliseconds: 200,
                                           ),
-                                          child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                                            Icon(Icons.phone_iphone_rounded, size: 16, color: !_useEmail ? theme.accentColor : theme.textTertiary),
-                                            const SizedBox(width: 6),
-                                            Text('手机号', style: TextStyle(color: !_useEmail ? theme.accentColor : theme.textTertiary, fontSize: 13, fontWeight: FontWeight.w600)),
-                                          ]),
+                                          padding: const EdgeInsets.symmetric(
+                                            vertical: 10,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: !_useEmail
+                                                ? theme.cardColor
+                                                : Colors.transparent,
+                                            borderRadius: BorderRadius.circular(
+                                              10,
+                                            ),
+                                            boxShadow: !_useEmail
+                                                ? [
+                                                    BoxShadow(
+                                                      color: Colors.black
+                                                          .withAlpha(
+                                                            theme.isDark
+                                                                ? 30
+                                                                : 10,
+                                                          ),
+                                                      blurRadius: 6,
+                                                      offset: const Offset(
+                                                        0,
+                                                        2,
+                                                      ),
+                                                    ),
+                                                  ]
+                                                : null,
+                                          ),
+                                          child: Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
+                                            children: [
+                                              Icon(
+                                                Icons.phone_iphone_rounded,
+                                                size: 16,
+                                                color: !_useEmail
+                                                    ? theme.accentColor
+                                                    : theme.textTertiary,
+                                              ),
+                                              const SizedBox(width: 6),
+                                              Text(
+                                                '手机号',
+                                                style: TextStyle(
+                                                  color: !_useEmail
+                                                      ? theme.accentColor
+                                                      : theme.textTertiary,
+                                                  fontSize: 13,
+                                                  fontWeight: FontWeight.w600,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
                                         ),
                                       ),
                                     ),
                                     Expanded(
                                       child: GestureDetector(
-                                        onTap: () => setState(() => _useEmail = true),
+                                        onTap: () =>
+                                            setState(() => _useEmail = true),
                                         child: AnimatedContainer(
-                                          duration: const Duration(milliseconds: 200),
-                                          padding: const EdgeInsets.symmetric(vertical: 10),
-                                          decoration: BoxDecoration(
-                                            color: _useEmail ? theme.cardColor : Colors.transparent,
-                                            borderRadius: BorderRadius.circular(10),
-                                            boxShadow: _useEmail ? [BoxShadow(color: Colors.black.withAlpha(theme.isDark ? 30 : 10), blurRadius: 6, offset: const Offset(0, 2))] : null,
+                                          duration: const Duration(
+                                            milliseconds: 200,
                                           ),
-                                          child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                                            Icon(Icons.email_outlined, size: 16, color: _useEmail ? theme.accentColor : theme.textTertiary),
-                                            const SizedBox(width: 6),
-                                            Text('邮箱', style: TextStyle(color: _useEmail ? theme.accentColor : theme.textTertiary, fontSize: 13, fontWeight: FontWeight.w600)),
-                                          ]),
+                                          padding: const EdgeInsets.symmetric(
+                                            vertical: 10,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: _useEmail
+                                                ? theme.cardColor
+                                                : Colors.transparent,
+                                            borderRadius: BorderRadius.circular(
+                                              10,
+                                            ),
+                                            boxShadow: _useEmail
+                                                ? [
+                                                    BoxShadow(
+                                                      color: Colors.black
+                                                          .withAlpha(
+                                                            theme.isDark
+                                                                ? 30
+                                                                : 10,
+                                                          ),
+                                                      blurRadius: 6,
+                                                      offset: const Offset(
+                                                        0,
+                                                        2,
+                                                      ),
+                                                    ),
+                                                  ]
+                                                : null,
+                                          ),
+                                          child: Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
+                                            children: [
+                                              Icon(
+                                                Icons.email_outlined,
+                                                size: 16,
+                                                color: _useEmail
+                                                    ? theme.accentColor
+                                                    : theme.textTertiary,
+                                              ),
+                                              const SizedBox(width: 6),
+                                              Text(
+                                                '邮箱',
+                                                style: TextStyle(
+                                                  color: _useEmail
+                                                      ? theme.accentColor
+                                                      : theme.textTertiary,
+                                                  fontSize: 13,
+                                                  fontWeight: FontWeight.w600,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
                                         ),
                                       ),
                                     ),
@@ -322,7 +469,7 @@ class _RegisterPageState extends State<RegisterPage> {
                               ),
                               const SizedBox(height: 16),
                               if (_useEmail) ...[
-                                _RegisterInput(
+                                XqAuthInput(
                                   controller: _emailCtrl,
                                   label: '邮箱',
                                   hint: '请输入邮箱地址',
@@ -333,50 +480,87 @@ class _RegisterPageState extends State<RegisterPage> {
                                 Row(
                                   children: [
                                     Expanded(
-                                      child: _RegisterInput(
+                                      child: XqAuthInput(
                                         controller: _emailCodeCtrl,
                                         label: '验证码',
                                         hint: '6位验证码',
                                         icon: Icons.pin_outlined,
                                         keyboardType: TextInputType.number,
-                                        inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(6)],
+                                        inputFormatters: [
+                                          FilteringTextInputFormatter
+                                              .digitsOnly,
+                                          LengthLimitingTextInputFormatter(6),
+                                        ],
                                       ),
                                     ),
                                     const SizedBox(width: 10),
                                     Padding(
                                       padding: const EdgeInsets.only(top: 14),
                                       child: SizedBox(
-                                        height: 44, width: 120,
+                                        height: 44,
+                                        width: 120,
                                         child: OutlinedButton(
-                                          onPressed: (_sendingCode || _codeCountdown > 0 || !_emailValid) ? null : _sendEmailCode,
+                                          onPressed:
+                                              (_sendingCode ||
+                                                  _codeCountdown > 0 ||
+                                                  !_emailValid)
+                                              ? null
+                                              : _sendEmailCode,
                                           style: OutlinedButton.styleFrom(
                                             foregroundColor: theme.accentColor,
-                                            disabledForegroundColor: theme.accentColor.withAlpha(100),
-                                            side: BorderSide(color: theme.accentColor.withAlpha(140)),
-                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                            disabledForegroundColor: theme
+                                                .accentColor
+                                                .withAlpha(100),
+                                            side: BorderSide(
+                                              color: theme.accentColor
+                                                  .withAlpha(140),
+                                            ),
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
+                                            ),
                                           ),
                                           child: _codeCountdown > 0
-                                              ? Text('${_codeCountdown}s', style: const TextStyle(fontSize: 13))
+                                              ? Text(
+                                                  '${_codeCountdown}s',
+                                                  style: const TextStyle(
+                                                    fontSize: 13,
+                                                  ),
+                                                )
                                               : _sendingCode
-                                                  ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
-                                                  : const Text('发送验证码', style: TextStyle(fontSize: 12)),
+                                              ? const SizedBox(
+                                                  width: 16,
+                                                  height: 16,
+                                                  child:
+                                                      CircularProgressIndicator(
+                                                        strokeWidth: 2,
+                                                      ),
+                                                )
+                                              : const Text(
+                                                  '发送验证码',
+                                                  style: TextStyle(
+                                                    fontSize: 12,
+                                                  ),
+                                                ),
                                         ),
                                       ),
                                     ),
                                   ],
                                 ),
                               ] else ...[
-                                _RegisterInput(
+                                XqAuthInput(
                                   controller: _phoneCtrl,
                                   label: '手机号',
                                   hint: '请输入 11 位手机号',
                                   icon: Icons.phone_iphone_rounded,
                                   keyboardType: TextInputType.phone,
-                                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                                  inputFormatters: [
+                                    FilteringTextInputFormatter.digitsOnly,
+                                  ],
                                 ),
                               ],
                               const SizedBox(height: 14),
-                              _RegisterInput(
+                              XqAuthInput(
                                 controller: _pwCtrl,
                                 label: '密码',
                                 hint: '至少 6 位',
@@ -394,7 +578,7 @@ class _RegisterPageState extends State<RegisterPage> {
                                 ),
                               ),
                               const SizedBox(height: 14),
-                              _RegisterInput(
+                              XqAuthInput(
                                 controller: _pw2Ctrl,
                                 label: '确认密码',
                                 hint: '再次输入密码',
@@ -430,7 +614,7 @@ class _RegisterPageState extends State<RegisterPage> {
                                       ),
                               ),
                               const SizedBox(height: 10),
-                              _RegisterButton(
+                              XqAuthButton(
                                 label: '创建账号',
                                 loading: _loading,
                                 active: _formValid,
@@ -542,14 +726,14 @@ class _RegisterPageState extends State<RegisterPage> {
               ),
             ),
           ] else ...[
-            _RegisterInput(
+            XqAuthInput(
               controller: _customQuestionCtrl,
               label: '自定义问题',
               hint: '输入你的问题',
               icon: Icons.help_outline_rounded,
             ),
             const SizedBox(height: 10),
-            _RegisterInput(
+            XqAuthInput(
               controller: _customAnswerCtrl,
               label: '答案',
               hint: '输入答案',
@@ -587,224 +771,6 @@ class _RegisterPageState extends State<RegisterPage> {
             fontWeight: FontWeight.w600,
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _RegisterBackdrop extends StatelessWidget {
-  final ThemeState theme;
-
-  const _RegisterBackdrop({required this.theme});
-
-  @override
-  Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        Positioned(
-          top: -80,
-          right: -70,
-          child: _RegisterGlow(
-            size: 220,
-            color: theme.accentColor.withAlpha(theme.isDark ? 42 : 30),
-          ),
-        ),
-        Positioned(
-          left: -80,
-          bottom: 80,
-          child: _RegisterGlow(
-            size: 180,
-            color: theme.gold.withAlpha(theme.isDark ? 30 : 24),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _RegisterGlow extends StatelessWidget {
-  final double size;
-  final Color color;
-
-  const _RegisterGlow({required this.size, required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        gradient: RadialGradient(colors: [color, Colors.transparent]),
-      ),
-    );
-  }
-}
-
-class _RegisterHero extends StatelessWidget {
-  final ThemeState theme;
-
-  const _RegisterHero({required this.theme});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Container(
-          width: 58,
-          height: 58,
-          decoration: BoxDecoration(
-            color: theme.cardColor.withAlpha(220),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: theme.borderColor),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withAlpha(theme.isDark ? 38 : 12),
-                blurRadius: 16,
-                offset: const Offset(0, 8),
-              ),
-            ],
-          ),
-          child: Icon(Icons.auto_stories_outlined, color: theme.gold, size: 29),
-        ),
-        const SizedBox(height: 12),
-        Text(
-          '欢迎来到心晴日记',
-          style: XqTypography.headlineMedium.copyWith(color: theme.textPrimary),
-        ),
-      ],
-    );
-  }
-}
-
-class _RegisterCard extends StatelessWidget {
-  final ThemeState theme;
-  final Widget child;
-
-  const _RegisterCard({required this.theme, required this.child});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: theme.cardColor.withAlpha(theme.isDark ? 238 : 245),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: theme.borderColor),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withAlpha(theme.isDark ? 48 : 14),
-            blurRadius: 24,
-            offset: const Offset(0, 12),
-          ),
-        ],
-      ),
-      child: child,
-    );
-  }
-}
-
-class _RegisterInput extends StatelessWidget {
-  final TextEditingController controller;
-  final String label;
-  final String hint;
-  final IconData icon;
-  final bool obscure;
-  final TextInputType keyboardType;
-  final List<TextInputFormatter>? inputFormatters;
-  final Widget? suffix;
-
-  const _RegisterInput({
-    required this.controller,
-    required this.label,
-    required this.hint,
-    required this.icon,
-    this.obscure = false,
-    this.keyboardType = TextInputType.text,
-    this.inputFormatters,
-    this.suffix,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = context.watch<ThemeState>();
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: TextStyle(
-            color: theme.textSecondary,
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        const SizedBox(height: 7),
-        TextField(
-          controller: controller,
-          obscureText: obscure,
-          keyboardType: keyboardType,
-          inputFormatters: inputFormatters,
-          maxLength: keyboardType == TextInputType.phone ? 11 : null,
-          style: TextStyle(color: theme.textPrimary, fontSize: 15),
-          cursorColor: theme.accentColor,
-          decoration: InputDecoration(
-            counterText: '',
-            prefixIcon: Icon(icon, color: theme.accentColor, size: 20),
-            suffixIcon: suffix,
-            hintText: hint,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _RegisterButton extends StatelessWidget {
-  final String label;
-  final bool loading;
-  final bool active;
-  final VoidCallback onTap;
-
-  const _RegisterButton({
-    required this.label,
-    required this.loading,
-    required this.active,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = context.watch<ThemeState>();
-    return SizedBox(
-      height: 50,
-      child: FilledButton(
-        onPressed: active && !loading ? onTap : null,
-        style: FilledButton.styleFrom(
-          backgroundColor: theme.accentColor,
-          foregroundColor: theme.textOnAccent,
-          disabledBackgroundColor: theme.borderColor,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-        ),
-        child: loading
-            ? SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  color: theme.textOnAccent,
-                ),
-              )
-            : Text(
-                label,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
       ),
     );
   }

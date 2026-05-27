@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../api/api_client.dart';
 import '../stores/theme_state.dart';
+import '../theme/xq_decorations.dart';
 
 class WeatherFeedbackBar extends StatefulWidget {
   final String weatherText;
@@ -26,107 +27,136 @@ class WeatherFeedbackBar extends StatefulWidget {
 class _WeatherFeedbackBarState extends State<WeatherFeedbackBar> {
   bool _submitted = false;
 
-  void _submitAccurate() {
+  void _submit(String type, {String? note}) {
     if (_submitted) return;
     setState(() => _submitted = true);
     Api.sendWeatherFeedback(
-      type: '准确',
+      type: type,
       weather: widget.weatherText,
-      temp: '${widget.currentTemp ?? "--"}° / ${widget.low ?? "--"}° ~ ${widget.high ?? "--"}°',
+      temp:
+          '${widget.currentTemp ?? "--"}° / ${widget.low ?? "--"}° ~ ${widget.high ?? "--"}°',
       city: widget.cityName,
+      note: note ?? '',
     );
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('感谢反馈！'), duration: Duration(seconds: 1)),
-      );
-    }
   }
 
-  void _showInaccurateSheet() {
+  void _showNoteSheet() {
     if (_submitted) return;
     final theme = context.read<ThemeState>();
-    String? selectedReason;
     final noteCtrl = TextEditingController();
+    String selectedReason = '其他';
 
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setSheetState) => Container(
-          padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
-          decoration: BoxDecoration(
-            color: theme.cardColor,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        builder: (ctx, setSheetState) => Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(ctx).viewInsets.bottom,
           ),
-          child: SafeArea(
-            top: false,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Center(child: Container(width: 36, height: 4, decoration: BoxDecoration(color: theme.borderColor, borderRadius: BorderRadius.circular(2)))),
-                const SizedBox(height: 16),
-                Text('哪里不准确？', style: TextStyle(color: theme.textPrimary, fontSize: 17, fontWeight: FontWeight.w700)),
-                const SizedBox(height: 12),
-                Wrap(spacing: 8, runSpacing: 8, children: ['偏冷', '偏热', '降雨不准', '风速不准', '天气类型不符', '其他'].map((r) =>
-                  GestureDetector(
-                    onTap: () => setSheetState(() => selectedReason = selectedReason == r ? null : r),
+          child: Container(
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+            decoration: XqDecorations.sheetSurface(
+              theme.cardColor,
+              theme.borderColor,
+              dark: theme.isDark,
+            ),
+            child: SafeArea(
+              top: false,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                      width: 36,
+                      height: 4,
                       decoration: BoxDecoration(
-                        color: selectedReason == r ? theme.accentColor.withAlpha(30) : theme.cardElevated,
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: selectedReason == r ? theme.accentColor : theme.borderColor.withAlpha(100)),
+                        color: theme.borderColor,
+                        borderRadius: BorderRadius.circular(2),
                       ),
-                      child: Text(r, style: TextStyle(color: selectedReason == r ? theme.accentColor : theme.textPrimary, fontSize: 12)),
                     ),
                   ),
-                ).toList()),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: noteCtrl,
-                  maxLines: 2,
-                  style: TextStyle(color: theme.textPrimary, fontSize: 13),
-                  decoration: InputDecoration(
-                    hintText: '补充说明（选填）',
-                    hintStyle: TextStyle(color: theme.textTertiary, fontSize: 13),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: theme.borderColor)),
-                    contentPadding: const EdgeInsets.all(12),
+                  const SizedBox(height: 16),
+                  Text(
+                    '哪里需要我记一下？',
+                    style: TextStyle(
+                      color: theme.textPrimary,
+                      fontSize: 17,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 16),
-                SizedBox(
-                  width: double.infinity, height: 46,
-                  child: FilledButton(
-                    onPressed: () {
-                      Navigator.pop(ctx);
-                      setState(() => _submitted = true);
-                      Api.sendWeatherFeedback(
-                        type: selectedReason ?? '不准确',
-                        weather: widget.weatherText,
-                        temp: '${widget.currentTemp ?? "--"}° / ${widget.low ?? "--"}° ~ ${widget.high ?? "--"}°',
-                        city: widget.cityName,
-                        note: noteCtrl.text,
+                  const SizedBox(height: 6),
+                  Text(
+                    '这会帮助之后的天气感受更贴近你。',
+                    style: TextStyle(color: theme.textSecondary, fontSize: 12),
+                  ),
+                  const SizedBox(height: 14),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: ['降雨不准', '风速不准', '天气类型不符', '其他'].map((r) {
+                      final active = selectedReason == r;
+                      return _feedbackChip(
+                        theme,
+                        label: r,
+                        icon: active ? Icons.check_rounded : Icons.tune_rounded,
+                        active: active,
+                        onTap: () => setSheetState(() => selectedReason = r),
                       );
-                      if (mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('感谢反馈！'), duration: Duration(seconds: 1)),
-                        );
-                      }
-                    },
-                    style: FilledButton.styleFrom(
-                      backgroundColor: theme.accentColor,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                    ),
-                    child: const Text('提交反馈'),
+                    }).toList(),
                   ),
-                ),
-              ],
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: noteCtrl,
+                    maxLines: 2,
+                    style: TextStyle(color: theme.textPrimary, fontSize: 13),
+                    cursorColor: theme.accentColor,
+                    decoration: InputDecoration(
+                      hintText: '补充一句也可以（选填）',
+                      hintStyle: TextStyle(
+                        color: theme.textTertiary,
+                        fontSize: 13,
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: BorderSide(color: theme.borderColor),
+                      ),
+                      contentPadding: const EdgeInsets.all(12),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 46,
+                    child: FilledButton(
+                      onPressed: () {
+                        Navigator.pop(ctx);
+                        _submit(
+                          selectedReason,
+                          note: noteCtrl.text.trim().isEmpty
+                              ? null
+                              : noteCtrl.text.trim(),
+                        );
+                      },
+                      style: FilledButton.styleFrom(
+                        backgroundColor: theme.accentColor,
+                        foregroundColor: theme.textOnAccent,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                      child: const Text('记下来'),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
       ),
-    );
+    ).whenComplete(noteCtrl.dispose);
   }
 
   @override
@@ -134,48 +164,158 @@ class _WeatherFeedbackBarState extends State<WeatherFeedbackBar> {
     final theme = context.watch<ThemeState>();
     return Container(
       padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: theme.cardColor.withAlpha(160),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: theme.borderColor.withAlpha(80)),
+      decoration: XqDecorations.actionCard(
+        theme.cardColor.withAlpha(theme.isDark ? 190 : 210),
+        theme.borderColor.withAlpha(90),
+        dark: theme.isDark,
+        accent: theme.accentColor,
       ),
-      child: _submitted
-          ? Row(
-              children: [
-                Icon(Icons.check_circle, color: theme.successColor, size: 18),
-                const SizedBox(width: 8),
-                Text('已收到反馈，谢谢！', style: TextStyle(color: theme.successColor, fontSize: 13, fontWeight: FontWeight.w600)),
-              ],
-            )
-          : Row(
-              children: [
-                Text('天气准确吗？', style: TextStyle(color: theme.textPrimary, fontSize: 13, fontWeight: FontWeight.w600)),
-                const Spacer(),
-                GestureDetector(
-                  onTap: _submitAccurate,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: theme.successColor.withAlpha(20),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Text('👍🏻 准确', style: TextStyle(color: theme.successColor, fontSize: 12, fontWeight: FontWeight.w600)),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                GestureDetector(
-                  onTap: _showInaccurateSheet,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: theme.warningColor.withAlpha(20),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Text('👎🏻 不准', style: TextStyle(color: theme.warningColor, fontSize: 12, fontWeight: FontWeight.w600)),
-                  ),
-                ),
-              ],
+      child: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 220),
+        child: _submitted ? _submittedView(theme) : _feedbackView(theme),
+      ),
+    );
+  }
+
+  Widget _feedbackView(ThemeState theme) {
+    return Column(
+      key: const ValueKey('feedback'),
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(
+              Icons.thermostat_auto_outlined,
+              color: theme.accentColor,
+              size: 17,
             ),
+            const SizedBox(width: 7),
+            Expanded(
+              child: Text(
+                '今天的天气感受对吗？',
+                style: TextStyle(
+                  color: theme.textPrimary,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            _feedbackChip(
+              theme,
+              label: '准确',
+              icon: Icons.check_rounded,
+              active: true,
+              onTap: () => _submit('准确'),
+            ),
+            _feedbackChip(
+              theme,
+              label: '偏冷',
+              icon: Icons.ac_unit_rounded,
+              onTap: () => _submit('偏冷'),
+            ),
+            _feedbackChip(
+              theme,
+              label: '偏热',
+              icon: Icons.wb_sunny_outlined,
+              onTap: () => _submit('偏热'),
+            ),
+            _feedbackChip(
+              theme,
+              label: '降雨不准',
+              icon: Icons.grain_outlined,
+              onTap: () => _submit('降雨不准'),
+            ),
+            _feedbackChip(
+              theme,
+              label: '补充说明',
+              icon: Icons.edit_note_rounded,
+              onTap: _showNoteSheet,
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _submittedView(ThemeState theme) {
+    return Row(
+      key: const ValueKey('submitted'),
+      children: [
+        Icon(
+          Icons.check_circle_outline_rounded,
+          color: theme.successColor,
+          size: 19,
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            '记下来了，之后会帮你校准这座城市的天气感受。',
+            style: TextStyle(
+              color: theme.successColor,
+              fontSize: 13,
+              height: 1.4,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _feedbackChip(
+    ThemeState theme, {
+    required String label,
+    required IconData icon,
+    required VoidCallback onTap,
+    bool active = false,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(999),
+        onTap: onTap,
+        child: Container(
+          constraints: const BoxConstraints(minHeight: 38),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: active
+                ? theme.accentColor.withAlpha(22)
+                : theme.cardElevated.withAlpha(theme.isDark ? 170 : 220),
+            borderRadius: BorderRadius.circular(999),
+            border: Border.all(
+              color: active
+                  ? theme.accentColor.withAlpha(90)
+                  : theme.borderColor.withAlpha(100),
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                icon,
+                size: 15,
+                color: active ? theme.accentColor : theme.textSecondary,
+              ),
+              const SizedBox(width: 5),
+              Text(
+                label,
+                style: TextStyle(
+                  color: active ? theme.accentColor : theme.textPrimary,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

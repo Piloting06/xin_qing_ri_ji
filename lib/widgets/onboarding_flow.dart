@@ -12,9 +12,9 @@ class OnboardingFlow {
     final prefs = await SharedPreferences.getInstance();
     final dn = prefs.getString(StorageKeys.displayName) ?? '';
     final onboarded = prefs.getBool(StorageKeys.onboardingDone) ?? false;
-    final appDn = context.read<AppState>().displayName;
 
     if (!context.mounted) return;
+    final appDn = context.read<AppState>().displayName;
 
     if (dn.isEmpty && appDn.isEmpty) {
       final name = await _showNameDialog(context);
@@ -22,7 +22,8 @@ class OnboardingFlow {
       try {
         await Api.updateDisplayName(name);
       } catch (_) {}
-      if (context.mounted) context.read<AppState>().setDisplayName(name);
+      if (!context.mounted) return;
+      context.read<AppState>().setDisplayName(name);
     }
 
     if (!onboarded && context.mounted) {
@@ -49,22 +50,24 @@ class OnboardingFlow {
             decoration: BoxDecoration(
               color: theme.cardColor,
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                  color: theme.gold.withAlpha(60)),
+              border: Border.all(color: theme.gold.withAlpha(60)),
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text('欢迎来到心晴日记',
-                    style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w600,
-                        color: theme.gold)),
+                Text(
+                  '欢迎来到心晴日记',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w600,
+                    color: theme.gold,
+                  ),
+                ),
                 const SizedBox(height: 8),
-                Text('先给自己起一个名字吧～',
-                    style: TextStyle(
-                        fontSize: 14,
-                        color: theme.textSecondary)),
+                Text(
+                  '先给自己起一个名字吧～',
+                  style: TextStyle(fontSize: 14, color: theme.textSecondary),
+                ),
                 const SizedBox(height: 20),
                 TextField(
                   controller: ctrl,
@@ -74,14 +77,16 @@ class OnboardingFlow {
                   cursorColor: theme.gold,
                   decoration: InputDecoration(
                     hintText: '你的名字',
-                    hintStyle:
-                        TextStyle(color: theme.textSecondary.withAlpha(120)),
+                    hintStyle: TextStyle(
+                      color: theme.textSecondary.withAlpha(120),
+                    ),
                     border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(14)),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
                     focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(14),
-                        borderSide: BorderSide(
-                            color: theme.gold, width: 1.5)),
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: BorderSide(color: theme.gold, width: 1.5),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 20),
@@ -95,14 +100,19 @@ class OnboardingFlow {
                       Navigator.pop(ctx, name);
                     },
                     style: ElevatedButton.styleFrom(
-                        backgroundColor: theme.gold,
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14))),
-                    child: const Text('确定',
-                        style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                            letterSpacing: 2)),
+                      backgroundColor: theme.gold,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
+                    child: const Text(
+                      '确定',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        letterSpacing: 2,
+                      ),
+                    ),
                   ),
                 ),
               ],
@@ -132,11 +142,7 @@ class OnboardingFlow {
         'title': '通知',
         'desc': '早晚安提醒、时光胶囊到期通知',
       },
-      {
-        'icon': Icons.folder_outlined,
-        'title': '存储',
-        'desc': '保存天气心情卡和限定壁纸到本地',
-      },
+      {'icon': Icons.folder_outlined, 'title': '存储', 'desc': '保存天气心情卡和限定壁纸到本地'},
     ];
 
     return showDialog<bool>(
@@ -151,55 +157,69 @@ class OnboardingFlow {
             decoration: BoxDecoration(
               color: theme.cardColor,
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                  color: theme.gold.withAlpha(60)),
+              border: Border.all(color: theme.gold.withAlpha(60)),
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Center(
-                  child: Text('我们需要以下权限',
-                      style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w600,
-                          color: theme.gold)),
+                  child: Text(
+                    '我们需要以下权限',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w600,
+                      color: theme.gold,
+                    ),
+                  ),
                 ),
                 const SizedBox(height: 6),
                 Center(
-                  child: Text('你的情绪数据只属于你自己',
-                      style: TextStyle(
-                          fontSize: 13, color: theme.textSecondary)),
+                  child: Text(
+                    '你的情绪数据只属于你自己',
+                    style: TextStyle(fontSize: 13, color: theme.textSecondary),
+                  ),
                 ),
                 const SizedBox(height: 20),
-                ...permissions.map((p) => Padding(
-                      padding: const EdgeInsets.only(bottom: 14),
-                      child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Icon(
-                                p['icon'] as IconData,
-                                size: 22,
-                                color: theme.gold),
-                            const SizedBox(width: 12),
-                            Expanded(
-                                child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                  Text(p['title'] as String,
-                                      style: TextStyle(
-                                          fontSize: 15,
-                                          fontWeight: FontWeight.w500,
-                                          color: theme.textPrimary)),
-                                  const SizedBox(height: 2),
-                                  Text(p['desc'] as String,
-                                      style: TextStyle(
-                                          fontSize: 13,
-                                          color: theme.textSecondary)),
-                                ])),
-                          ]),
-                    )),
+                ...permissions.map(
+                  (p) => Padding(
+                    padding: const EdgeInsets.only(bottom: 14),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(
+                          p['icon'] as IconData,
+                          size: 22,
+                          color: theme.gold,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                p['title'] as String,
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w500,
+                                  color: theme.textPrimary,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                p['desc'] as String,
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: theme.textSecondary,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
                 const SizedBox(height: 8),
                 SizedBox(
                   width: double.infinity,
@@ -210,14 +230,19 @@ class OnboardingFlow {
                       Navigator.pop(ctx, true);
                     },
                     style: ElevatedButton.styleFrom(
-                        backgroundColor: theme.gold,
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14))),
-                    child: const Text('我知道了',
-                        style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                            letterSpacing: 2)),
+                      backgroundColor: theme.gold,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
+                    child: const Text(
+                      '我知道了',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        letterSpacing: 2,
+                      ),
+                    ),
                   ),
                 ),
               ],

@@ -6,7 +6,6 @@ import '../api/api_client.dart';
 import '../services/notification_service.dart';
 import '../stores/theme_state.dart';
 import '../stores/app_state.dart';
-import '../theme/xq_decorations.dart';
 import '../pages/home_page.dart';
 import '../pages/mood_page.dart';
 import '../pages/city_map_page.dart';
@@ -67,7 +66,9 @@ class _MainScaffoldState extends State<MainScaffold> {
         await NotificationService.scheduleCapsuleReminder(
           capsuleId: id is int ? id : int.tryParse(id.toString()) ?? 0,
           openDate: openDate,
-          preview: content.length > 36 ? '${content.substring(0, 36)}...' : content,
+          preview: content.length > 36
+              ? '${content.substring(0, 36)}...'
+              : content,
         );
       }
     } catch (_) {}
@@ -96,23 +97,25 @@ class _MainScaffoldState extends State<MainScaffold> {
     final overlayStyle = SystemUiOverlayStyle(
       systemNavigationBarColor: theme.backgroundColor,
       systemNavigationBarDividerColor: theme.backgroundColor,
-      systemNavigationBarIconBrightness: theme.isDark ? Brightness.light : Brightness.dark,
+      systemNavigationBarIconBrightness: theme.isDark
+          ? Brightness.light
+          : Brightness.dark,
       statusBarColor: Colors.transparent,
-      statusBarIconBrightness: theme.isDark ? Brightness.light : Brightness.dark,
+      statusBarIconBrightness: theme.isDark
+          ? Brightness.light
+          : Brightness.dark,
     );
 
     if (appState.isLockedOut) {
+      final navigator = Navigator.of(context);
+      final messenger = ScaffoldMessenger.maybeOf(context);
       Future.delayed(const Duration(milliseconds: 120), () {
-        if (mounted) {
-          Navigator.pushAndRemoveUntil(
-            context,
-            MaterialPageRoute(builder: (_) => const LoginPage()),
-            (_) => false,
-          );
-          ScaffoldMessenger.maybeOf(context)?.showSnackBar(
-            const SnackBar(content: Text('登录已过期，请重新登录')),
-          );
-        }
+        if (!mounted) return;
+        navigator.pushAndRemoveUntil(
+          MaterialPageRoute(builder: (_) => const LoginPage()),
+          (_) => false,
+        );
+        messenger?.showSnackBar(const SnackBar(content: Text('登录已过期，请重新登录')));
       });
     }
 
@@ -125,9 +128,7 @@ class _MainScaffoldState extends State<MainScaffold> {
         extendBody: true,
         body: Stack(
           children: [
-            Positioned.fill(
-              child: Container(color: theme.backgroundColor),
-            ),
+            Positioned.fill(child: Container(color: theme.backgroundColor)),
             Padding(
               padding: EdgeInsets.only(bottom: 70 + bottomInsets),
               child: PageView(
@@ -192,6 +193,7 @@ class _FrostedCapsule extends StatelessWidget {
     _TabIcon(Icons.explore_outlined, Icons.explore),
     _TabIcon(Icons.person_outline, Icons.person),
   ];
+  static const _labels = ['天气', '心情', '城迹', '我的'];
 
   @override
   Widget build(BuildContext context) {
@@ -207,7 +209,10 @@ class _FrostedCapsule extends StatelessWidget {
                 ? const Color(0xFF0E1222).withAlpha(120)
                 : theme.backgroundColor.withAlpha(140),
             borderRadius: BorderRadius.circular(28),
-            border: Border.all(color: theme.borderColor.withAlpha(40), width: 0.5),
+            border: Border.all(
+              color: theme.borderColor.withAlpha(40),
+              width: 0.5,
+            ),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -215,6 +220,7 @@ class _FrostedCapsule extends StatelessWidget {
               final active = currentIndex == i;
               return _CapsuleTabItem(
                 icon: _icons[i],
+                label: _labels[i],
                 active: active,
                 accentColor: theme.accentColor,
                 inactiveColor: theme.textSecondary,
@@ -236,6 +242,7 @@ class _TabIcon {
 
 class _CapsuleTabItem extends StatelessWidget {
   final _TabIcon icon;
+  final String label;
   final bool active;
   final Color accentColor;
   final Color inactiveColor;
@@ -243,6 +250,7 @@ class _CapsuleTabItem extends StatelessWidget {
 
   const _CapsuleTabItem({
     required this.icon,
+    required this.label,
     required this.active,
     required this.accentColor,
     required this.inactiveColor,
@@ -252,61 +260,80 @@ class _CapsuleTabItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = active ? accentColor : inactiveColor;
-    return GestureDetector(
-      onTap: onTap,
-      behavior: HitTestBehavior.opaque,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 260),
-        curve: Curves.easeOutCubic,
-        transform: Matrix4.translationValues(0, active ? -3 : 0, 0),
-        child: SizedBox(
-          width: 64,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              TweenAnimationBuilder<double>(
-                tween: Tween(begin: 1.0, end: active ? 1.0 : 1.0),
-                duration: const Duration(milliseconds: 300),
-                curve: Curves.easeOutBack,
-                builder: (context, value, child) => Transform.scale(
-                  scale: value,
-                  child: child,
-                ),
-                child: AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 200),
-                  transitionBuilder: (child, anim) =>
-                      FadeTransition(opacity: anim, child: child),
-                  child: Icon(
-                    active ? icon.filled : icon.outlined,
-                    key: ValueKey(active),
-                    size: 28,
-                    color: color,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 4),
-              TweenAnimationBuilder<double>(
-                tween: Tween(begin: 0.0, end: active ? 1.0 : 0.0),
+    return Semantics(
+      label: label,
+      button: true,
+      selected: active,
+      child: GestureDetector(
+        onTap: onTap,
+        behavior: HitTestBehavior.opaque,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 260),
+          curve: Curves.easeOutCubic,
+          transform: Matrix4.translationValues(0, active ? -2 : 0, 0),
+          child: SizedBox(
+            width: 64,
+            height: 52,
+            child: Center(
+              child: AnimatedContainer(
                 duration: const Duration(milliseconds: 260),
-                curve: Curves.easeOutBack,
-                builder: (context, value, child) => Opacity(
-                  opacity: value,
-                  child: Transform.scale(scale: value, child: child),
-                ),
-                child: Container(
-                  width: 5,
-                  height: 5,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: accentColor,
-                    boxShadow: [
-                      BoxShadow(color: accentColor.withAlpha(110), blurRadius: 6, spreadRadius: 1),
-                    ],
+                curve: Curves.easeOutCubic,
+                width: active ? 54 : 44,
+                height: active ? 48 : 44,
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                decoration: BoxDecoration(
+                  color: active
+                      ? accentColor.withAlpha(24)
+                      : Colors.transparent,
+                  borderRadius: BorderRadius.circular(22),
+                  border: Border.all(
+                    color: active
+                        ? accentColor.withAlpha(70)
+                        : Colors.transparent,
+                    width: 0.8,
                   ),
+                  boxShadow: active
+                      ? [
+                          BoxShadow(
+                            color: accentColor.withAlpha(65),
+                            blurRadius: 16,
+                            spreadRadius: 1,
+                            offset: const Offset(0, 5),
+                          ),
+                        ]
+                      : null,
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 200),
+                      transitionBuilder: (child, anim) => FadeTransition(
+                        opacity: anim,
+                        child: ScaleTransition(scale: anim, child: child),
+                      ),
+                      child: Icon(
+                        active ? icon.filled : icon.outlined,
+                        key: ValueKey('${label}_$active'),
+                        size: active ? 24 : 27,
+                        color: color,
+                      ),
+                    ),
+                    AnimatedContainer(
+                      duration: const Duration(milliseconds: 240),
+                      curve: Curves.easeOutCubic,
+                      margin: EdgeInsets.only(top: active ? 4 : 0),
+                      width: active ? 18 : 0,
+                      height: active ? 3 : 0,
+                      decoration: BoxDecoration(
+                        color: accentColor,
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            ],
+            ),
           ),
         ),
       ),

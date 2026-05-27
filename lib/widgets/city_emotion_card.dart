@@ -36,9 +36,9 @@ class _CityEmotionCardState extends State<CityEmotionCard> {
     final map = context.watch<MapState>();
     final theme = context.watch<ThemeState>();
     final city = MapState.allCityList.cast<CityData?>().firstWhere(
-          (c) => c?.code == widget.cityCode,
-          orElse: () => null,
-        );
+      (c) => c?.code == widget.cityCode,
+      orElse: () => null,
+    );
     if (city == null) return const SizedBox.shrink();
 
     final mood = map.cityMood(widget.cityCode);
@@ -85,7 +85,10 @@ class _CityEmotionCardState extends State<CityEmotionCard> {
                   ),
                   const SizedBox(height: 6),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 5,
+                    ),
                     decoration: BoxDecoration(
                       color: _moodColor(mood).withAlpha(30),
                       borderRadius: BorderRadius.circular(12),
@@ -112,13 +115,21 @@ class _CityEmotionCardState extends State<CityEmotionCard> {
                       width: double.infinity,
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: theme.cardColor.withAlpha(theme.isDark ? 60 : 180),
+                        color: theme.cardColor.withAlpha(
+                          theme.isDark ? 60 : 180,
+                        ),
                         borderRadius: BorderRadius.circular(18),
-                        border: Border.all(color: theme.borderColor.withAlpha(60)),
+                        border: Border.all(
+                          color: theme.borderColor.withAlpha(60),
+                        ),
                       ),
                       child: Column(
                         children: [
-                          Icon(Icons.format_quote, size: 20, color: _moodColor(mood)),
+                          Icon(
+                            Icons.format_quote,
+                            size: 20,
+                            color: _moodColor(mood),
+                          ),
                           const SizedBox(height: 8),
                           Text(
                             '"${comments.first['content'] ?? ''}"',
@@ -194,7 +205,13 @@ class _CityEmotionCardState extends State<CityEmotionCard> {
                       map.loadMoreComments();
                       return const Padding(
                         padding: EdgeInsets.all(16),
-                        child: Center(child: SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))),
+                        child: Center(
+                          child: SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          ),
+                        ),
                       );
                     }
                     final c = comments[i];
@@ -210,7 +227,11 @@ class _CityEmotionCardState extends State<CityEmotionCard> {
                               color: _moodColor(mood).withAlpha(20),
                               borderRadius: BorderRadius.circular(10),
                             ),
-                            child: Icon(Icons.person_outline, size: 16, color: _moodColor(mood).withAlpha(150)),
+                            child: Icon(
+                              Icons.person_outline,
+                              size: 16,
+                              color: _moodColor(mood).withAlpha(150),
+                            ),
                           ),
                           const SizedBox(width: 10),
                           Expanded(
@@ -219,24 +240,45 @@ class _CityEmotionCardState extends State<CityEmotionCard> {
                               children: [
                                 Text(
                                   c['content'] ?? '',
-                                  style: TextStyle(color: theme.textPrimary, fontSize: 14, height: 1.4),
+                                  style: TextStyle(
+                                    color: theme.textPrimary,
+                                    fontSize: 14,
+                                    height: 1.4,
+                                  ),
                                 ),
                                 const SizedBox(height: 4),
                                 Row(
                                   children: [
                                     Text(
                                       _formatTime(c['created_at']?.toString()),
-                                      style: TextStyle(color: theme.textTertiary, fontSize: 11),
+                                      style: TextStyle(
+                                        color: theme.textTertiary,
+                                        fontSize: 11,
+                                      ),
                                     ),
                                     const SizedBox(width: 10),
                                     GestureDetector(
-                                      onTap: () => map.likeComment(readInt(c['id']) ?? 0),
+                                      onTap: () => map.likeComment(
+                                        readInt(c['id']) ?? 0,
+                                      ),
                                       child: Row(
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
-                                          Icon(Icons.favorite_border, size: 12, color: c['liked'] == true ? Colors.red : theme.textTertiary),
+                                          Icon(
+                                            Icons.favorite_border,
+                                            size: 12,
+                                            color: c['liked'] == true
+                                                ? Colors.red
+                                                : theme.textTertiary,
+                                          ),
                                           const SizedBox(width: 2),
-                                          Text('${readInt(c['likes']) ?? 0}', style: TextStyle(color: theme.textTertiary, fontSize: 11)),
+                                          Text(
+                                            '${readInt(c['likes']) ?? 0}',
+                                            style: TextStyle(
+                                              color: theme.textTertiary,
+                                              fontSize: 11,
+                                            ),
+                                          ),
                                         ],
                                       ),
                                     ),
@@ -269,39 +311,61 @@ class _CityEmotionCardState extends State<CityEmotionCard> {
         child: Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: context.watch<ThemeState>().isDark ? const Color(0xFF0A1628) : Colors.white,
+            color: context.watch<ThemeState>().isDark
+                ? const Color(0xFF0A1628)
+                : Colors.white,
             borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text('写下足迹', style: TextStyle(color: context.watch<ThemeState>().textPrimary, fontSize: 18, fontWeight: FontWeight.w700)),
+              Text(
+                '写下足迹',
+                style: TextStyle(
+                  color: context.watch<ThemeState>().textPrimary,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
               const SizedBox(height: 12),
               TextField(
                 controller: _commentCtrl,
                 autofocus: true,
                 maxLength: 200,
-                style: TextStyle(color: context.watch<ThemeState>().textPrimary),
+                style: TextStyle(
+                  color: context.watch<ThemeState>().textPrimary,
+                ),
                 decoration: InputDecoration(
                   hintText: '说点什么...',
-                  hintStyle: TextStyle(color: context.watch<ThemeState>().textTertiary),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+                  hintStyle: TextStyle(
+                    color: context.watch<ThemeState>().textTertiary,
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
                   filled: true,
                   fillColor: context.watch<ThemeState>().cardColor,
                 ),
               ),
               const SizedBox(height: 12),
               ElevatedButton(
-                onPressed: _posting ? null : () async {
-                  setState(() => _posting = true);
-                  final result = await map.postComment(_commentCtrl.text.trim());
-                  setState(() => _posting = false);
-                  if (ctx.mounted) Navigator.pop(ctx);
-                  if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(result.message)));
-                  }
-                },
+                onPressed: _posting
+                    ? null
+                    : () async {
+                        setState(() => _posting = true);
+                        final result = await map.postComment(
+                          _commentCtrl.text.trim(),
+                        );
+                        if (!mounted || !context.mounted) return;
+                        setState(() => _posting = false);
+                        if (ctx.mounted) {
+                          Navigator.pop(ctx);
+                        }
+                        ScaffoldMessenger.of(
+                          context,
+                        ).showSnackBar(SnackBar(content: Text(result.message)));
+                      },
                 child: Text(_posting ? '发送中...' : '提交足迹'),
               ),
             ],
@@ -313,7 +377,9 @@ class _CityEmotionCardState extends State<CityEmotionCard> {
 
   Future<void> _shareCard() async {
     try {
-      final boundary = _repaintKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
+      final boundary =
+          _repaintKey.currentContext?.findRenderObject()
+              as RenderRepaintBoundary?;
       if (boundary == null) return;
       final image = await boundary.toImage(pixelRatio: 3.0);
       final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
@@ -326,12 +392,12 @@ class _CityEmotionCardState extends State<CityEmotionCard> {
 
       await Gal.putImageBytes(pngBytes);
       // Share directly, no SnackBar (which would be hidden behind BottomSheet)
-      Share.shareXFiles([XFile(file.path)]);
+      await SharePlus.instance.share(ShareParams(files: [XFile(file.path)]));
     } catch (_) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('分享失败，请稍后重试')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('分享失败，请稍后重试')));
       }
     }
   }
@@ -356,7 +422,14 @@ class _CityEmotionCardState extends State<CityEmotionCard> {
           children: [
             Icon(icon, size: 16, color: color),
             const SizedBox(width: 6),
-            Text(label, style: TextStyle(color: color, fontSize: 13, fontWeight: FontWeight.w600)),
+            Text(
+              label,
+              style: TextStyle(
+                color: color,
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ],
         ),
       ),

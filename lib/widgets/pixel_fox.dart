@@ -415,14 +415,4 @@ class _BubbleMenu extends StatelessWidget {
       ),
     );
   }
-
-  Widget _bubbleBtn(String text, VoidCallback onTap, Color accentColor) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 4),
-        child: Text(text, style: TextStyle(color: accentColor, fontSize: 12)),
-      ),
-    );
-  }
 }

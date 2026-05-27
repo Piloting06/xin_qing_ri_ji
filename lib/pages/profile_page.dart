@@ -15,7 +15,7 @@ import '../api/api_client.dart';
 import '../constants/keys.dart';
 import '../stores/app_state.dart';
 import '../stores/theme_state.dart';
-import '../theme/xq_colors.dart';
+import '../theme/xq_decorations.dart';
 import '../theme/xq_typography.dart';
 import '../services/notification_service.dart';
 import '../widgets/xq_toast.dart';
@@ -211,12 +211,28 @@ class _ProfilePageState extends State<ProfilePage> {
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         backgroundColor: theme.cardColor,
-        title: Text('注销账号', style: TextStyle(color: theme.errorColor, fontSize: 17, fontWeight: FontWeight.w700)),
+        title: Text(
+          '注销账号',
+          style: TextStyle(
+            color: theme.errorColor,
+            fontSize: 17,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
         content: const Text('注销后会退出当前账号，并释放手机号。重新注册会创建一个全新账号。'),
         actionsPadding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text('取消', style: TextStyle(color: theme.textSecondary))),
-          TextButton(onPressed: () => Navigator.pop(ctx, true), style: TextButton.styleFrom(foregroundColor: const Color(0xFFD9706A)), child: const Text('确定注销')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text('取消', style: TextStyle(color: theme.textSecondary)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: TextButton.styleFrom(
+              foregroundColor: const Color(0xFFD9706A),
+            ),
+            child: const Text('确定注销'),
+          ),
         ],
       ),
     );
@@ -245,12 +261,24 @@ class _ProfilePageState extends State<ProfilePage> {
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         backgroundColor: theme.cardColor,
-        title: const Text('退出登录', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
+        title: const Text(
+          '退出登录',
+          style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
+        ),
         content: const Text('确定要退出当前账号吗？'),
         actionsPadding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text('取消', style: TextStyle(color: theme.textSecondary))),
-          TextButton(onPressed: () => Navigator.pop(ctx, true), style: TextButton.styleFrom(foregroundColor: const Color(0xFFD9706A)), child: const Text('退出')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text('取消', style: TextStyle(color: theme.textSecondary)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: TextButton.styleFrom(
+              foregroundColor: const Color(0xFFD9706A),
+            ),
+            child: const Text('退出'),
+          ),
         ],
       ),
     );
@@ -292,138 +320,248 @@ class _ProfilePageState extends State<ProfilePage> {
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setSheetState) {
           return Container(
-          padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
-          decoration: BoxDecoration(
-            color: theme.cardColor,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-          ),
-          child: SafeArea(
-            top: false,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(22, 20, 22, 16),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Center(child: Container(width: 36, height: 4, decoration: BoxDecoration(color: theme.borderColor, borderRadius: BorderRadius.circular(2)))),
-                  const SizedBox(height: 16),
-                  Text(_boundEmail.isEmpty ? '绑定邮箱' : '更换邮箱', style: TextStyle(color: theme.textPrimary, fontSize: 18, fontWeight: FontWeight.w700)),
-                  if (_boundEmail.isNotEmpty) ...[
-                    const SizedBox(height: 6),
-                    Text('当前: $_boundEmail', style: TextStyle(color: theme.textSecondary, fontSize: 13)),
-                  ],
-                  const SizedBox(height: 16),
-                  TextField(
-                    controller: emailCtrl,
-                    keyboardType: TextInputType.emailAddress,
-                    onChanged: (_) => setSheetState(() {}),
-                    style: TextStyle(color: theme.textPrimary, fontSize: 14),
-                    cursorColor: theme.accentColor,
-                    decoration: InputDecoration(
-                      labelText: '邮箱地址',
-                      labelStyle: TextStyle(color: theme.textSecondary, fontSize: 13),
-                      prefixIcon: Icon(Icons.email_outlined, color: theme.accentColor, size: 18),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: theme.borderColor)),
-                      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: theme.accentColor)),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: codeCtrl,
-                          keyboardType: TextInputType.number,
-                          inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(6)],
-                          style: TextStyle(color: theme.textPrimary, fontSize: 14),
-                          cursorColor: theme.accentColor,
-                          decoration: InputDecoration(
-                            labelText: '验证码',
-                            labelStyle: TextStyle(color: theme.textSecondary, fontSize: 13),
-                            prefixIcon: Icon(Icons.pin_outlined, color: theme.accentColor, size: 18),
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: theme.borderColor)),
-                            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: theme.accentColor)),
-                          ),
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(ctx).viewInsets.bottom,
+            ),
+            decoration: BoxDecoration(
+              color: theme.cardColor,
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(24),
+              ),
+            ),
+            child: SafeArea(
+              top: false,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(22, 20, 22, 16),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Center(
+                      child: Container(
+                        width: 36,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: theme.borderColor,
+                          borderRadius: BorderRadius.circular(2),
                         ),
                       ),
-                      const SizedBox(width: 10),
-                      SizedBox(
-                        width: 120, height: 44,
-                        child: OutlinedButton(
-                          onPressed: (sending || countdown > 0 || !emailCtrl.text.contains('@') || !emailCtrl.text.contains('.')) ? null : () async {
-                            sending = true;
-                            setSheetState(() {});
-                            try {
-                              await Api.sendEmailCode(emailCtrl.text.trim());
-                              countdown = 60;
-                              sending = false;
-                              if (mounted) setState(() {});
-                              startCountdown();
-                            } catch (_) {
-                              sending = false;
-                              if (mounted) setState(() {});
-                            }
-                          },
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: theme.accentColor,
-                            disabledForegroundColor: theme.accentColor.withAlpha(100),
-                            side: BorderSide(color: theme.accentColor.withAlpha(140)),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          ),
-                          child: countdown > 0 ? Text('${countdown}s', style: const TextStyle(fontSize: 13)) : sending ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)) : const Text('发送验证码', style: TextStyle(fontSize: 12)),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      _boundEmail.isEmpty ? '绑定邮箱' : '更换邮箱',
+                      style: TextStyle(
+                        color: theme.textPrimary,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    if (_boundEmail.isNotEmpty) ...[
+                      const SizedBox(height: 6),
+                      Text(
+                        '当前: $_boundEmail',
+                        style: TextStyle(
+                          color: theme.textSecondary,
+                          fontSize: 13,
                         ),
                       ),
                     ],
-                  ),
-                  const SizedBox(height: 20),
-                  SizedBox(
-                    height: 48,
-                    child: FilledButton(
-                      onPressed: binding ? null : () async {
-                        if (emailCtrl.text.trim().isEmpty || codeCtrl.text.isEmpty) return;
-                        binding = true;
-                        setSheetState(() {});
-                        try {
-                          await Api.bindEmail(emailCtrl.text.trim(), codeCtrl.text);
-                          setState(() => _boundEmail = emailCtrl.text.trim());
-                          if (ctx.mounted) Navigator.pop(ctx);
-                          if (mounted) XqToast.success(context, '邮箱绑定成功');
-                        } on ApiException catch (e) {
-                          binding = false;
-                          setSheetState(() {});
-                          if (mounted) XqToast.error(context, e.message);
-                        } catch (_) {
-                          binding = false;
-                          setSheetState(() {});
-                          if (mounted) XqToast.error(context, '绑定失败，请稍后重试');
-                        }
-                      },
-                      style: FilledButton.styleFrom(backgroundColor: theme.accentColor, foregroundColor: theme.textOnAccent, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
-                      child: binding
-                          ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                          : const Text('确认绑定'),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: emailCtrl,
+                      keyboardType: TextInputType.emailAddress,
+                      onChanged: (_) => setSheetState(() {}),
+                      style: TextStyle(color: theme.textPrimary, fontSize: 14),
+                      cursorColor: theme.accentColor,
+                      decoration: InputDecoration(
+                        labelText: '邮箱地址',
+                        labelStyle: TextStyle(
+                          color: theme.textSecondary,
+                          fontSize: 13,
+                        ),
+                        prefixIcon: Icon(
+                          Icons.email_outlined,
+                          color: theme.accentColor,
+                          size: 18,
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: theme.borderColor),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: theme.accentColor),
+                        ),
+                      ),
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 10),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: codeCtrl,
+                            keyboardType: TextInputType.number,
+                            inputFormatters: [
+                              FilteringTextInputFormatter.digitsOnly,
+                              LengthLimitingTextInputFormatter(6),
+                            ],
+                            style: TextStyle(
+                              color: theme.textPrimary,
+                              fontSize: 14,
+                            ),
+                            cursorColor: theme.accentColor,
+                            decoration: InputDecoration(
+                              labelText: '验证码',
+                              labelStyle: TextStyle(
+                                color: theme.textSecondary,
+                                fontSize: 13,
+                              ),
+                              prefixIcon: Icon(
+                                Icons.pin_outlined,
+                                color: theme.accentColor,
+                                size: 18,
+                              ),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(
+                                  color: theme.borderColor,
+                                ),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(
+                                  color: theme.accentColor,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        SizedBox(
+                          width: 120,
+                          height: 44,
+                          child: OutlinedButton(
+                            onPressed:
+                                (sending ||
+                                    countdown > 0 ||
+                                    !emailCtrl.text.contains('@') ||
+                                    !emailCtrl.text.contains('.'))
+                                ? null
+                                : () async {
+                                    sending = true;
+                                    setSheetState(() {});
+                                    try {
+                                      await Api.sendEmailCode(
+                                        emailCtrl.text.trim(),
+                                      );
+                                      countdown = 60;
+                                      sending = false;
+                                      if (mounted) setState(() {});
+                                      startCountdown();
+                                    } catch (_) {
+                                      sending = false;
+                                      if (mounted) setState(() {});
+                                    }
+                                  },
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: theme.accentColor,
+                              disabledForegroundColor: theme.accentColor
+                                  .withAlpha(100),
+                              side: BorderSide(
+                                color: theme.accentColor.withAlpha(140),
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            child: countdown > 0
+                                ? Text(
+                                    '${countdown}s',
+                                    style: const TextStyle(fontSize: 13),
+                                  )
+                                : sending
+                                ? const SizedBox(
+                                    width: 16,
+                                    height: 16,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                : const Text(
+                                    '发送验证码',
+                                    style: TextStyle(fontSize: 12),
+                                  ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+                    SizedBox(
+                      height: 48,
+                      child: FilledButton(
+                        onPressed: binding
+                            ? null
+                            : () async {
+                                if (emailCtrl.text.trim().isEmpty ||
+                                    codeCtrl.text.isEmpty) {
+                                  return;
+                                }
+                                binding = true;
+                                setSheetState(() {});
+                                try {
+                                  await Api.bindEmail(
+                                    emailCtrl.text.trim(),
+                                    codeCtrl.text,
+                                  );
+                                  setState(
+                                    () => _boundEmail = emailCtrl.text.trim(),
+                                  );
+                                  if (ctx.mounted) {
+                                    Navigator.pop(ctx);
+                                  }
+                                  if (mounted) {
+                                    XqToast.success(context, '邮箱绑定成功');
+                                  }
+                                } on ApiException catch (e) {
+                                  binding = false;
+                                  setSheetState(() {});
+                                  if (mounted) {
+                                    XqToast.error(context, e.message);
+                                  }
+                                } catch (_) {
+                                  binding = false;
+                                  setSheetState(() {});
+                                  if (mounted) {
+                                    XqToast.error(context, '绑定失败，请稍后重试');
+                                  }
+                                }
+                              },
+                        style: FilledButton.styleFrom(
+                          backgroundColor: theme.accentColor,
+                          foregroundColor: theme.textOnAccent,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                        ),
+                        child: binding
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : const Text('确认绑定'),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-        );
-      },
+          );
+        },
       ),
-    );
-  }
-
-  void _showErr(String msg) {
-    XqToast.error(context, msg);
-  }
-
-  SnackBar _snack(String msg, bool ok) {
-    final theme = context.read<ThemeState>();
-    return SnackBar(
-      content: Text(msg),
-      backgroundColor: ok ? theme.successColor : null,
-      duration: const Duration(seconds: 2),
     );
   }
 
@@ -438,26 +576,35 @@ class _ProfilePageState extends State<ProfilePage> {
         child: ListView(
           padding: const EdgeInsets.fromLTRB(16, 20, 16, 28),
           children: [
-            // ── Profile header ──
             _profileHeader(theme, appState),
-            const SizedBox(height: 28),
+            const SizedBox(height: 18),
 
-            // ── 我的记录 ──
-            _sectionTitle('我的记录', theme),
+            _sectionTitle('记录概览', theme, subtitle: '这些小事正在慢慢攒起来'),
             const SizedBox(height: 10),
             _recordsGroup(theme),
-            const SizedBox(height: 24),
+            const SizedBox(height: 22),
 
-            // ── 设置 ──
-            _sectionTitle('设置', theme),
+            _sectionTitle('个人资料', theme),
             const SizedBox(height: 10),
-            _settingsGroup(theme, appState),
-            const SizedBox(height: 24),
+            _profileSettingsGroup(theme, appState),
+            const SizedBox(height: 22),
 
-            // ── 账号 ──
-            _sectionTitle('账号', theme),
+            _sectionTitle('外观与偏好', theme),
             const SizedBox(height: 10),
-            _accountGroup(theme),
+            _appearanceGroup(theme),
+            const SizedBox(height: 22),
+
+            _sectionTitle('账号与安全', theme),
+            const SizedBox(height: 10),
+            _securityGroup(theme),
+            const SizedBox(height: 22),
+
+            _sectionTitle('关于与帮助', theme),
+            const SizedBox(height: 10),
+            _aboutGroup(theme),
+            const SizedBox(height: 22),
+
+            _dangerZone(theme),
 
             const SizedBox(height: 32),
             Text(
@@ -471,145 +618,154 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  // ── Profile header: big avatar, name, phone ──
   Widget _profileHeader(ThemeState theme, AppState appState) {
-    final name =
-        appState.displayName.isNotEmpty ? appState.displayName : '用户';
+    final name = appState.displayName.isNotEmpty ? appState.displayName : '用户';
+    final accountText = _phone.isEmpty ? '账号信息已同步' : _phone;
 
-    return Column(
-      children: [
-        GestureDetector(
-          onTap: _pickAvatar,
-          child: Container(
-            width: 96,
-            height: 96,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  theme.accentColor.withAlpha(50),
-                  theme.accentColor.withAlpha(18),
-                ],
-              ),
-              border: Border.all(
-                color: theme.accentColor.withAlpha(100),
-                width: 1.8,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: theme.accentColor.withAlpha(30),
-                  blurRadius: 20,
-                ),
-              ],
-            ),
-            child: _avatarPath != null
-                ? ClipOval(
-                    child: Image.file(File(_avatarPath!), fit: BoxFit.cover),
-                  )
-                : Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.camera_alt_outlined,
-                          size: 30, color: theme.accentColor),
-                      const SizedBox(height: 2),
-                      Text(
-                        '设置头像',
-                        style: TextStyle(
-                          color: theme.accentColor,
-                          fontSize: 9,
-                          fontWeight: FontWeight.w600,
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(18, 18, 18, 16),
+      decoration: XqDecorations.heroCard(
+        theme.cardColor.withAlpha(theme.isDark ? 238 : 248),
+        theme.cardElevated.withAlpha(theme.isDark ? 210 : 236),
+        theme.borderColor,
+        dark: theme.isDark,
+        glow: theme.accentColor,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              GestureDetector(
+                onTap: _pickAvatar,
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    Container(
+                      width: 76,
+                      height: 76,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            theme.accentColor.withAlpha(46),
+                            theme.gold.withAlpha(theme.isDark ? 34 : 46),
+                          ],
+                        ),
+                        border: Border.all(
+                          color: theme.accentColor.withAlpha(100),
+                          width: 1.4,
+                        ),
+                        boxShadow: XqDecorations.shadowSubtle(
+                          dark: theme.isDark,
                         ),
                       ),
-                    ],
-                  ),
+                      child: _avatarPath != null
+                          ? ClipOval(
+                              child: Image.file(
+                                File(_avatarPath!),
+                                fit: BoxFit.cover,
+                              ),
+                            )
+                          : Icon(
+                              Icons.person_outline_rounded,
+                              size: 34,
+                              color: theme.accentColor,
+                            ),
+                    ),
+                    Positioned(
+                      right: -2,
+                      bottom: -2,
+                      child: Container(
+                        width: 28,
+                        height: 28,
+                        decoration: BoxDecoration(
+                          color: theme.accentColor,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: theme.cardColor, width: 2),
+                        ),
+                        child: Icon(
+                          Icons.edit_rounded,
+                          color: theme.textOnAccent,
+                          size: 14,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '$name 的心晴档案',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: XqTypography.headlineMedium.copyWith(
+                        color: theme.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 5),
+                    Text(
+                      accountText,
+                      style: TextStyle(
+                        color: theme.textSecondary,
+                        fontSize: 13,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Wrap(
+                      spacing: 7,
+                      runSpacing: 7,
+                      children: [
+                        _profilePill(
+                          theme,
+                          Icons.local_fire_department_outlined,
+                          '连续 $_consecutive 天',
+                        ),
+                        _profilePill(
+                          theme,
+                          _checkedIn
+                              ? Icons.check_circle_outline
+                              : Icons.radio_button_unchecked,
+                          _checkedIn ? '今日已记' : '今日未记',
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
-        ),
-        const SizedBox(height: 14),
-        Text(
-          name,
-          style: XqTypography.headlineMedium.copyWith(
-            color: theme.textPrimary,
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          _phone.isEmpty ? '账号信息已同步' : _phone,
-          style: TextStyle(color: theme.textSecondary, fontSize: 13),
-        ),
-      ],
-    );
-  }
-
-  // ── 我的记录 ──
-  Widget _recordsGroup(ThemeState theme) {
-    return _card(
-      theme,
-      child: Column(
-        children: [
-          _infoRow(
-            theme,
-            icon: Icons.local_fire_department_outlined,
-            title: _checkedIn ? '已连续记录 $_consecutive 天' : '今天还没记录',
-            subtitle: _checkedIn
-                ? '保持住这份小小的连续感'
-                : _checkingIn
-                    ? '正在帮你留住今天这一笔'
-                    : '轻点一下，给今天留个印记',
-            trailing: _checkedIn ? '已完成' : (_checkingIn ? '记录中' : '签到'),
-            onTap: (_checkedIn || _checkingIn) ? null : _doCheckin,
-          ),
-          _divider(theme),
-          // Time capsule + notification toggle
-          _infoRow(
-            theme,
-            icon: Icons.hourglass_empty,
-            title: '时光胶囊',
-            subtitle: '写给未来某一天的自己',
-            trailing: '打开',
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const CapsulePage()),
-              );
-            },
-          ),
-          Padding(
-            padding: const EdgeInsets.only(left: 52, top: 4),
+          const SizedBox(height: 16),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            decoration: BoxDecoration(
+              color: theme.surfaceAlpha.withAlpha(theme.isDark ? 140 : 210),
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: theme.borderColor.withAlpha(80)),
+            ),
             child: Row(
               children: [
+                Icon(Icons.auto_stories_outlined, color: theme.gold, size: 18),
+                const SizedBox(width: 9),
                 Expanded(
                   child: Text(
-                    '胶囊提醒  到期时通知我',
+                    '这里会收好你的天气、心情和写给未来的话。',
                     style: TextStyle(
                       color: theme.textSecondary,
                       fontSize: 12,
+                      height: 1.35,
                     ),
                   ),
                 ),
-                Switch.adaptive(
-                  value: _capsuleNotify,
-                  onChanged: (v) async {
-                    if (v) {
-                      await NotificationService.requestPermissionIfNeeded();
-                    }
-                    _setCapsuleNotify(v);
-                  },
-                ),
               ],
-            ),
-          ),
-          _divider(theme),
-          _infoRow(
-            theme,
-            icon: Icons.people_outline,
-            title: '好友',
-            subtitle: '管理好友，查看朋友心情',
-            trailing: '查看',
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const FriendsPage()),
             ),
           ),
         ],
@@ -617,43 +773,276 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  // ── 设置 ──
-  Widget _settingsGroup(ThemeState theme, AppState appState) {
+  Widget _profilePill(ThemeState theme, IconData icon, String text) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
+      decoration: BoxDecoration(
+        color: theme.accentColor.withAlpha(20),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: theme.accentColor.withAlpha(55)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: theme.accentColor, size: 13),
+          const SizedBox(width: 4),
+          Text(
+            text,
+            style: TextStyle(
+              color: theme.accentColor,
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _recordsGroup(ThemeState theme) {
+    return _card(
+      theme,
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: _overviewTile(
+                  theme,
+                  icon: _checkedIn
+                      ? Icons.check_circle_outline_rounded
+                      : Icons.local_fire_department_outlined,
+                  title: _checkedIn ? '今日已记录' : '今天还没记',
+                  subtitle: _checkedIn
+                      ? '连续 $_consecutive 天'
+                      : (_checkingIn ? '正在记录' : '轻点签到'),
+                  onTap: (_checkedIn || _checkingIn) ? null : _doCheckin,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _overviewTile(
+                  theme,
+                  icon: Icons.hourglass_empty_rounded,
+                  title: '时光胶囊',
+                  subtitle: _capsuleNotify ? '提醒已开启' : '提醒未开启',
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const CapsulePage()),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                child: _overviewTile(
+                  theme,
+                  icon: Icons.people_outline_rounded,
+                  title: '好友心情',
+                  subtitle: '看看朋友近况',
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const FriendsPage()),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Container(
+                  height: 92,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: theme.cardElevated.withAlpha(
+                      theme.isDark ? 130 : 210,
+                    ),
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(color: theme.borderColor.withAlpha(90)),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              '胶囊提醒',
+                              style: TextStyle(
+                                color: theme.textPrimary,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            const SizedBox(height: 5),
+                            Text(
+                              '到期时通知我',
+                              style: TextStyle(
+                                color: theme.textSecondary,
+                                fontSize: 11,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Switch.adaptive(
+                        value: _capsuleNotify,
+                        onChanged: (v) async {
+                          if (v) {
+                            await NotificationService.requestPermissionIfNeeded();
+                          }
+                          _setCapsuleNotify(v);
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _overviewTile(
+    ThemeState theme, {
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    VoidCallback? onTap,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(18),
+        onTap: onTap,
+        child: Container(
+          height: 92,
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: theme.cardElevated.withAlpha(theme.isDark ? 130 : 210),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: theme.borderColor.withAlpha(90)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: theme.accentColor.withAlpha(22),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(icon, color: theme.accentColor, size: 18),
+              ),
+              const Spacer(),
+              Text(
+                title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: theme.textPrimary,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(height: 3),
+              Text(
+                subtitle,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(color: theme.textSecondary, fontSize: 11),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _profileSettingsGroup(ThemeState theme, AppState appState) {
+    return _card(
+      theme,
+      child: Column(
+        children: [
+          _infoRow(
+            theme,
+            icon: Icons.badge_outlined,
+            title: '昵称',
+            subtitle: appState.displayName.isNotEmpty
+                ? appState.displayName
+                : '点击设置你的日记署名',
+            trailing: '修改',
+            onTap: () => _showNicknameDialog(theme, appState),
+          ),
+          _divider(theme),
+          _infoRow(
+            theme,
+            icon: Icons.email_outlined,
+            title: _boundEmail.isEmpty ? '绑定邮箱' : '邮箱',
+            subtitle: _boundEmail.isEmpty ? '绑定后可用邮箱登录' : _boundEmail,
+            trailing: _boundEmail.isEmpty ? '绑定' : '更换',
+            onTap: () => _showEmailSheet(theme),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _appearanceGroup(ThemeState theme) {
     return _card(
       theme,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Nickname - tap to edit
-          _infoRow(
-            theme,
-            icon: Icons.edit_outlined,
-            title: '昵称',
-            subtitle: appState.displayName.isNotEmpty
-                ? appState.displayName
-                : '点击设置',
-            trailing: '修改',
-            onTap: () => _showNicknameDialog(theme, appState),
-          ),
-          _divider(theme),
-
-          // Theme - inline selector
-          Text(
-            '主题',
-            style: TextStyle(
-              color: theme.textPrimary,
-              fontSize: 14,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
+          _themeSelectorGrid(theme),
           const SizedBox(height: 10),
           Row(
-            children: ThemeState.themeNames.entries.map((entry) {
-              final active = theme.themeMode == entry.key;
-              final colors = ThemeState.themeColors[entry.key]!;
-              final desc = _themeSceneDesc(entry.key);
-              return Expanded(
-                child: GestureDetector(
+            children: [
+              Icon(
+                Icons.touch_app_outlined,
+                size: 14,
+                color: theme.textTertiary.withAlpha(160),
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  '点击已选中的主题，可以查看它的创作故事',
+                  style: TextStyle(
+                    color: theme.textTertiary.withAlpha(170),
+                    fontSize: 11,
+                    height: 1.35,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _themeSelectorGrid(ThemeState theme) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final width = (constraints.maxWidth - 10) / 2;
+        return Wrap(
+          spacing: 10,
+          runSpacing: 10,
+          children: ThemeState.themeNames.entries.map((entry) {
+            final active = theme.themeMode == entry.key;
+            final colors = ThemeState.themeColors[entry.key]!;
+            final desc = _themeSceneDesc(entry.key);
+            return SizedBox(
+              width: width,
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(18),
                   onTap: () {
                     if (active) {
                       _showThemeDetail(entry.key, entry.value, colors, desc);
@@ -664,217 +1053,240 @@ class _ProfilePageState extends State<ProfilePage> {
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 240),
                     curve: Curves.easeOutCubic,
-                    height: 64,
-                    margin: EdgeInsets.only(
-                        right: entry.key != ThemeState.themeNames.keys.last
-                            ? 6
-                            : 0),
-                    padding: const EdgeInsets.all(8),
+                    height: 78,
+                    padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(14),
+                      borderRadius: BorderRadius.circular(18),
                       color: colors[2],
                       border: Border.all(
                         color: active
                             ? colors[0]
                             : theme.borderColor.withAlpha(100),
-                        width: active ? 2 : 0.5,
+                        width: active ? 1.6 : 0.7,
                       ),
                       boxShadow: active
                           ? [
                               BoxShadow(
-                                color: colors[0].withAlpha(30),
-                                blurRadius: 10,
-                                offset: const Offset(0, 4),
-                              )
+                                color: colors[0].withAlpha(32),
+                                blurRadius: 12,
+                                offset: const Offset(0, 5),
+                              ),
                             ]
                           : null,
                     ),
                     child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // 3 color dots
                         Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: colors.map((c) => Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 2),
-                            child: Container(
-                              width: 10, height: 10,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: c,
-                                border: Border.all(
-                                  color: Colors.white.withAlpha(120), width: 0.5),
+                          children: [
+                            ...colors
+                                .take(3)
+                                .map(
+                                  (c) => Container(
+                                    width: 13,
+                                    height: 13,
+                                    margin: const EdgeInsets.only(right: 4),
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: c,
+                                      border: Border.all(
+                                        color: Colors.white.withAlpha(140),
+                                        width: 0.6,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                            const Spacer(),
+                            if (active)
+                              Icon(
+                                Icons.check_circle_rounded,
+                                color: colors[0],
+                                size: 17,
                               ),
-                            ),
-                          )).toList(),
+                          ],
                         ),
-                        const SizedBox(height: 6),
+                        const Spacer(),
                         Text(
                           entry.value,
-                          textAlign: TextAlign.center,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
-                            color: active  ? colors[0] : _readableTextOn(colors[2]),
-                            fontSize: active ? 11 : 10,
-                            fontWeight: active ? FontWeight.w700 : FontWeight.w500,
+                            color: active
+                                ? colors[0]
+                                : _readableTextOn(colors[2]),
+                            fontSize: 12,
+                            fontWeight: FontWeight.w800,
                           ),
                         ),
-                        if (active)
-                          Text(
-                            desc,
-                            textAlign: TextAlign.center,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              color: _readableTextOn(colors[2]).withAlpha(160),
-                              fontSize: 8,
-                            ),
+                        const SizedBox(height: 2),
+                        Text(
+                          desc,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: _readableTextOn(colors[2]).withAlpha(165),
+                            fontSize: 10,
                           ),
+                        ),
                       ],
                     ),
                   ),
                 ),
-              );
-            }).toList(),
-          ),
-          Padding(
-            padding: const EdgeInsets.only(top: 8, left: 2),
-            child: Row(
-              children: [
-                Icon(Icons.touch_app_outlined, size: 13,
-                    color: theme.textTertiary.withAlpha(150)),
-                const SizedBox(width: 5),
-                Text(
-                  '点击已选中的主题，可以查看它的创作故事',
-                  style: TextStyle(
-                    color: theme.textTertiary.withAlpha(150),
-                    fontSize: 11,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          _divider(theme),
-          _infoRow(
-            theme,
-            icon: Icons.lock_outline,
-            title: '修改密码',
-            subtitle: '更改登录密码',
-            trailing: '修改',
-            onTap: () => _showPasswordSheet(theme),
-          ),
-        ],
+              ),
+            );
+          }).toList(),
+        );
+      },
+    );
+  }
+
+  Widget _securityGroup(ThemeState theme) {
+    return _card(
+      theme,
+      child: _infoRow(
+        theme,
+        icon: Icons.lock_outline_rounded,
+        title: '修改密码',
+        subtitle: '更改当前登录密码',
+        trailing: '修改',
+        onTap: () => _showPasswordSheet(theme),
       ),
     );
   }
 
-  // ── 账号 ──
-  Widget _accountGroup(ThemeState theme) {
+  Widget _aboutGroup(ThemeState theme) {
     return _card(
       theme,
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Privacy & Terms
           _infoRow(
             theme,
             icon: Icons.description_outlined,
             title: '隐私政策',
             subtitle: '查看数据和隐私说明',
             trailing: '查看',
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => const LegalPage(isPrivacy: true),
-                ),
-              );
-            },
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => const LegalPage(isPrivacy: true),
+              ),
+            ),
           ),
-          const SizedBox(height: 6),
+          _divider(theme),
           _infoRow(
             theme,
             icon: Icons.article_outlined,
             title: '用户协议',
             subtitle: '查看使用约定',
             trailing: '查看',
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => const LegalPage(isPrivacy: false),
-                ),
-              );
-            },
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => const LegalPage(isPrivacy: false),
+              ),
+            ),
           ),
-
           _divider(theme),
-
-          // Email bind
           _infoRow(
             theme,
-            icon: Icons.email_outlined,
-            title: _boundEmail.isEmpty ? '绑定邮箱' : '邮箱',
-            subtitle: _boundEmail.isEmpty ? '绑定后可用邮箱登录' : _boundEmail,
-            trailing: _boundEmail.isEmpty ? '绑定' : '更换',
-            onTap: () => _showEmailSheet(theme),
-          ),
-
-          _divider(theme),
-
-          // QQ group
-          _infoRow(
-            theme,
-            icon: Icons.chat_bubble_outline,
+            icon: Icons.chat_bubble_outline_rounded,
             title: '加入交流群',
             subtitle: '和更多用户一起聊聊',
             trailing: '加入',
-            onTap: () async {
-              final url = Uri.parse('https://qm.qq.com/q/EKUVPDQV8Y');
-              try {
-                final can = await canLaunchUrl(url);
-                if (can) {
-                  await launchUrl(url, mode: LaunchMode.externalApplication);
-                } else {
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('请先安装 QQ')),
-                    );
-                  }
-                }
-              } catch (_) {
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('跳转失败，请稍后重试')),
-                  );
-                }
-              }
-            },
+            onTap: _openQqGroup,
           ),
-
-          _divider(theme),
-
-          // Danger zone
-          _dangerButton(theme, '退出登录', Icons.logout, _logout, filled: false),
-          const SizedBox(height: 8),
-          _dangerButton(
-              theme, '注销账号', Icons.delete_outline, _deleteAccount, filled: true),
         ],
       ),
     );
   }
 
+  Widget _dangerZone(ThemeState theme) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: theme.errorColor.withAlpha(theme.isDark ? 18 : 12),
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: theme.errorColor.withAlpha(55)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.warning_amber_rounded,
+                color: theme.errorColor,
+                size: 18,
+              ),
+              const SizedBox(width: 7),
+              Text(
+                '危险操作',
+                style: TextStyle(
+                  color: theme.errorColor,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          _dangerButton(
+            theme,
+            '退出登录',
+            Icons.logout_rounded,
+            _logout,
+            filled: false,
+          ),
+          const SizedBox(height: 8),
+          _dangerButton(
+            theme,
+            '注销账号',
+            Icons.delete_outline_rounded,
+            _deleteAccount,
+            filled: true,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _openQqGroup() async {
+    final url = Uri.parse('https://qm.qq.com/q/EKUVPDQV8Y');
+    try {
+      final can = await canLaunchUrl(url);
+      if (!mounted) return;
+      if (can) {
+        await launchUrl(url, mode: LaunchMode.externalApplication);
+      } else {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('请先安装 QQ')));
+      }
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('跳转失败，请稍后重试')));
+    }
+  }
+
   void _showNicknameDialog(ThemeState theme, AppState appState) {
     final ctrl = TextEditingController(
-        text: appState.displayName.isNotEmpty ? appState.displayName : '');
+      text: appState.displayName.isNotEmpty ? appState.displayName : '',
+    );
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: theme.cardColor,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
-        title: Text('修改昵称',
-            style: TextStyle(color: theme.textPrimary, fontWeight: FontWeight.w700)),
+        title: Text(
+          '修改昵称',
+          style: TextStyle(
+            color: theme.textPrimary,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
         content: TextField(
           controller: ctrl,
           autofocus: true,
@@ -947,7 +1359,8 @@ class _ProfilePageState extends State<ProfilePage> {
                 children: [
                   Center(
                     child: Container(
-                      width: 36, height: 4,
+                      width: 36,
+                      height: 4,
                       decoration: BoxDecoration(
                         color: theme.borderColor,
                         borderRadius: BorderRadius.circular(2),
@@ -955,11 +1368,14 @@ class _ProfilePageState extends State<ProfilePage> {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  Text('修改密码',
-                      style: TextStyle(
-                          color: theme.textPrimary,
-                          fontSize: 18,
-                          fontWeight: FontWeight.w700)),
+                  Text(
+                    '修改密码',
+                    style: TextStyle(
+                      color: theme.textPrimary,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
                   const SizedBox(height: 16),
                   TextField(
                     controller: oldCtrl,
@@ -968,12 +1384,23 @@ class _ProfilePageState extends State<ProfilePage> {
                     cursorColor: theme.accentColor,
                     decoration: InputDecoration(
                       labelText: '当前密码',
-                      labelStyle: TextStyle(color: theme.textSecondary, fontSize: 13),
-                      prefixIcon: Icon(Icons.lock_outline, color: theme.accentColor, size: 18),
+                      labelStyle: TextStyle(
+                        color: theme.textSecondary,
+                        fontSize: 13,
+                      ),
+                      prefixIcon: Icon(
+                        Icons.lock_outline,
+                        color: theme.accentColor,
+                        size: 18,
+                      ),
                       suffixIcon: IconButton(
-                        icon: Icon(obscureOld ? Icons.visibility_off : Icons.visibility,
-                            color: theme.textSecondary, size: 18),
-                        onPressed: () => setSheetState(() => obscureOld = !obscureOld),
+                        icon: Icon(
+                          obscureOld ? Icons.visibility_off : Icons.visibility,
+                          color: theme.textSecondary,
+                          size: 18,
+                        ),
+                        onPressed: () =>
+                            setSheetState(() => obscureOld = !obscureOld),
                       ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -993,12 +1420,23 @@ class _ProfilePageState extends State<ProfilePage> {
                     cursorColor: theme.accentColor,
                     decoration: InputDecoration(
                       labelText: '新密码',
-                      labelStyle: TextStyle(color: theme.textSecondary, fontSize: 13),
-                      prefixIcon: Icon(Icons.lock_reset, color: theme.accentColor, size: 18),
+                      labelStyle: TextStyle(
+                        color: theme.textSecondary,
+                        fontSize: 13,
+                      ),
+                      prefixIcon: Icon(
+                        Icons.lock_reset,
+                        color: theme.accentColor,
+                        size: 18,
+                      ),
                       suffixIcon: IconButton(
-                        icon: Icon(obscureNew ? Icons.visibility_off : Icons.visibility,
-                            color: theme.textSecondary, size: 18),
-                        onPressed: () => setSheetState(() => obscureNew = !obscureNew),
+                        icon: Icon(
+                          obscureNew ? Icons.visibility_off : Icons.visibility,
+                          color: theme.textSecondary,
+                          size: 18,
+                        ),
+                        onPressed: () =>
+                            setSheetState(() => obscureNew = !obscureNew),
                       ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -1018,8 +1456,15 @@ class _ProfilePageState extends State<ProfilePage> {
                     cursorColor: theme.accentColor,
                     decoration: InputDecoration(
                       labelText: '确认新密码',
-                      labelStyle: TextStyle(color: theme.textSecondary, fontSize: 13),
-                      prefixIcon: Icon(Icons.lock_reset, color: theme.accentColor, size: 18),
+                      labelStyle: TextStyle(
+                        color: theme.textSecondary,
+                        fontSize: 13,
+                      ),
+                      prefixIcon: Icon(
+                        Icons.lock_reset,
+                        color: theme.accentColor,
+                        size: 18,
+                      ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide(color: theme.borderColor),
@@ -1035,8 +1480,11 @@ class _ProfilePageState extends State<ProfilePage> {
                     height: 48,
                     child: FilledButton(
                       onPressed: () {
-                        if (oldCtrl.text.isEmpty || newCtrl.text.length < 6 ||
-                            newCtrl.text != confirmCtrl.text) return;
+                        if (oldCtrl.text.isEmpty ||
+                            newCtrl.text.length < 6 ||
+                            newCtrl.text != confirmCtrl.text) {
+                          return;
+                        }
                         _oldPwCtrl.text = oldCtrl.text;
                         _newPwCtrl.text = newCtrl.text;
                         _changePassword();
@@ -1046,7 +1494,8 @@ class _ProfilePageState extends State<ProfilePage> {
                         backgroundColor: theme.accentColor,
                         foregroundColor: theme.textOnAccent,
                         shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14)),
+                          borderRadius: BorderRadius.circular(14),
+                        ),
                       ),
                       child: const Text('确认修改'),
                     ),
@@ -1072,10 +1521,17 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Color _readableTextOn(Color bg) {
-    return (bg.computeLuminance() > 0.5) ? const Color(0xFF333333) : const Color(0xFFEEEEEE);
+    return (bg.computeLuminance() > 0.5)
+        ? const Color(0xFF333333)
+        : const Color(0xFFEEEEEE);
   }
 
-  void _showThemeDetail(String mode, String name, List<Color> colors, String scene) {
+  void _showThemeDetail(
+    String mode,
+    String name,
+    List<Color> colors,
+    String scene,
+  ) {
     final d = _themeDetail(mode);
     final repaintKey = GlobalKey();
     showDialog(
@@ -1107,7 +1563,9 @@ class _ProfilePageState extends State<ProfilePage> {
                   Container(
                     height: 80,
                     decoration: BoxDecoration(
-                      borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                      borderRadius: const BorderRadius.vertical(
+                        top: Radius.circular(24),
+                      ),
                       gradient: LinearGradient(
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
@@ -1117,20 +1575,33 @@ class _ProfilePageState extends State<ProfilePage> {
                     child: Center(
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
-                        children: colors.map((c) => Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 6),
-                          child: Container(
-                            width: 28, height: 28,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: c,
-                              border: Border.all(color: Colors.white.withAlpha(180), width: 2),
-                              boxShadow: [
-                                BoxShadow(color: Colors.black.withAlpha(30), blurRadius: 6),
-                              ],
-                            ),
-                          ),
-                        )).toList(),
+                        children: colors
+                            .map(
+                              (c) => Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 6,
+                                ),
+                                child: Container(
+                                  width: 28,
+                                  height: 28,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: c,
+                                    border: Border.all(
+                                      color: Colors.white.withAlpha(180),
+                                      width: 2,
+                                    ),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withAlpha(30),
+                                        blurRadius: 6,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            )
+                            .toList(),
                       ),
                     ),
                   ),
@@ -1139,19 +1610,23 @@ class _ProfilePageState extends State<ProfilePage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(name,
-                            style: TextStyle(
-                              color: _readableTextOn(colors[2]),
-                              fontSize: 22,
-                              fontWeight: FontWeight.w800,
-                            )),
+                        Text(
+                          name,
+                          style: TextStyle(
+                            color: _readableTextOn(colors[2]),
+                            fontSize: 22,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
                         const SizedBox(height: 4),
-                        Text('$scene，”${d['nickname']}”',
-                            style: TextStyle(
-                              color: _readableTextOn(colors[2]).withAlpha(180),
-                              fontSize: 13,
-                              height: 1.4,
-                            )),
+                        Text(
+                          '$scene，”${d['nickname']}”',
+                          style: TextStyle(
+                            color: _readableTextOn(colors[2]).withAlpha(180),
+                            fontSize: 13,
+                            height: 1.4,
+                          ),
+                        ),
                         const SizedBox(height: 16),
                         Container(
                           padding: const EdgeInsets.all(14),
@@ -1163,33 +1638,45 @@ class _ProfilePageState extends State<ProfilePage> {
                           child: Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Icon(Icons.auto_awesome, size: 16, color: colors[0]),
+                              Icon(
+                                Icons.auto_awesome,
+                                size: 16,
+                                color: colors[0],
+                              ),
                               const SizedBox(width: 10),
                               Expanded(
-                                child: Text(d['creator']!,
-                                    style: TextStyle(
-                                      color: _readableTextOn(colors[2]).withAlpha(210),
-                                      fontSize: 13,
-                                      height: 1.6,
-                                    )),
+                                child: Text(
+                                  d['creator']!,
+                                  style: TextStyle(
+                                    color: _readableTextOn(
+                                      colors[2],
+                                    ).withAlpha(210),
+                                    fontSize: 13,
+                                    height: 1.6,
+                                  ),
+                                ),
                               ),
                             ],
                           ),
                         ),
                         const SizedBox(height: 16),
-                        Text(d['title']!,
-                            style: TextStyle(
-                              color: _readableTextOn(colors[2]),
-                              fontSize: 14,
-                              fontWeight: FontWeight.w700,
-                            )),
+                        Text(
+                          d['title']!,
+                          style: TextStyle(
+                            color: _readableTextOn(colors[2]),
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
                         const SizedBox(height: 8),
-                        Text(d['detail']!,
-                            style: TextStyle(
-                              color: _readableTextOn(colors[2]).withAlpha(200),
-                              fontSize: 12,
-                              height: 1.65,
-                            )),
+                        Text(
+                          d['detail']!,
+                          style: TextStyle(
+                            color: _readableTextOn(colors[2]).withAlpha(200),
+                            fontSize: 12,
+                            height: 1.65,
+                          ),
+                        ),
                         const SizedBox(height: 24),
                         // Buttons row
                         Row(
@@ -1200,12 +1687,18 @@ class _ProfilePageState extends State<ProfilePage> {
                                 child: OutlinedButton.icon(
                                   onPressed: () => _saveCard(repaintKey, name),
                                   icon: const Icon(Icons.download, size: 17),
-                                  label: const Text('保存', style: TextStyle(fontSize: 12)),
+                                  label: const Text(
+                                    '保存',
+                                    style: TextStyle(fontSize: 12),
+                                  ),
                                   style: OutlinedButton.styleFrom(
                                     foregroundColor: colors[0],
-                                    side: BorderSide(color: colors[0].withAlpha(100)),
+                                    side: BorderSide(
+                                      color: colors[0].withAlpha(100),
+                                    ),
                                     shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(14)),
+                                      borderRadius: BorderRadius.circular(14),
+                                    ),
                                   ),
                                 ),
                               ),
@@ -1217,14 +1710,19 @@ class _ProfilePageState extends State<ProfilePage> {
                                 child: FilledButton.icon(
                                   onPressed: () => _shareCard(repaintKey, name),
                                   icon: const Icon(Icons.share, size: 17),
-                                  label: const Text('分享', style: TextStyle(fontSize: 12)),
+                                  label: const Text(
+                                    '分享',
+                                    style: TextStyle(fontSize: 12),
+                                  ),
                                   style: FilledButton.styleFrom(
                                     backgroundColor: colors[0],
-                                    foregroundColor: colors[0].computeLuminance() > 0.5
+                                    foregroundColor:
+                                        colors[0].computeLuminance() > 0.5
                                         ? const Color(0xFF222222)
                                         : Colors.white,
                                     shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(14)),
+                                      borderRadius: BorderRadius.circular(14),
+                                    ),
                                   ),
                                 ),
                               ),
@@ -1245,7 +1743,8 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Future<void> _saveCard(GlobalKey key, String name) async {
     try {
-      final boundary = key.currentContext?.findRenderObject() as RenderRepaintBoundary?;
+      final boundary =
+          key.currentContext?.findRenderObject() as RenderRepaintBoundary?;
       if (boundary == null) return;
       final image = await boundary.toImage(pixelRatio: 3.0);
       final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
@@ -1254,24 +1753,25 @@ class _ProfilePageState extends State<ProfilePage> {
       final file = File(p.join(dir.path, 'theme_$name.png'));
       await file.writeAsBytes(byteData.buffer.asUint8List());
       await Gal.putImage(file.path);
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('$name 已保存到相册'),
-              duration: const Duration(seconds: 2)),
-        );
-      }
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('$name 已保存到相册'),
+          duration: const Duration(seconds: 2),
+        ),
+      );
     } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('保存失败，请检查相册权限')),
-        );
-      }
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('保存失败，请检查相册权限')));
     }
   }
 
   Future<void> _shareCard(GlobalKey key, String name) async {
     try {
-      final boundary = key.currentContext?.findRenderObject() as RenderRepaintBoundary?;
+      final boundary =
+          key.currentContext?.findRenderObject() as RenderRepaintBoundary?;
       if (boundary == null) return;
       final image = await boundary.toImage(pixelRatio: 3.0);
       final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
@@ -1294,42 +1794,50 @@ class _ProfilePageState extends State<ProfilePage> {
     return switch (mode) {
       'warm' => {
         'nickname': '晴日暖白',
-        'creator': '我喜欢被阳光包裹的感觉。窗边那张桌子，一本摊开的日记本，笔尖在纸上沙沙地走，'
+        'creator':
+            '我喜欢被阳光包裹的感觉。窗边那张桌子，一本摊开的日记本，笔尖在纸上沙沙地走，'
             '旁边一杯热茶冒着气。这种温暖不是燥热，是让人忍不住想跟自己说几句话的那种安宁。'
             '这是我给心晴日记选的第一套颜色。',
         'title': '不只是一种颜色',
-        'detail': '暖白色不是白色加了黄，是一种被时间浸润后的纸张色。'
+        'detail':
+            '暖白色不是白色加了黄，是一种被时间浸润后的纸张色。'
             '它的温和不刺眼，适合长时间书写。棕色强调色像一杯手冲，'
             '不过分甜，不刻意苦，刚好能托住情绪的起伏。'
             '这大概是所有日记应用都想成为的样子：一个让你愿意坐下来、慢慢写的地方。',
       },
       'dark' => {
         'nickname': '静夜深蓝',
-        'creator': '有时候就是半夜才有话想说。白天的话是社交用的，夜里的话才是自己的。'
+        'creator':
+            '有时候就是半夜才有话想说。白天的话是社交用的，夜里的话才是自己的。'
             '关掉灯，只剩屏幕的光，指尖在暗色界面上敲字很安静，不会吵醒心里那些还没理清的念头。'
             '我需要一个不怕黑的主题。',
         'title': '黑夜是伴侣，不是敌人',
-        'detail': '深蓝底色带一点紫调，避免了纯黑的压抑感，像是在月光下写字而不是在黑洞里。'
+        'detail':
+            '深蓝底色带一点紫调，避免了纯黑的压抑感，像是在月光下写字而不是在黑洞里。'
             '薰衣草蓝的强调色保留了夜间的温柔，不会刺眼，不会让深夜的情绪觉得被冒犯。'
             '这是一个为独处时刻准备的空间：不用假装开心，不用强撑白天的样子。',
       },
       'mint' => {
         'nickname': '雾感薄荷',
-        'creator': '有些早晨推开窗，空气里还有昨晚下雨的味道，凉凉的、带着植物的清新。'
+        'creator':
+            '有些早晨推开窗，空气里还有昨晚下雨的味道，凉凉的、带着植物的清新。'
             '那种感觉应该被记录下来。我觉得写东西不一定要很沉重，'
             '有时候就是随手记一个念头、一张喜欢的外卖单、一句路过听到的话。清爽就好。',
         'title': '轻，但不轻薄',
-        'detail': '低饱和的青碧绿像薄荷叶在杯底慢慢舒展，不是鲜艳夺目的荧光绿，'
+        'detail':
+            '低饱和的青碧绿像薄荷叶在杯底慢慢舒展，不是鲜艳夺目的荧光绿，'
             '而是被水雾蒙了一层的那种温柔绿意。它让写日记这件事变得轻快起来，'
             '像是在雨后林间散步，深呼吸一口，所有烦恼都能先放一放。',
       },
       _ => {
         'nickname': '豆沙柔粉',
-        'creator': '这个颜色是我心里的隐藏款。有人说粉色太甜，那是没找到对的灰调。'
+        'creator':
+            '这个颜色是我心里的隐藏款。有人说粉色太甜，那是没找到对的灰调。'
             '豆沙粉像是冬天大衣口袋里的一颗糖果，或者咖啡馆角落里铺着的那种旧丝绒沙发。'
             '它不张扬，但每次看到都会心里一动。我把它收在四个主题里，像是给懂的人留的小暗号。',
         'title': '被低估的温柔力量',
-        'detail': '灰调豆沙粉在哑光质感下呈现出一种成熟的浪漫：不是少女梦里的粉红泡泡，'
+        'detail':
+            '灰调豆沙粉在哑光质感下呈现出一种成熟的浪漫：不是少女梦里的粉红泡泡，'
             '而是成年后还愿意相信美好的那种笃定。暖棕色的强调色让整个界面有了温度，'
             '像一封手写信的封蜡，或一杯温水，不惊艳，但能安抚你一天的疲惫。'
             '这是一款值得细细品味的颜色，也是四款中最特别的存在。',
@@ -1339,25 +1847,38 @@ class _ProfilePageState extends State<ProfilePage> {
 
   // ── Reusable components ──
 
-  Widget _sectionTitle(String text, ThemeState theme) {
-    return Text(
-      text,
-      style: TextStyle(
-        color: theme.textPrimary,
-        fontSize: 17,
-        fontWeight: FontWeight.w800,
-      ),
+  Widget _sectionTitle(String text, ThemeState theme, {String? subtitle}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          text,
+          style: TextStyle(
+            color: theme.textPrimary,
+            fontSize: 17,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+        if (subtitle != null) ...[
+          const SizedBox(height: 3),
+          Text(
+            subtitle,
+            style: TextStyle(color: theme.textTertiary, fontSize: 12),
+          ),
+        ],
+      ],
     );
   }
 
   Widget _card(ThemeState theme, {required Widget child}) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: theme.cardColor,
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: theme.borderColor),
+      padding: const EdgeInsets.all(14),
+      decoration: XqDecorations.actionCard(
+        theme.cardColor.withAlpha(theme.isDark ? 224 : 245),
+        theme.borderColor,
+        dark: theme.isDark,
+        accent: theme.accentColor,
       ),
       child: child,
     );
@@ -1367,129 +1888,6 @@ class _ProfilePageState extends State<ProfilePage> {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 12),
       child: Divider(color: theme.borderColor, height: 1),
-    );
-  }
-
-  Widget _inputRow(
-    TextEditingController ctrl,
-    String hint,
-    IconData icon,
-    ThemeState theme,
-    VoidCallback onSave,
-  ) {
-    return Row(
-      children: [
-        Expanded(
-          child: TextField(
-            controller: ctrl,
-            style: TextStyle(color: theme.textPrimary, fontSize: 14),
-            cursorColor: theme.accentColor,
-            decoration: InputDecoration(
-              prefixIcon: Icon(icon, color: theme.accentColor, size: 20),
-              hintText: hint,
-              hintStyle: TextStyle(color: theme.textTertiary, fontSize: 13),
-              contentPadding:
-                  const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: theme.borderColor),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: theme.borderColor),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: theme.accentColor),
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(width: 10),
-        SizedBox(
-          height: 44,
-          child: FilledButton(
-            onPressed: _saving ? null : onSave,
-            style: FilledButton.styleFrom(
-              backgroundColor: theme.accentColor,
-              foregroundColor: theme.textOnAccent,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-            child: const Text('保存'),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _switchTile(
-    ThemeState theme, {
-    required String title,
-    required String subtitle,
-    required bool value,
-    required ValueChanged<bool> onChanged,
-  }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 4),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: TextStyle(
-                    color: theme.textPrimary,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  subtitle,
-                  style: TextStyle(
-                    color: theme.textSecondary,
-                    fontSize: 12,
-                    height: 1.4,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Switch.adaptive(value: value, onChanged: onChanged),
-        ],
-      ),
-    );
-  }
-
-  Widget _pwField(TextEditingController ctrl, String hint, ThemeState theme) {
-    return TextField(
-      controller: ctrl,
-      obscureText: true,
-      style: TextStyle(color: theme.textPrimary, fontSize: 14),
-      cursorColor: theme.accentColor,
-      decoration: InputDecoration(
-        prefixIcon: Icon(Icons.lock_outline, color: theme.accentColor, size: 18),
-        hintText: hint,
-        hintStyle: TextStyle(color: theme.textTertiary, fontSize: 13),
-        isDense: true,
-        contentPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: theme.borderColor),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: theme.borderColor),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: theme.accentColor),
-        ),
-      ),
     );
   }
 
@@ -1504,18 +1902,19 @@ class _ProfilePageState extends State<ProfilePage> {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(16),
         onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Container(
+          constraints: const BoxConstraints(minHeight: 58),
+          padding: const EdgeInsets.symmetric(vertical: 7),
           child: Row(
             children: [
               Container(
-                width: 40,
-                height: 40,
+                width: 42,
+                height: 42,
                 decoration: BoxDecoration(
                   color: theme.accentColor.withAlpha(18),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(14),
                 ),
                 child: Icon(icon, color: theme.accentColor, size: 20),
               ),
@@ -1523,18 +1922,23 @@ class _ProfilePageState extends State<ProfilePage> {
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
                       title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         color: theme.textPrimary,
                         fontSize: 14,
-                        fontWeight: FontWeight.w700,
+                        fontWeight: FontWeight.w800,
                       ),
                     ),
                     const SizedBox(height: 3),
                     Text(
                       subtitle,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         color: theme.textSecondary,
                         fontSize: 12,
@@ -1543,14 +1947,23 @@ class _ProfilePageState extends State<ProfilePage> {
                   ],
                 ),
               ),
+              const SizedBox(width: 10),
               Text(
                 trailing,
                 style: TextStyle(
                   color: onTap == null ? theme.textTertiary : theme.accentColor,
                   fontSize: 12,
-                  fontWeight: FontWeight.w700,
+                  fontWeight: FontWeight.w800,
                 ),
               ),
+              if (onTap != null) ...[
+                const SizedBox(width: 2),
+                Icon(
+                  Icons.chevron_right_rounded,
+                  color: theme.accentColor.withAlpha(150),
+                  size: 18,
+                ),
+              ],
             ],
           ),
         ),
@@ -1567,7 +1980,7 @@ class _ProfilePageState extends State<ProfilePage> {
   }) {
     return SizedBox(
       width: double.infinity,
-      height: 44,
+      height: 48,
       child: filled
           ? FilledButton.icon(
               onPressed: onTap,
@@ -1575,8 +1988,9 @@ class _ProfilePageState extends State<ProfilePage> {
               label: Text(label),
               style: FilledButton.styleFrom(
                 backgroundColor: theme.errorColor,
-                foregroundColor:
-                    theme.isDark ? theme.backgroundColor : Colors.white,
+                foregroundColor: theme.isDark
+                    ? theme.backgroundColor
+                    : Colors.white,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(14),
                 ),

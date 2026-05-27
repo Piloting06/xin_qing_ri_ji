@@ -317,7 +317,7 @@ class WeatherDetailPage extends StatelessWidget {
                 ),
                 decoration: BoxDecoration(
                   color: theme.cardColor,
-                  borderRadius: BorderRadius.circular(18),
+                  borderRadius: BorderRadius.circular(XqDecorations.radiusCard),
                   border: Border.all(color: theme.borderColor),
                 ),
                 child: Row(
@@ -366,7 +366,7 @@ class WeatherDetailPage extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
       decoration: BoxDecoration(
         color: theme.cardColor,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(XqDecorations.radiusCard),
         border: Border.all(color: theme.borderColor),
       ),
       child: Column(

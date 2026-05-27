@@ -31,6 +31,7 @@ class _MainScaffoldState extends State<MainScaffold> {
   late int _currentIndex;
   late final PageController _pageController;
   bool _onboardingChecked = false;
+  bool _lockoutHandled = false;
 
   @override
   void initState() {
@@ -106,16 +107,17 @@ class _MainScaffoldState extends State<MainScaffold> {
           : Brightness.dark,
     );
 
-    if (appState.isLockedOut) {
-      final navigator = Navigator.of(context);
-      final messenger = ScaffoldMessenger.maybeOf(context);
-      Future.delayed(const Duration(milliseconds: 120), () {
+    if (appState.isLockedOut && !_lockoutHandled) {
+      _lockoutHandled = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
-        navigator.pushAndRemoveUntil(
+        Navigator.of(context).pushAndRemoveUntil(
           MaterialPageRoute(builder: (_) => const LoginPage()),
           (_) => false,
         );
-        messenger?.showSnackBar(const SnackBar(content: Text('登录已过期，请重新登录')));
+        ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+          const SnackBar(content: Text('登录已过期，请重新登录')),
+        );
       });
     }
 
@@ -200,7 +202,7 @@ class _FrostedCapsule extends StatelessWidget {
     return ClipRRect(
       borderRadius: BorderRadius.circular(28),
       child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+        filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
         child: Container(
           height: 66,
           padding: const EdgeInsets.symmetric(horizontal: 20),

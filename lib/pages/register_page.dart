@@ -10,6 +10,7 @@ import '../widgets/auth_frame.dart';
 import '../widgets/main_scaffold.dart';
 import '../services/notification_service.dart';
 import '../main.dart';
+import '../theme/xq_decorations.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -656,7 +657,7 @@ class _RegisterPageState extends State<RegisterPage> {
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: theme.surfaceAlpha,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(XqDecorations.radiusCard),
         border: Border.all(color: theme.borderColor),
       ),
       child: Column(

@@ -75,11 +75,6 @@ class XqTypography {
   );
 
   // ── 专用样式 ──
-  static const handwrittenTitle = TextStyle(
-    fontSize: 20,
-    fontWeight: FontWeight.w600,
-    letterSpacing: 1.0,
-  );
   static const handwrittenBody = TextStyle(
     fontSize: 15,
     fontWeight: FontWeight.w400,

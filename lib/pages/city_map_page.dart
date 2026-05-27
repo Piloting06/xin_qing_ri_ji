@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../stores/map_state.dart';
 import '../stores/theme_state.dart';
 import '../widgets/city_comment_sheet.dart';
+import '../theme/xq_decorations.dart';
 
 class CityMapPage extends StatefulWidget {
   const CityMapPage({super.key});
@@ -407,7 +408,7 @@ class _CityMapPageState extends State<CityMapPage>
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(XqDecorations.radiusCard),
         onTap: () {
           HapticFeedback.selectionClick();
           map.selectCityCode(city.code);
@@ -420,7 +421,7 @@ class _CityMapPageState extends State<CityMapPage>
             color: hasActivity
                 ? _moodBg(mood, theme).withAlpha(theme.isDark ? 55 : 40)
                 : theme.cardColor.withAlpha(120),
-            borderRadius: BorderRadius.circular(18),
+            borderRadius: BorderRadius.circular(XqDecorations.radiusCard),
             border: Border.all(
               color: isMe
                   ? const Color(0xFFFF9F1C)

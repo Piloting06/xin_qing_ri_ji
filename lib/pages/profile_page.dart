@@ -229,7 +229,7 @@ class _ProfilePageState extends State<ProfilePage> {
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: TextButton.styleFrom(
-              foregroundColor: const Color(0xFFD9706A),
+              foregroundColor: theme.errorColor,
             ),
             child: const Text('确定注销'),
           ),
@@ -275,7 +275,7 @@ class _ProfilePageState extends State<ProfilePage> {
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: TextButton.styleFrom(
-              foregroundColor: const Color(0xFFD9706A),
+              foregroundColor: theme.errorColor,
             ),
             child: const Text('退出'),
           ),
@@ -748,7 +748,7 @@ class _ProfilePageState extends State<ProfilePage> {
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             decoration: BoxDecoration(
               color: theme.surfaceAlpha.withAlpha(theme.isDark ? 140 : 210),
-              borderRadius: BorderRadius.circular(18),
+              borderRadius: BorderRadius.circular(XqDecorations.radiusCard),
               border: Border.all(color: theme.borderColor.withAlpha(80)),
             ),
             child: Row(
@@ -849,57 +849,6 @@ class _ProfilePageState extends State<ProfilePage> {
                   ),
                 ),
               ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Container(
-                  height: 92,
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: theme.cardElevated.withAlpha(
-                      theme.isDark ? 130 : 210,
-                    ),
-                    borderRadius: BorderRadius.circular(18),
-                    border: Border.all(color: theme.borderColor.withAlpha(90)),
-                  ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              '胶囊提醒',
-                              style: TextStyle(
-                                color: theme.textPrimary,
-                                fontSize: 13,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                            const SizedBox(height: 5),
-                            Text(
-                              '到期时通知我',
-                              style: TextStyle(
-                                color: theme.textSecondary,
-                                fontSize: 11,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Switch.adaptive(
-                        value: _capsuleNotify,
-                        onChanged: (v) async {
-                          if (v) {
-                            await NotificationService.requestPermissionIfNeeded();
-                          }
-                          _setCapsuleNotify(v);
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-              ),
             ],
           ),
         ],
@@ -917,14 +866,14 @@ class _ProfilePageState extends State<ProfilePage> {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(XqDecorations.radiusCard),
         onTap: onTap,
         child: Container(
           height: 92,
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
             color: theme.cardElevated.withAlpha(theme.isDark ? 130 : 210),
-            borderRadius: BorderRadius.circular(18),
+            borderRadius: BorderRadius.circular(XqDecorations.radiusCard),
             border: Border.all(color: theme.borderColor.withAlpha(90)),
           ),
           child: Column(
@@ -1021,6 +970,51 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
             ],
           ),
+          const SizedBox(height: 14),
+          Divider(color: theme.borderColor.withAlpha(60), height: 1),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Icon(
+                Icons.notifications_active_outlined,
+                size: 18,
+                color: theme.gold,
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '胶囊提醒',
+                      style: TextStyle(
+                        color: theme.textPrimary,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '到期时通过通知提醒我',
+                      style: TextStyle(
+                        color: theme.textSecondary,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Switch.adaptive(
+                value: _capsuleNotify,
+                onChanged: (v) async {
+                  if (v) {
+                    await NotificationService.requestPermissionIfNeeded();
+                  }
+                  _setCapsuleNotify(v);
+                },
+              ),
+            ],
+          ),
         ],
       ),
     );
@@ -1042,7 +1036,7 @@ class _ProfilePageState extends State<ProfilePage> {
               child: Material(
                 color: Colors.transparent,
                 child: InkWell(
-                  borderRadius: BorderRadius.circular(18),
+                  borderRadius: BorderRadius.circular(XqDecorations.radiusCard),
                   onTap: () {
                     if (active) {
                       _showThemeDetail(entry.key, entry.value, colors, desc);
@@ -1056,7 +1050,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     height: 78,
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(18),
+                      borderRadius: BorderRadius.circular(XqDecorations.radiusCard),
                       color: colors[2],
                       border: Border.all(
                         color: active

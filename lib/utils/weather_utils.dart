@@ -37,14 +37,16 @@ String weatherUpdatedText(DateTime? time) {
 }
 
 IconData weatherIcon(int code, String text) {
-  final isSnow = text.contains('雪') ||
+  final isSnow =
+      text.contains('雪') ||
       code == 71 ||
       code == 73 ||
       code == 75 ||
       code == 77 ||
       code == 85 ||
       code == 86;
-  final isRain = text.contains('雨') ||
+  final isRain =
+      text.contains('雨') ||
       code == 51 ||
       code == 53 ||
       code == 55 ||
@@ -71,10 +73,6 @@ IconData weatherIcon(int code, String text) {
     return Icons.blur_on_outlined;
   }
   return Icons.wb_sunny_outlined;
-}
-
-String weatherPrompt(Map<String, dynamic>? weather) {
-  return weatherCardPrompt(weather);
 }
 
 /// 天气卡片内部提示 — 偏天气感受

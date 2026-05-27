@@ -76,6 +76,10 @@ class _HomePageState extends State<HomePage> {
       } catch (_) {}
     }
 
+    // 缓存新鲜（30分钟内）则不触发网络请求
+    if (updatedAt != null && DateTime.now().difference(updatedAt).inMinutes < 30) {
+      return;
+    }
     _loadWeather();
   }
 

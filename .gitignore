@@ -17,3 +17,4 @@ server_update_*.tar.gz
 server_fix.tar.gz
 android/.kotlin/
 *.apk
+key.properties

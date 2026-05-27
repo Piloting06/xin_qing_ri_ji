@@ -8,13 +8,12 @@ class XqDecorations {
   // ── 圆角 ──
   static const radiusSmall = 8.0;
   static const radiusMedium = 14.0;
+  static const radiusCard = 18.0;
   static const radiusLarge = 20.0;
-  static const radiusXL = 24.0;
   static const radiusHero = 28.0;
   static const radiusSheet = 28.0;
-  static const radiusPill = 999.0;
 
-  // ── 阴影（浅色模式）──
+  // ── 阴影 ──
   static List<BoxShadow> shadowSubtle({bool dark = false}) => [
     BoxShadow(
       color: (dark ? Colors.black : XqColors.lightInk).withAlpha(dark ? 4 : 8),
@@ -53,22 +52,10 @@ class XqDecorations {
       Border.all(color: accent.withAlpha(60), width: 1.0);
 
   // ═══════════════════════════════════════
-  //  5 种卡片模式
+  //  卡片模式
   // ═══════════════════════════════════════
 
-  /// 标准内容卡片
-  static BoxDecoration paperCard(
-    Color card,
-    Color border, {
-    bool dark = false,
-  }) => BoxDecoration(
-    color: card,
-    borderRadius: BorderRadius.circular(radiusMedium),
-    border: borderThin(border),
-    boxShadow: shadowSubtle(dark: dark),
-  );
-
-  /// 高级卡片（天气、语录）
+  /// 高级卡片（天气轮播等）
   static BoxDecoration elevatedCard(
     Color cardElevated,
     Color accent, {
@@ -83,6 +70,7 @@ class XqDecorations {
     ],
   );
 
+  /// Hero 卡片（天气、语录、档案）
   static BoxDecoration heroCard(
     Color start,
     Color end,
@@ -102,6 +90,7 @@ class XqDecorations {
         : [...shadowMedium(dark: dark), ...shadowGlow(glow)],
   );
 
+  /// 操作卡片（快捷入口、反馈）
   static BoxDecoration actionCard(
     Color card,
     Color border, {
@@ -114,6 +103,7 @@ class XqDecorations {
     boxShadow: shadowSubtle(dark: dark),
   );
 
+  /// Sheet 表面（底部弹层）
   static BoxDecoration sheetSurface(
     Color card,
     Color border, {
@@ -126,33 +116,4 @@ class XqDecorations {
     border: Border(top: BorderSide(color: border.withAlpha(120), width: 0.5)),
     boxShadow: shadowStrong(dark: dark),
   );
-
-  static BoxDecoration insetField(Color surface, Color border) => BoxDecoration(
-    color: surface,
-    borderRadius: BorderRadius.circular(radiusMedium),
-    border: borderThin(border),
-  );
-
-  /// 浮动面板（毛玻璃效果需配合 BackdropFilter）
-  static BoxDecoration glassCard(Color card, Color border) => BoxDecoration(
-    color: card.withAlpha(200),
-    borderRadius: BorderRadius.circular(radiusMedium),
-    border: borderThin(border),
-  );
-
-  /// 便利贴（树洞留言）
-  static BoxDecoration postItCard(Color washi, {double rotation = 0}) =>
-      BoxDecoration(
-        color: washi,
-        borderRadius: BorderRadius.circular(radiusSmall),
-        boxShadow: shadowSubtle(),
-      );
-
-  /// 拍立得（好友卡片）
-  static BoxDecoration polaroidCard(Color cardElevated, {bool dark = false}) =>
-      BoxDecoration(
-        color: cardElevated,
-        borderRadius: BorderRadius.circular(radiusMedium),
-        boxShadow: shadowMedium(dark: dark),
-      );
 }

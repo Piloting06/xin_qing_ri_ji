@@ -366,7 +366,7 @@ class _TreeholePageState extends State<TreeholePage>
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: theme.cardColor,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(XqDecorations.radiusCard),
         border: Border.all(color: theme.borderColor),
       ),
       child: Column(
@@ -394,7 +394,7 @@ class _TreeholePageState extends State<TreeholePage>
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: washi.withAlpha(theme.isDark ? 42 : 20),
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(XqDecorations.radiusCard),
         border: Border.all(
           color: isOwn
               ? theme.accentColor.withAlpha(100)

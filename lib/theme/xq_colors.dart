@@ -10,9 +10,8 @@ class XqColors {
   // ═══════════════════════════════════════
 
   static const lightBackground = Color(0xFFFAF4EC);
-  static const lightSurface = Color(0xFFF2EBE4);
   static const lightCard = Color(0xFFFDFAF6);
-  static const lightCardElevated = Color(0xFFFFFBF4); // 带暖黄调，非纯白
+  static const lightCardElevated = Color(0xFFFFFBF4);
   static const lightAccent = Color(0xFFB8782C);
   static const lightAccentLight = Color(0xFFD99B57);
   static const lightAccentMuted = Color(0x2EB8782C);
@@ -40,8 +39,7 @@ class XqColors {
   //  深色模式（月光紫黑 + 柔薰衣草蓝）
   // ═══════════════════════════════════════
 
-  static const darkBackground = Color(0xFF0E1222); // 带蓝调，与城迹深蓝协调
-  static const darkSurface = Color(0xFF17182A);
+  static const darkBackground = Color(0xFF0E1222);
   static const darkCard = Color(0xFF1E1F38);
   static const darkCardElevated = Color(0xFF282946);
   static const darkAccent = Color(0xFFB9B8FF);
@@ -72,9 +70,8 @@ class XqColors {
   // ═══════════════════════════════════════
 
   static const mintBackground = Color(0xFFDDEBE3);
-  static const mintSurface = Color(0xFFCFE3D8);
   static const mintCard = Color(0xFFF2F9F5);
-  static const mintCardElevated = Color(0xFFF6FBF8); // 带绿调，非纯白
+  static const mintCardElevated = Color(0xFFF6FBF8);
   static const mintAccent = Color(0xFF4D8C7A);
   static const mintAccentLight = Color(0xFF6DB5A2);
   static const mintAccentMuted = Color(0x2E4D8C7A);
@@ -101,7 +98,6 @@ class XqColors {
   // ═══════════════════════════════════════
 
   static const blushBackground = Color(0xFFF2DED8);
-  static const blushSurface = Color(0xFFEAD7D1);
   static const blushCard = Color(0xFFFDF6F4);
   static const blushCardElevated = Color(0xFFFFF8F6);
   static const blushAccent = Color(0xFFC4707A);
@@ -124,17 +120,4 @@ class XqColors {
   static const blushWashi2 = Color(0xFFF2D5CD);
   static const blushWashi3 = Color(0xFFEBCAC3);
   static const blushWashi4 = Color(0xFFF0D2CA);
-
-  // ═══════════════════════════════════════
-  //  心情颜色（主题无关）
-  // ═══════════════════════════════════════
-
-  static const moodHappy = Color(0xFFFFD54F);
-  static const moodCalm = Color(0xFF81C784);
-  static const moodSad = Color(0xFF90CAF9);
-  static const moodAngry = Color(0xFFE57373);
-  static const moodAnxious = Color(0xFFCE93D8);
-  static const moodTired = Color(0xFFBCAAA4);
-  static const moodGrateful = Color(0xFFFFB74D);
-  static const moodNeutral = Color(0xFF90A4AE);
 }

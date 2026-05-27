@@ -40,6 +40,7 @@ class _MoodPageState extends State<MoodPage> {
   bool _hydrating = false;
   bool _highlightEditor = false;
   List<Map<String, dynamic>> _allMoods = [];
+  List<Map<String, dynamic>> _dayMoods = []; // 当天所有记录
   final _picker = ImagePicker();
 
   @override
@@ -112,22 +113,26 @@ class _MoodPageState extends State<MoodPage> {
         _photos = [];
         _dirty = false;
         _saved = false;
+        _dayMoods = [];
       });
     }
 
     try {
       final prefs = await SharedPreferences.getInstance();
       final photoStr = prefs.getString('photos_$date') ?? '';
-      final mood = await Api.getMood(date);
+      final moods = await Api.getMoodsByDate(date);
       if (!mounted) return;
 
       setState(() {
-        if (mood != null) {
-          _moodScore = _readMoodScore(mood['emotion_type']);
-          _notesCtrl.text = mood['notes'] ?? '';
+        _dayMoods = moods;
+        if (moods.isNotEmpty) {
+          // 加载最新一条作为当前表单内容
+          final latest = moods.last;
+          _moodScore = _readMoodScore(latest['emotion_type']);
+          _notesCtrl.text = latest['notes'] ?? '';
           if (_moodScore > 0) _emotionNotes[_moodScore] = _notesCtrl.text;
           _selectedTags =
-              (mood['emotion_tags'] as String?)
+              (latest['emotion_tags'] as String?)
                   ?.split(',')
                   .where((s) => s.isNotEmpty)
                   .toList() ??
@@ -144,10 +149,12 @@ class _MoodPageState extends State<MoodPage> {
       });
       _hydrating = false;
 
-      if (showSnack) {
+      if (showSnack && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(mood == null ? '该日期暂无记录' : '已加载 $date 的心情'),
+            content: Text(
+              moods.isEmpty ? '该日期暂无记录' : '已加载 $date 的 ${moods.length} 条记录',
+            ),
             duration: const Duration(seconds: 1),
           ),
         );
@@ -230,15 +237,27 @@ class _MoodPageState extends State<MoodPage> {
         await prefs.remove('photos_$date');
       }
       await _loadAllMoods();
+      // 刷新当天记录列表
+      final dayMoods = await Api.getMoodsByDate(date);
 
       if (mounted) {
         setState(() {
           _saving = false;
           _saved = true;
           _dirty = false;
+          _dayMoods = dayMoods;
         });
-        Future.delayed(const Duration(seconds: 3), () {
-          if (mounted) setState(() => _saved = false);
+        // 保存后清空表单，方便"再记一条"
+        Future.delayed(const Duration(seconds: 2), () {
+          if (mounted) {
+            setState(() {
+              _saved = false;
+              _moodScore = 0;
+              _notesCtrl.clear();
+              _selectedTags = [];
+              _emotionNotes.clear();
+            });
+          }
         });
       }
     } catch (e) {
@@ -280,7 +299,8 @@ class _MoodPageState extends State<MoodPage> {
       }
     } catch (_) {}
     if (!mounted) return;
-    await MoodCardMaker.show(context,
+    await MoodCardMaker.show(
+      context,
       date: appState.selectedDate,
       moodLabel: moodLabels[_moodScore] ?? '心情',
       moodScore: _moodScore,
@@ -382,6 +402,8 @@ class _MoodPageState extends State<MoodPage> {
                   ],
                 ),
                 const SizedBox(height: 16),
+                _buildDayMoodsSummary(t),
+                const SizedBox(height: 16),
                 // 8 Emotion buttons — 2-column grid
                 GridView.count(
                   crossAxisCount: 2,
@@ -400,11 +422,12 @@ class _MoodPageState extends State<MoodPage> {
                           _emotionNotes[_moodScore] = _notesCtrl.text;
                           _moodScore = s;
                           _notesCtrl.text = _emotionNotes[s] ?? '';
+                          _selectedTags = []; // 切换心情时才重置标签
                         } else {
                           _emotionNotes[_moodScore] = _notesCtrl.text;
                           _moodScore = 0;
+                          // 双击取消不清空标签
                         }
-                        _selectedTags = [];
                         _dirty = true;
                         _saved = false;
                       }),
@@ -413,28 +436,46 @@ class _MoodPageState extends State<MoodPage> {
                         duration: const Duration(milliseconds: 200),
                         curve: Curves.easeOutBack,
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 14,
+                          ),
                           decoration: BoxDecoration(
-                            color: active ? color.withAlpha(28) : t.surfaceAlpha,
+                            color: active
+                                ? color.withAlpha(28)
+                                : t.surfaceAlpha,
                             borderRadius: BorderRadius.circular(16),
                             border: Border.all(
-                              color: active ? color.withAlpha(180) : t.borderColor.withAlpha(80),
+                              color: active
+                                  ? color.withAlpha(180)
+                                  : t.borderColor.withAlpha(80),
                               width: active ? 1.5 : 1,
                             ),
                             boxShadow: active
-                                ? [BoxShadow(color: color.withAlpha(30), blurRadius: 8, offset: const Offset(0, 2))]
+                                ? [
+                                    BoxShadow(
+                                      color: color.withAlpha(30),
+                                      blurRadius: 8,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ]
                                 : null,
                           ),
                           child: Row(
                             children: [
-                              Text(moodEmojis[s]!, style: const TextStyle(fontSize: 22)),
+                              Text(
+                                moodEmojis[s]!,
+                                style: const TextStyle(fontSize: 22),
+                              ),
                               const SizedBox(width: 10),
                               Expanded(
                                 child: Text(
                                   moodLabels[s]!,
                                   style: TextStyle(
                                     fontSize: 13,
-                                    fontWeight: active ? FontWeight.w600 : FontWeight.w400,
+                                    fontWeight: active
+                                        ? FontWeight.w600
+                                        : FontWeight.w400,
                                     color: active ? color : t.textSecondary,
                                   ),
                                 ),
@@ -452,49 +493,50 @@ class _MoodPageState extends State<MoodPage> {
                   Wrap(
                     spacing: 10,
                     runSpacing: 10,
-                    children: _currentTags
-                        .take(8)
-                        .toList()
-                        .asMap()
-                        .entries
-                        .map((entry) {
-                          final tag = entry.value;
-                          final sel = _selectedTags.contains(tag['id']);
-                          return GestureDetector(
-                            onTap: () => setState(() {
-                              if (sel) {
-                                _selectedTags.remove(tag['id']);
-                              } else {
-                                _selectedTags.add(tag['id']!);
-                              }
-                              _dirty = true;
-                              _saved = false;
-                            }),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                              decoration: BoxDecoration(
+                    children: _currentTags.take(8).toList().asMap().entries.map(
+                      (entry) {
+                        final tag = entry.value;
+                        final sel = _selectedTags.contains(tag['id']);
+                        return GestureDetector(
+                          onTap: () => setState(() {
+                            if (sel) {
+                              _selectedTags.remove(tag['id']);
+                            } else {
+                              _selectedTags.add(tag['id']!);
+                            }
+                            _dirty = true;
+                            _saved = false;
+                          }),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 10,
+                            ),
+                            decoration: BoxDecoration(
+                              color: sel
+                                  ? t.accentColor.withAlpha(30)
+                                  : t.borderColor.withAlpha(60),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
                                 color: sel
-                                    ? t.accentColor.withAlpha(30)
-                                    : t.borderColor.withAlpha(60),
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: sel
-                                      ? t.accentColor.withAlpha(180)
-                                      : t.borderColor.withAlpha(40),
-                                ),
-                              ),
-                              child: Text(
-                                '${tag['icon']} ${tag['label']}',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: sel ? FontWeight.w600 : FontWeight.w400,
-                                  color: sel ? t.accentColor : t.textSecondary,
-                                ),
+                                    ? t.accentColor.withAlpha(180)
+                                    : t.borderColor.withAlpha(40),
                               ),
                             ),
-                          );
-                        })
-                        .toList(),
+                            child: Text(
+                              '${tag['icon']} ${tag['label']}',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: sel
+                                    ? FontWeight.w600
+                                    : FontWeight.w400,
+                                color: sel ? t.accentColor : t.textSecondary,
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ).toList(),
                   ),
                   const SizedBox(height: 14),
                 ],
@@ -617,8 +659,12 @@ class _MoodPageState extends State<MoodPage> {
                           label: const Text('分享心情'),
                           style: OutlinedButton.styleFrom(
                             foregroundColor: t.accentColor,
-                            side: BorderSide(color: t.accentColor.withAlpha(80)),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                            side: BorderSide(
+                              color: t.accentColor.withAlpha(80),
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
                           ),
                         ),
                       ),
@@ -631,7 +677,9 @@ class _MoodPageState extends State<MoodPage> {
                           style: OutlinedButton.styleFrom(
                             foregroundColor: t.gold,
                             side: BorderSide(color: t.gold.withAlpha(80)),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
                           ),
                         ),
                       ),
@@ -658,7 +706,7 @@ class _MoodPageState extends State<MoodPage> {
                   child: _buildPieChart(t),
                 ),
                 const SizedBox(height: 16),
-                _buildMiniTimeline(t),
+                _buildRecentDays(t),
                 const SizedBox(height: 60),
               ],
             ),
@@ -818,9 +866,107 @@ class _MoodPageState extends State<MoodPage> {
     );
   }
 
-  Widget _buildMiniTimeline(ThemeState t) {
+  Widget _buildDayMoodsSummary(ThemeState t) {
+    if (_dayMoods.isEmpty) return const SizedBox.shrink();
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: t.cardColor,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: t.borderColor),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.today_outlined, size: 16, color: t.accentColor),
+              const SizedBox(width: 6),
+              Text(
+                '今天已记 ${_dayMoods.length} 条',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: t.textPrimary,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          ..._dayMoods.map((m) {
+            final score = _readMoodScore(m['emotion_type']);
+            final color = Color(moodColors[score] ?? 0xFF90A4AE);
+            final notes = m['notes']?.toString() ?? '';
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 6),
+              child: Row(
+                children: [
+                  Container(
+                    width: 3,
+                    height: 20,
+                    decoration: BoxDecoration(
+                      color: color,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(moodEmojis[score] ?? '', style: const TextStyle(fontSize: 16)),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      notes.isEmpty ? '(无文字)' : notes,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(color: t.textSecondary, fontSize: 12),
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: () => _deleteDayMood(m['id'] as int),
+                    child: Icon(Icons.close, size: 14, color: t.textTertiary),
+                  ),
+                ],
+              ),
+            );
+          }),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _deleteDayMood(int id) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('删除记录'),
+        content: const Text('确定删除这条心情记录吗？'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('取消')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('删除', style: TextStyle(color: Color(0xFFC5524C))),
+          ),
+        ],
+      ),
+    );
+    if (ok != true || !mounted) return;
+    final date = context.read<AppState>().selectedDate;
+    try {
+      await Api.deleteMood(id);
+      final dayMoods = await Api.getMoodsByDate(date);
+      await _loadAllMoods();
+      if (mounted) setState(() => _dayMoods = dayMoods);
+    } catch (_) {}
+  }
+
+  Widget _buildRecentDays(ThemeState t) {
     if (_allMoods.isEmpty) return const SizedBox.shrink();
-    final recent = _allMoods.take(10).toList();
+    // 按日期分组，取最近 7 天
+    final grouped = <String, List<Map<String, dynamic>>>{};
+    for (final m in _allMoods) {
+      final date = m['date']?.toString() ?? '';
+      grouped.putIfAbsent(date, () => []).add(m);
+    }
+    final recentDates = grouped.keys.take(7).toList();
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -840,10 +986,11 @@ class _MoodPageState extends State<MoodPage> {
             ),
           ),
           const SizedBox(height: 10),
-          ...recent.map((m) {
-            final score = _readMoodScore(m['emotion_type']);
+          ...recentDates.map((date) {
+            final moods = grouped[date]!;
+            final latest = moods.last;
+            final score = _readMoodScore(latest['emotion_type']);
             final color = Color(moodColors[score] ?? 0xFF90A4AE);
-            final date = m['date']?.toString() ?? '';
             return GestureDetector(
               onTap: () => _editMoodDay(date),
               child: Padding(
@@ -868,9 +1015,27 @@ class _MoodPageState extends State<MoodPage> {
                       date,
                       style: TextStyle(color: t.textSecondary, fontSize: 12),
                     ),
+                    if (moods.length > 1) ...[
+                      const SizedBox(width: 4),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                        decoration: BoxDecoration(
+                          color: t.accentColor.withAlpha(20),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          '${moods.length}条',
+                          style: TextStyle(
+                            color: t.accentColor,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
                     const Spacer(),
                     Text(
-                      m['notes']?.toString() ?? '',
+                      latest['notes']?.toString() ?? '',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
@@ -934,6 +1099,10 @@ class _MoodPageState extends State<MoodPage> {
             ],
           ),
           const SizedBox(height: 12),
+          if (spots.length >= 3) ...[
+            _buildTrendInsight(spots, moods, t),
+            const SizedBox(height: 8),
+          ],
           SizedBox(
             height: 120,
             child: spots.length < 2
@@ -975,6 +1144,36 @@ class _MoodPageState extends State<MoodPage> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildTrendInsight(List<FlSpot> spots, List<Map<String, dynamic>> moods, ThemeState t) {
+    // 计算趋势方向
+    final recent3 = spots.length >= 3 ? spots.sublist(spots.length - 3) : spots;
+    final older3 = spots.length >= 6 ? spots.sublist(spots.length - 6, spots.length - 3) : [];
+    String trend = '';
+    if (older3.isNotEmpty) {
+      final recentAvg = recent3.map((s) => s.y).reduce((a, b) => a + b) / recent3.length;
+      final olderAvg = older3.map((s) => s.y).reduce((a, b) => a + b) / older3.length;
+      if (recentAvg > olderAvg + 0.3) {
+        trend = '最近心情在好转';
+      } else if (recentAvg < olderAvg - 0.3) {
+        trend = '最近情绪有些波动';
+      } else {
+        trend = '情绪比较平稳';
+      }
+    } else {
+      trend = '记录越多，洞察越准';
+    }
+    return Row(
+      children: [
+        Icon(Icons.insights_outlined, size: 14, color: t.accentColor),
+        const SizedBox(width: 6),
+        Text(
+          trend,
+          style: TextStyle(color: t.textSecondary, fontSize: 12),
+        ),
+      ],
     );
   }
 
@@ -1093,17 +1292,7 @@ class _MoodPageState extends State<MoodPage> {
                                   reservedSize: 28,
                                   interval: 1,
                                   getTitlesWidget: (v, _) => Text(
-                                    [
-                                      '',
-                                      '😄',
-                                      '😊',
-                                      '😢',
-                                      '😠',
-                                      '😰',
-                                      '😴',
-                                      '🥰',
-                                      '💭',
-                                    ][v.toInt().clamp(1, 8)],
+                                    moodEmojis[v.toInt()] ?? '',
                                     style: const TextStyle(fontSize: 12),
                                   ),
                                 ),

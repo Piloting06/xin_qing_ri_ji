@@ -9,9 +9,6 @@ class StorageKeys {
   static const String cityLon = 'cityLon';
   static const String locationCache = 'locationCache';
   static const String onboardingDone = 'onboardingDone';
-  static const String morningNotify = 'morningNotify';
-  static const String nightNotify = 'nightNotify';
   static const String capsuleNotify = 'capsuleNotify';
-  static const String friendNotify = 'friendNotify';
   static const String pendingCapsuleLaunch = 'pendingCapsuleLaunch';
 }

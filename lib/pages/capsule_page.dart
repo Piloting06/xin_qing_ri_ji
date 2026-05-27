@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../utils/helpers.dart';
 import '../utils/time_utils.dart';
+import '../theme/xq_decorations.dart';
 
 import '../api/api_client.dart';
 import '../services/notification_service.dart';
@@ -443,15 +444,15 @@ class _CapsulePageState extends State<CapsulePage> {
           ),
           Row(
             children: [
-              Text('1天后', style: TextStyle(color: theme.textTertiary, fontSize: 11)),
-              const Spacer(),
-              Text('3天', style: TextStyle(color: _days == 3 ? theme.accentColor : theme.textTertiary, fontSize: 11, fontWeight: _days == 3 ? FontWeight.w700 : FontWeight.w400)),
-              const Spacer(),
-              Text('7天', style: TextStyle(color: _days == 7 ? theme.accentColor : theme.textTertiary, fontSize: 11, fontWeight: _days == 7 ? FontWeight.w700 : FontWeight.w400)),
-              const Spacer(),
-              Text('14天', style: TextStyle(color: _days == 14 ? theme.accentColor : theme.textTertiary, fontSize: 11, fontWeight: _days == 14 ? FontWeight.w700 : FontWeight.w400)),
-              const Spacer(),
-              Text('30天后', style: TextStyle(color: _days == 30 ? theme.accentColor : theme.textTertiary, fontSize: 11, fontWeight: _days == 30 ? FontWeight.w700 : FontWeight.w400)),
+              _quickDayButton(theme, '1天', 1),
+              const SizedBox(width: 8),
+              _quickDayButton(theme, '3天', 3),
+              const SizedBox(width: 8),
+              _quickDayButton(theme, '7天', 7),
+              const SizedBox(width: 8),
+              _quickDayButton(theme, '14天', 14),
+              const SizedBox(width: 8),
+              _quickDayButton(theme, '30天', 30),
             ],
           ),
           const SizedBox(height: 10),
@@ -509,7 +510,7 @@ class _CapsulePageState extends State<CapsulePage> {
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: theme.cardColor,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(XqDecorations.radiusCard),
         border: Border.all(color: theme.borderColor),
       ),
       child: Column(
@@ -547,6 +548,32 @@ class _CapsulePageState extends State<CapsulePage> {
     );
   }
 
+  Widget _quickDayButton(ThemeState theme, String label, int days) {
+    final active = _days == days;
+    return GestureDetector(
+      onTap: () => setState(() => _days = days),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+        decoration: BoxDecoration(
+          color: active ? theme.accentColor.withAlpha(20) : Colors.transparent,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: active ? theme.accentColor.withAlpha(80) : theme.borderColor,
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: active ? theme.accentColor : theme.textTertiary,
+            fontSize: 12,
+            fontWeight: active ? FontWeight.w700 : FontWeight.w400,
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _capsuleCard(Map<String, dynamic> capsule, ThemeState theme) {
     final opened = _isOpened(capsule);
     final openDate = DateTime.tryParse(capsule['open_date']?.toString() ?? '');
@@ -557,14 +584,14 @@ class _CapsulePageState extends State<CapsulePage> {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(XqDecorations.radiusCard),
         onTap: () => _open(capsule),
         child: Container(
           margin: const EdgeInsets.only(bottom: 10),
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: theme.cardColor,
-            borderRadius: BorderRadius.circular(18),
+            borderRadius: BorderRadius.circular(XqDecorations.radiusCard),
             border: Border.all(
               color: canOpen
                   ? theme.accentColor.withAlpha(140)

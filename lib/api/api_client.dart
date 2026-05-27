@@ -4,7 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../constants/keys.dart';
 
 class Api {
-  static const String baseUrl = 'http://114.55.138.55:8888/api';
+  static const String baseUrl = 'http://xqrj.glxgo.xin/api';
   static const Duration timeout = Duration(seconds: 15);
   static void Function()? onUnauthorized;
   static void Function()? onAuthenticated;
@@ -223,23 +223,29 @@ class Api {
     return await _handle(res);
   }
 
-  static Future<Map<String, dynamic>?> getMood(String date) async {
+  /// 获取某天所有心情记录
+  static Future<List<Map<String, dynamic>>> getMoodsByDate(String date) async {
     final res = await http
         .get(Uri.parse('$baseUrl/mood?date=$date'), headers: await _headers())
         .timeout(timeout);
-    try {
-      return await _handle(res);
-    } on ApiException catch (e) {
-      if (e.statusCode == 404) return null;
-      rethrow;
-    }
+    final data = await _handle(res);
+    return List<Map<String, dynamic>>.from(data['moods'] ?? []);
   }
 
+  /// 获取所有心情记录
   static Future<Map<String, dynamic>> getAllMoods() async {
     final res = await http
         .get(Uri.parse('$baseUrl/mood/all'), headers: await _headers())
         .timeout(timeout);
     return await _handle(res);
+  }
+
+  /// 删除单条心情记录
+  static Future<void> deleteMood(int id) async {
+    final res = await http
+        .delete(Uri.parse('$baseUrl/mood/$id'), headers: await _headers())
+        .timeout(timeout);
+    await _handle(res);
   }
 
   // ── Checkin ──
@@ -419,7 +425,10 @@ class Api {
   // ── Treehole comments ──
   static Future<Map<String, dynamic>> getTreeholeComments(int messageId) async {
     final res = await http
-        .get(Uri.parse('$baseUrl/treehole/$messageId/comments'), headers: await _headers())
+        .get(
+          Uri.parse('$baseUrl/treehole/$messageId/comments'),
+          headers: await _headers(),
+        )
         .timeout(timeout);
     return await _handle(res);
   }
@@ -475,14 +484,23 @@ class Api {
     return await _handle(res);
   }
 
-  static Future<Map<String, dynamic>> getCityComments(String cityCode, {int page = 1}) async {
+  static Future<Map<String, dynamic>> getCityComments(
+    String cityCode, {
+    int page = 1,
+  }) async {
     final res = await http
-        .get(Uri.parse('$baseUrl/city/comments?city=$cityCode&page=$page'), headers: await _headers())
+        .get(
+          Uri.parse('$baseUrl/city/comments?city=$cityCode&page=$page'),
+          headers: await _headers(),
+        )
         .timeout(timeout);
     return await _handle(res);
   }
 
-  static Future<Map<String, dynamic>> postCityComment(String cityCode, String content) async {
+  static Future<Map<String, dynamic>> postCityComment(
+    String cityCode,
+    String content,
+  ) async {
     final res = await http
         .post(
           Uri.parse('$baseUrl/city/comments'),
@@ -505,33 +523,48 @@ class Api {
 
   static Future<Map<String, dynamic>> deleteCityComment(int commentId) async {
     final res = await http
-        .delete(Uri.parse('$baseUrl/city/comments/$commentId'), headers: await _headers())
+        .delete(
+          Uri.parse('$baseUrl/city/comments/$commentId'),
+          headers: await _headers(),
+        )
         .timeout(timeout);
     return await _handle(res);
   }
 
   static Future<Map<String, dynamic>> deleteTreehole(int messageId) async {
     final res = await http
-        .delete(Uri.parse('$baseUrl/treehole/$messageId'), headers: await _headers())
+        .delete(
+          Uri.parse('$baseUrl/treehole/$messageId'),
+          headers: await _headers(),
+        )
         .timeout(timeout);
     return await _handle(res);
   }
 
   static Future<Map<String, dynamic>> deleteCapsule(int capsuleId) async {
     final res = await http
-        .delete(Uri.parse('$baseUrl/capsule/$capsuleId'), headers: await _headers())
+        .delete(
+          Uri.parse('$baseUrl/capsule/$capsuleId'),
+          headers: await _headers(),
+        )
         .timeout(timeout);
     return await _handle(res);
   }
 
   static Future<Map<String, dynamic>> getCityReplies(int commentId) async {
     final res = await http
-        .get(Uri.parse('$baseUrl/city/comments/$commentId/replies'), headers: await _headers())
+        .get(
+          Uri.parse('$baseUrl/city/comments/$commentId/replies'),
+          headers: await _headers(),
+        )
         .timeout(timeout);
     return await _handle(res);
   }
 
-  static Future<Map<String, dynamic>> postCityReply(int commentId, String content) async {
+  static Future<Map<String, dynamic>> postCityReply(
+    int commentId,
+    String content,
+  ) async {
     final res = await http
         .post(
           Uri.parse('$baseUrl/city/comments/$commentId/replies'),
@@ -554,12 +587,20 @@ class Api {
     await _handle(res);
   }
 
-  static Future<Map<String, dynamic>> emailRegister(String email, String password, String code) async {
+  static Future<Map<String, dynamic>> emailRegister(
+    String email,
+    String password,
+    String code,
+  ) async {
     final res = await http
         .post(
           Uri.parse('$baseUrl/auth/email-register'),
           headers: await _headers(auth: false),
-          body: json.encode({'email': email, 'password': password, 'code': code}),
+          body: json.encode({
+            'email': email,
+            'password': password,
+            'code': code,
+          }),
         )
         .timeout(timeout);
     final data = await _handle(res);
@@ -575,7 +616,10 @@ class Api {
     return data;
   }
 
-  static Future<Map<String, dynamic>> emailLogin(String email, String password) async {
+  static Future<Map<String, dynamic>> emailLogin(
+    String email,
+    String password,
+  ) async {
     final res = await http
         .post(
           Uri.parse('$baseUrl/auth/email-login'),
@@ -593,7 +637,10 @@ class Api {
     return data;
   }
 
-  static Future<Map<String, dynamic>> bindEmail(String email, String code) async {
+  static Future<Map<String, dynamic>> bindEmail(
+    String email,
+    String code,
+  ) async {
     final res = await http
         .post(
           Uri.parse('$baseUrl/auth/bind-email'),
@@ -613,14 +660,19 @@ class Api {
     String note = '',
   }) async {
     try {
-      await http.post(
-        Uri.parse('$baseUrl/weather/feedback'),
-        headers: await _headers(),
-        body: json.encode({
-          'type': type, 'weather': weather, 'temp': temp,
-          'city': city, 'note': note,
-        }),
-      ).timeout(timeout);
+      await http
+          .post(
+            Uri.parse('$baseUrl/weather/feedback'),
+            headers: await _headers(),
+            body: json.encode({
+              'type': type,
+              'weather': weather,
+              'temp': temp,
+              'city': city,
+              'note': note,
+            }),
+          )
+          .timeout(timeout);
     } catch (_) {}
   }
 }

@@ -8,6 +8,7 @@ import '../constants/mood.dart';
 import '../stores/theme_state.dart';
 import '../theme/xq_typography.dart';
 import '../widgets/ink_writing_loader.dart';
+import '../theme/xq_decorations.dart';
 
 class FriendsPage extends StatefulWidget {
   const FriendsPage({super.key});
@@ -662,7 +663,7 @@ class _FriendsPageState extends State<FriendsPage> {
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: theme.surfaceAlpha,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(XqDecorations.radiusCard),
         border: Border.all(color: theme.borderColor),
       ),
       child: Row(
@@ -756,7 +757,7 @@ class _FriendsPageState extends State<FriendsPage> {
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: theme.cardColor,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(XqDecorations.radiusCard),
         border: Border.all(color: theme.borderColor),
       ),
       child: Column(
@@ -1259,7 +1260,7 @@ class _FriendMoodPageState extends State<FriendMoodPage> {
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: theme.cardColor,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(XqDecorations.radiusCard),
         border: Border.all(color: theme.borderColor),
       ),
       child: Column(
@@ -1277,7 +1278,7 @@ class _FriendMoodPageState extends State<FriendMoodPage> {
       padding: const EdgeInsets.all(28),
       decoration: BoxDecoration(
         color: theme.cardColor,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(XqDecorations.radiusCard),
         border: Border.all(color: theme.borderColor),
       ),
       child: Text(
@@ -1297,7 +1298,7 @@ class _FriendMoodPageState extends State<FriendMoodPage> {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(XqDecorations.radiusCard),
         onTap: () {
           if (selected) return;
           setState(() => _selectedMood = mood);
@@ -1308,7 +1309,7 @@ class _FriendMoodPageState extends State<FriendMoodPage> {
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: theme.cardColor,
-            borderRadius: BorderRadius.circular(18),
+            borderRadius: BorderRadius.circular(XqDecorations.radiusCard),
             border: Border.all(
               color: selected ? theme.accentColor : theme.borderColor,
               width: selected ? 1.5 : 1,
@@ -1360,7 +1361,7 @@ class _FriendMoodPageState extends State<FriendMoodPage> {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: theme.cardColor,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(XqDecorations.radiusCard),
         border: Border.all(color: theme.borderColor),
       ),
       child: Column(

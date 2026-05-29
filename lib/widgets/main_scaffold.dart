@@ -270,7 +270,7 @@ class _FrostedCapsuleState extends State<_FrostedCapsule>
                 mainAxisSize: MainAxisSize.min,
                 children: List.generate(_icons.length, (i) {
                   final active = widget.currentIndex == i;
-                  final isBreathTarget = active && _breatheCtrl.isAnimating;
+                  final isBreathTarget = active && _breatheCtrl.value > 0.001;
                   return _CapsuleTabItem(
                     icon: _icons[i],
                     label: _labels[i],

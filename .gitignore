@@ -1,21 +1,45 @@
-.metadata
-build/
+# Flutter / Dart
 .dart_tool/
-*.lock
+.flutter-plugins-dependencies
+build/
 *.g.dart
 *.freezed.dart
-*.db
-*.db-journal
-*.db-wal
-.env
-server/.env
-CLAUDE.md
-开发日志/
-docs/
-node_modules/
-server_update_*.tar.gz
-server_fix.tar.gz
+pubspec.lock
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# Android / iOS build
 android/.kotlin/
 *.apk
 key.properties
 *.jks
+
+# Environment & secrets
+.env
+server/.env
+CLAUDE.md
+
+# 后端（不公开）
+server/
+node_modules/
+
+# 文档（不公开）
+docs/
+开发日志/
+
+# 临时文件 / 归档
+*.tar.gz
+*.zip
+
+# SQLite
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+
+# 其他
+.metadata
+*.py

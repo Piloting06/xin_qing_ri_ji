@@ -163,10 +163,20 @@ class _MainScaffoldState extends State<MainScaffold> {
               left: 0,
               right: 0,
               child: Center(
-                child: _FrostedCapsule(
-                  currentIndex: _currentIndex,
-                  theme: theme,
-                  onTap: _onTabTap,
+                child: GestureDetector(
+                  onHorizontalDragEnd: (details) {
+                    if (details.primaryVelocity == null) return;
+                    if (details.primaryVelocity! < -100 && _currentIndex < 3) {
+                      _onTabTap(_currentIndex + 1);
+                    } else if (details.primaryVelocity! > 100 && _currentIndex > 0) {
+                      _onTabTap(_currentIndex - 1);
+                    }
+                  },
+                  child: _FrostedCapsule(
+                    currentIndex: _currentIndex,
+                    theme: theme,
+                    onTap: _onTabTap,
+                  ),
                 ),
               ),
             ),

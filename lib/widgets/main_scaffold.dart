@@ -217,11 +217,25 @@ class _FrostedCapsuleState extends State<_FrostedCapsule>
   static const _labels = ['天气', '心情', '城迹', '我的'];
 
   late final AnimationController _breatheCtrl;
+  late final Animation<double> _capsuleScale;
+  late final Animation<double> _iconBounce;
 
   @override
   void initState() {
     super.initState();
     _breatheCtrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 420));
+
+    _capsuleScale = TweenSequence<double>([
+      TweenSequenceItem(tween: Tween(begin: 1.0, end: 0.96), weight: 0.25),
+      TweenSequenceItem(tween: Tween(begin: 0.96, end: 1.02), weight: 0.55),
+      TweenSequenceItem(tween: Tween(begin: 1.02, end: 1.0), weight: 0.2),
+    ]).animate(CurvedAnimation(parent: _breatheCtrl, curve: Curves.easeOutQuart));
+
+    _iconBounce = TweenSequence<double>([
+      TweenSequenceItem(tween: Tween(begin: 1.0, end: 0.85), weight: 0.2),
+      TweenSequenceItem(tween: Tween(begin: 0.85, end: 1.15), weight: 0.6),
+      TweenSequenceItem(tween: Tween(begin: 1.15, end: 1.0), weight: 0.2),
+    ]).animate(CurvedAnimation(parent: _breatheCtrl, curve: Curves.easeOutBack));
   }
 
   @override
@@ -232,23 +246,19 @@ class _FrostedCapsuleState extends State<_FrostedCapsule>
 
   void breathe() {
     if (_breatheCtrl.isAnimating) return;
-    _breatheCtrl.forward(from: 0);
+    _breatheCtrl.forward(from: 0).then((_) {
+      if (mounted) _breatheCtrl.value = 0;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     final t = widget.theme;
 
-    final capsuleScale = TweenSequence<double>([
-      TweenSequenceItem(tween: Tween(begin: 1.0, end: 0.96), weight: 0.25),
-      TweenSequenceItem(tween: Tween(begin: 0.96, end: 1.02), weight: 0.55),
-      TweenSequenceItem(tween: Tween(begin: 1.02, end: 1.0), weight: 0.2),
-    ]).animate(CurvedAnimation(parent: _breatheCtrl, curve: Curves.easeOutQuart));
-
     return AnimatedBuilder(
       animation: _breatheCtrl,
       builder: (_, child) => Transform.scale(
-        scale: capsuleScale.value,
+        scale: _capsuleScale.value,
         child: ClipRRect(
           borderRadius: BorderRadius.circular(28),
           child: BackdropFilter(
@@ -270,13 +280,11 @@ class _FrostedCapsuleState extends State<_FrostedCapsule>
                 mainAxisSize: MainAxisSize.min,
                 children: List.generate(_icons.length, (i) {
                   final active = widget.currentIndex == i;
-                  final isBreathTarget = active && _breatheCtrl.value > 0.001;
                   return _CapsuleTabItem(
                     icon: _icons[i],
                     label: _labels[i],
                     active: active,
-                    breathing: isBreathTarget,
-                    breatheCtrl: _breatheCtrl,
+                    iconBounce: _iconBounce,
                     accentColor: t.accentColor,
                     inactiveColor: t.textSecondary,
                     onTap: () => widget.onTap(i),
@@ -301,8 +309,7 @@ class _CapsuleTabItem extends StatelessWidget {
   final _TabIcon icon;
   final String label;
   final bool active;
-  final bool breathing;
-  final AnimationController breatheCtrl;
+  final Animation<double> iconBounce;
   final Color accentColor;
   final Color inactiveColor;
   final VoidCallback onTap;
@@ -311,8 +318,7 @@ class _CapsuleTabItem extends StatelessWidget {
     required this.icon,
     required this.label,
     required this.active,
-    this.breathing = false,
-    required this.breatheCtrl,
+    required this.iconBounce,
     required this.accentColor,
     required this.inactiveColor,
     required this.onTap,
@@ -321,12 +327,6 @@ class _CapsuleTabItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = active ? accentColor : inactiveColor;
-
-    final iconScale = TweenSequence<double>([
-      TweenSequenceItem(tween: Tween(begin: 1.0, end: 0.85), weight: 0.2),
-      TweenSequenceItem(tween: Tween(begin: 0.85, end: 1.15), weight: 0.6),
-      TweenSequenceItem(tween: Tween(begin: 1.15, end: 1.0), weight: 0.2),
-    ]).animate(CurvedAnimation(parent: breatheCtrl, curve: Curves.easeOutBack));
 
     return Semantics(
       label: label,
@@ -343,9 +343,9 @@ class _CapsuleTabItem extends StatelessWidget {
             height: 52,
             child: Center(
               child: AnimatedBuilder(
-                animation: breatheCtrl,
+                animation: iconBounce,
                 builder: (_, child) => Transform.scale(
-                  scale: breathing ? iconScale.value : 1.0,
+                  scale: active ? iconBounce.value : 1.0,
                   child: child,
                 ),
                 child: AnimatedContainer(

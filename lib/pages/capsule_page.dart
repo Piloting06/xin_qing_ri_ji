@@ -14,6 +14,21 @@ import '../stores/theme_state.dart';
 import '../theme/xq_typography.dart';
 import '../widgets/ink_writing_loader.dart';
 
+class _BrandStep {
+  final IconData icon;
+  final String title;
+  final String desc;
+  const _BrandStep(this.icon, this.title, this.desc);
+}
+
+class _BrandGuide {
+  final String name;
+  final String system;
+  final IconData icon;
+  final List<_BrandStep> steps;
+  const _BrandGuide({required this.name, required this.system, required this.icon, required this.steps});
+}
+
 class CapsulePage extends StatefulWidget {
   final int? initialCapsuleId;
 
@@ -106,11 +121,35 @@ class _CapsulePageState extends State<CapsulePage> {
     final text = _contentCtrl.text.trim();
     if (text.isEmpty || _creating) return;
     if (text.length > 500) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('内容最多 500 字')));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('内容最多 500 字')));
       return;
     }
+
+    // 检测通知是否开启，未开启则弹出品牌引导
+    final notificationsOk = await NotificationService.areSystemNotificationsEnabled();
+    if (!mounted) return;
+    if (!notificationsOk) {
+      await _showNotificationGuide();
+      if (!mounted) return;
+      // 引导后重试检测，如果仍然未开启则继续创建但不保证提醒
+      final retryOk = await NotificationService.areSystemNotificationsEnabled();
+      if (!mounted) return;
+      if (!retryOk) {
+        final confirmed = await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: const Text('通知未开启'),
+            content: const Text('未开启通知将无法收到胶囊提醒。确定要直接封存吗？'),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('我再调一下')),
+              TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('直接封存')),
+            ],
+          ),
+        );
+        if (!mounted || confirmed != true) return;
+      }
+    }
+
     setState(() => _creating = true);
     final openDate = DateTime.now().add(Duration(days: _days));
     final dateStr = DateFormat('yyyy-MM-dd').format(openDate);
@@ -137,7 +176,7 @@ class _CapsulePageState extends State<CapsulePage> {
             ),
           );
         } else {
-          _showReminderHelp();
+          _showNotificationGuide();
         }
       }
       await _load();
@@ -199,32 +238,213 @@ class _CapsulePageState extends State<CapsulePage> {
     }
   }
 
-  void _showReminderHelp() {
-    showDialog(
+  static const _brands = [
+    _BrandGuide(
+      name: 'OPPO / 一加 / realme',
+      system: 'ColorOS',
+      icon: Icons.phone_android,
+      steps: [
+        _BrandStep(Icons.power_settings_new_rounded, '自启动', '设置 → 应用 → 应用管理 → 拾晴日记 → 打开「自启动」'),
+        _BrandStep(Icons.battery_charging_full_rounded, '电池优化', '设置 → 应用 → 应用管理 → 拾晴日记 → 耗电保护 → 选择「无限制」'),
+        _BrandStep(Icons.notifications_active_rounded, '通知', '设置 → 通知与状态栏 → 拾晴日记 → 允许通知'),
+      ],
+    ),
+    _BrandGuide(
+      name: '华为 / 荣耀',
+      system: 'HarmonyOS',
+      icon: Icons.auto_awesome,
+      steps: [
+        _BrandStep(Icons.power_settings_new_rounded, '自启动', '手机管家 → 应用启动管理 → 拾晴日记 → 关闭「自动管理」→ 全部手动开启'),
+        _BrandStep(Icons.battery_charging_full_rounded, '电池优化', '设置 → 应用 → 拾晴日记 → 耗电详情 → 启动管理 → 手动管理'),
+        _BrandStep(Icons.notifications_active_rounded, '通知', '设置 → 通知和状态栏 → 拾晴日记 → 允许通知'),
+      ],
+    ),
+    _BrandGuide(
+      name: '小米 / Redmi',
+      system: 'HyperOS / MIUI',
+      icon: Icons.rocket_launch,
+      steps: [
+        _BrandStep(Icons.power_settings_new_rounded, '自启动', '设置 → 应用设置 → 拾晴日记 → 打开「自启动」'),
+        _BrandStep(Icons.battery_charging_full_rounded, '电池优化', '设置 → 应用设置 → 拾晴日记 → 省电策略 → 选择「无限制」'),
+        _BrandStep(Icons.notifications_active_rounded, '通知', '设置 → 通知管理 → 拾晴日记 → 允许通知'),
+      ],
+    ),
+    _BrandGuide(
+      name: 'vivo / iQOO',
+      system: 'Funtouch OS / OriginOS',
+      icon: Icons.flash_on,
+      steps: [
+        _BrandStep(Icons.power_settings_new_rounded, '自启动', 'i管家 → 应用管理 → 权限管理 → 拾晴日记 → 打开「自启动」'),
+        _BrandStep(Icons.battery_charging_full_rounded, '电池优化', '设置 → 应用 → 拾晴日记 → 电池 → 打开「允许后台高耗电」'),
+        _BrandStep(Icons.notifications_active_rounded, '通知', '设置 → 通知 → 拾晴日记 → 允许通知'),
+      ],
+    ),
+    _BrandGuide(
+      name: '其他 Android 手机',
+      system: '通用设置',
+      icon: Icons.settings,
+      steps: [
+        _BrandStep(Icons.power_settings_new_rounded, '自启动', '安全中心或手机管家 → 应用管理 → 拾晴日记 → 允许自启动'),
+        _BrandStep(Icons.battery_charging_full_rounded, '电池优化', '设置 → 应用 → 拾晴日记 → 电池或耗电 → 设为不限制'),
+        _BrandStep(Icons.notifications_active_rounded, '通知', '设置 → 通知 → 拾晴日记 → 允许通知'),
+      ],
+    ),
+  ];
+
+  Future<void> _showNotificationGuide() async {
+    final theme = context.read<ThemeState>();
+    final pageCtrl = PageController();
+    var currentPage = 0;
+
+    await showModalBottomSheet<void>(
       context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
       builder: (ctx) {
-        final theme = Provider.of<ThemeState>(ctx, listen: false);
-        return AlertDialog(
-          backgroundColor: theme.cardColor,
-          title: Text('胶囊已封存', style: TextStyle(color: theme.textPrimary)),
-          content: Text(
-            '提醒卡暂时没能安排上。\n\n'
-            '如果你用的是 OPPO 或 vivo 手机，可以检查这几个设置：\n'
-            '1. 系统设置 → 应用 → 拾晴日记 → 通知 → 打开\n'
-            '2. 系统设置 → 应用 → 拾晴日记 → 电池 → 不优化\n'
-            '3. 系统设置 → 应用 → 拾晴日记 → 自启动 → 打开\n\n'
-            '设置好后，下次创建胶囊就能正常提醒啦。',
-            style: TextStyle(color: theme.textSecondary, height: 1.5),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('知道了'),
-            ),
-          ],
+        return StatefulBuilder(
+          builder: (ctx, setState) {
+            return Container(
+              constraints: BoxConstraints(maxHeight: MediaQuery.of(ctx).size.height * 0.72),
+              decoration: BoxDecoration(
+                color: theme.cardColor,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+              ),
+              child: SafeArea(
+                top: false,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const SizedBox(height: 8),
+                    Container(width: 36, height: 4, decoration: BoxDecoration(color: theme.borderColor, borderRadius: BorderRadius.circular(2))),
+                    const SizedBox(height: 12),
+                    Text('开启通知才不会错过胶囊', style: XqTypography.headlineMedium.copyWith(color: theme.textPrimary)),
+                    const SizedBox(height: 6),
+                    Text('左右滑动查看你的手机品牌', style: TextStyle(color: theme.textSecondary, fontSize: 13)),
+                    const SizedBox(height: 14),
+                    // 品牌指示器
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: List.generate(_brands.length, (i) =>
+                        AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          curve: Curves.easeOutCubic,
+                          margin: const EdgeInsets.symmetric(horizontal: 3),
+                          width: currentPage == i ? 20.0 : 6.0,
+                          height: 6.0,
+                          decoration: BoxDecoration(
+                            color: currentPage == i ? theme.accentColor : theme.borderColor,
+                            borderRadius: BorderRadius.circular(3),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    // PageView
+                    Expanded(
+                      child: PageView.builder(
+                        controller: pageCtrl,
+                        onPageChanged: (i) => setState(() => currentPage = i),
+                        itemCount: _brands.length,
+                        itemBuilder: (_, i) {
+                          final b = _brands[i];
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 24),
+                            child: Column(
+                              children: [
+                                Container(
+                                  width: 52,
+                                  height: 52,
+                                  decoration: BoxDecoration(
+                                    color: theme.accentColor.withAlpha(18),
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  child: Icon(b.icon, color: theme.accentColor, size: 26),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(b.name, style: TextStyle(color: theme.textPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
+                                const SizedBox(height: 2),
+                                Text(b.system, style: TextStyle(color: theme.textTertiary, fontSize: 12)),
+                                const SizedBox(height: 20),
+                                ...b.steps.map((s) => Padding(
+                                  padding: const EdgeInsets.only(bottom: 14),
+                                  child: Row(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Container(
+                                        width: 36,
+                                        height: 36,
+                                        decoration: BoxDecoration(
+                                          color: theme.accentColor.withAlpha(14),
+                                          borderRadius: BorderRadius.circular(10),
+                                        ),
+                                        child: Icon(s.icon, color: theme.accentColor, size: 18),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(s.title, style: TextStyle(color: theme.textPrimary, fontSize: 13, fontWeight: FontWeight.w600)),
+                                            const SizedBox(height: 3),
+                                            Text(s.desc, style: TextStyle(color: theme.textSecondary, fontSize: 12, height: 1.4)),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                )),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    // 左右箭头导航
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        IconButton(
+                          onPressed: currentPage > 0 ? () => pageCtrl.previousPage(duration: const Duration(milliseconds: 300), curve: Curves.easeOutCubic) : null,
+                          icon: Icon(Icons.arrow_back_ios_rounded, size: 18, color: currentPage > 0 ? theme.accentColor : theme.borderColor),
+                        ),
+                        const SizedBox(width: 24),
+                        Text('${currentPage + 1} / ${_brands.length}', style: TextStyle(color: theme.textTertiary, fontSize: 12)),
+                        const SizedBox(width: 24),
+                        IconButton(
+                          onPressed: currentPage < _brands.length - 1 ? () => pageCtrl.nextPage(duration: const Duration(milliseconds: 300), curve: Curves.easeOutCubic) : null,
+                          icon: Icon(Icons.arrow_forward_ios_rounded, size: 18, color: currentPage < _brands.length - 1 ? theme.accentColor : theme.borderColor),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: SizedBox(
+                        width: double.infinity,
+                        height: 48,
+                        child: FilledButton.icon(
+                          onPressed: () => Navigator.pop(ctx),
+                          icon: const Icon(Icons.check, size: 18),
+                          label: const Text('设置好了，开始封存'),
+                          style: FilledButton.styleFrom(
+                            backgroundColor: theme.accentColor,
+                            foregroundColor: theme.textOnAccent,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                  ],
+                ),
+              ),
+            );
+          },
         );
       },
     );
+    pageCtrl.dispose();
   }
 
   void _showContent(

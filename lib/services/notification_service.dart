@@ -197,6 +197,15 @@ class NotificationService {
     });
   }
 
+  /// 检查系统通知是否已开启
+  static Future<bool> areSystemNotificationsEnabled() async {
+    await initialize();
+    final android = _notifications
+        .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+    final enabled = await android?.areNotificationsEnabled();
+    return enabled ?? true; // 非Android系统默认true
+  }
+
   /// 快速测试通知 — 1分钟后推送，用于验证通知功能
   static Future<String?> scheduleQuickTest() async {
     await initialize();

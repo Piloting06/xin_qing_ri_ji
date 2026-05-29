@@ -1005,33 +1005,11 @@ class _ProfilePageState extends State<ProfilePage> {
                 value: _capsuleNotify,
                 onChanged: (v) async {
                   if (v) {
-                    final ok = await NotificationService.areSystemNotificationsEnabled();
+                    // 直接请求系统通知权限（类似定位权限弹窗）
+                    final granted = await NotificationService.requestPermissionIfNeeded();
                     if (!mounted) return;
-                    if (!ok) {
-                      _setCapsuleNotify(false);
-                      final theme = context.read<ThemeState>();
-                      final choice = await showDialog<String>(
-                        context: context,
-                        builder: (ctx) => AlertDialog(
-                          backgroundColor: theme.cardColor,
-                          title: Text('通知未开启', style: TextStyle(color: theme.textPrimary)),
-                          content: Text(
-                            '需要开启系统通知才能收到胶囊到期提醒。\n\n各品牌手机设置路径不同，去胶囊页面可以查看详细教程。',
-                            style: TextStyle(color: theme.textSecondary, height: 1.5),
-                          ),
-                          actions: [
-                            TextButton(onPressed: () => Navigator.pop(ctx, 'cancel'), child: const Text('稍后再说')),
-                            TextButton(
-                              onPressed: () => Navigator.pop(ctx, 'guide'),
-                              child: Text('去胶囊页设置', style: TextStyle(color: theme.accentColor)),
-                            ),
-                          ],
-                        ),
-                      );
-                      if (!mounted) return;
-                      if (choice == 'guide') {
-                        Navigator.push(context, MaterialPageRoute(builder: (_) => const CapsulePage()));
-                      }
+                    if (!granted) {
+                      // 系统弹窗被拒绝，保持关闭状态
                       return;
                     }
                   }

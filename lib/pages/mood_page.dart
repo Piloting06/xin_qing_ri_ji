@@ -27,6 +27,7 @@ class _MoodPageState extends State<MoodPage> {
   final _notesCtrl = TextEditingController();
   final _scrollCtrl = ScrollController();
   final _editorKey = GlobalKey();
+  final _emotionsKey = GlobalKey();
   final Map<int, String> _emotionNotes = {}; // per-emotion independent text
   List<String> _selectedTags = [];
   bool _saving = false;
@@ -149,6 +150,31 @@ class _MoodPageState extends State<MoodPage> {
       curve: Curves.easeOutCubic,
       alignment: 0.3,
     );
+  }
+
+  void _scrollToEmotions() {
+    if (_emotionsKey.currentContext == null) return;
+    Scrollable.ensureVisible(
+      _emotionsKey.currentContext!,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeOutCubic,
+      alignment: 0.2,
+    );
+  }
+
+  void _selectMood(int s) {
+    setState(() {
+      if (s != _moodScore) {
+        _emotionNotes[_moodScore] = _notesCtrl.text;
+        _moodScore = s;
+        _notesCtrl.text = _emotionNotes[s] ?? '';
+      } else {
+        _emotionNotes[_moodScore] = _notesCtrl.text;
+        _moodScore = 0;
+      }
+      _dirty = true;
+      _saved = false;
+    });
   }
 
   String _formatTime(dynamic createdAt) {
@@ -318,87 +344,58 @@ class _MoodPageState extends State<MoodPage> {
                   ],
                 ),
                 const SizedBox(height: 16),
-                // Recent records - horizontal scroll at top
+                // Card preview hero / day summary
+                _buildTodayCardPreview(t),
+                const SizedBox(height: 16),
+                // Recent records - mini cards
                 _buildRecentDaysHorizontal(t),
                 const SizedBox(height: 16),
-                _buildDayMoodsSummary(t),
-                const SizedBox(height: 16),
-                // 8 Emotion buttons — 2-column grid
+                // 4-column emotion pills
                 GridView.count(
-                  crossAxisCount: 2,
-                  mainAxisSpacing: 12,
-                  crossAxisSpacing: 12,
+                  key: _emotionsKey,
+                  crossAxisCount: 4,
+                  mainAxisSpacing: 8,
+                  crossAxisSpacing: 8,
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
-                  childAspectRatio: 2.2,
+                  childAspectRatio: 2.0,
                   children: List.generate(8, (i) {
                     final s = i + 1;
                     final active = s == _moodScore;
                     final color = Color(moodColors[s]!);
                     return GestureDetector(
-                      onTap: () => setState(() {
-                        if (!active) {
-                          _emotionNotes[_moodScore] = _notesCtrl.text;
-                          _moodScore = s;
-                          _notesCtrl.text = _emotionNotes[s] ?? '';
-                          // 不再清空标签，保留用户选择
-                        } else {
-                          _emotionNotes[_moodScore] = _notesCtrl.text;
-                          _moodScore = 0;
-                        }
-                        _dirty = true;
-                        _saved = false;
-                      }),
+                      onTap: () => _selectMood(s),
                       child: AnimatedScale(
-                        scale: active ? 1.04 : 1.0,
+                        scale: active ? 1.05 : 1.0,
                         duration: const Duration(milliseconds: 200),
                         curve: Curves.easeOutQuart,
                         child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 14,
-                            vertical: 14,
-                          ),
                           decoration: BoxDecoration(
                             color: active
                                 ? color.withAlpha(28)
                                 : t.surfaceAlpha,
-                            borderRadius: BorderRadius.circular(XqDecorations.radiusMedium),
+                            borderRadius: BorderRadius.circular(12),
                             border: Border.all(
                               color: active
                                   ? color.withAlpha(180)
                                   : t.borderColor.withAlpha(80),
                               width: active ? 1.5 : 1,
                             ),
-                            boxShadow: active
-                                ? [
-                                    BoxShadow(
-                                      color: color.withAlpha(30),
-                                      blurRadius: 8,
-                                      offset: const Offset(0, 2),
-                                    ),
-                                  ]
-                                : null,
                           ),
-                          child: Row(
-                            children: [
-                              Text(
-                                moodEmojis[s]!,
-                                style: const TextStyle(fontSize: 22),
-                              ),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: Text(
-                                  moodLabels[s]!,
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: active
-                                        ? FontWeight.w600
-                                        : FontWeight.w400,
-                                    color: active ? color : t.textSecondary,
-                                  ),
+                          child: Center(
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Text(
+                                '${moodEmojis[s]} ${moodLabels[s]}',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: active
+                                      ? FontWeight.w600
+                                      : FontWeight.w400,
+                                  color: active ? color : t.textSecondary,
                                 ),
                               ),
-                            ],
+                            ),
                           ),
                         ),
                       ),
@@ -635,6 +632,95 @@ class _MoodPageState extends State<MoodPage> {
     );
   }
 
+  Widget _buildTodayCardPreview(ThemeState t) {
+    if (_dayMoods.isNotEmpty) return _buildDayMoodsSummary(t);
+    // Empty state: card preview hero
+    final appState = context.read<AppState>();
+    return GestureDetector(
+      onTap: _scrollToEmotions,
+      child: Container(
+        height: 200,
+        width: double.infinity,
+        decoration: BoxDecoration(
+          color: t.cardColor,
+          borderRadius: BorderRadius.circular(XqDecorations.radiusCard),
+          border: Border.all(color: t.borderColor.withAlpha(80)),
+          boxShadow: XqDecorations.shadowSubtle(dark: t.isDark),
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(XqDecorations.radiusCard),
+          child: Stack(
+            children: [
+              // Subtle paper texture
+              Positioned.fill(
+                child: CustomPaint(
+                  painter: LinedPaperPainter(
+                    lineColor: t.paperLine.withAlpha(40),
+                    lineSpacing: 28,
+                    marginLeft: 48,
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(18),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      appState.selectedDate,
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: t.textTertiary,
+                      ),
+                    ),
+                    const Spacer(),
+                    Center(
+                      child: Column(
+                        children: [
+                          Text(
+                            '今天还没有心情记录',
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                              color: t.textSecondary,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            '选一个心情，开始记录吧',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: t.textTertiary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Spacer(),
+                    Row(
+                      children: [
+                        const Spacer(),
+                        Text(
+                          'SHI QING',
+                          style: TextStyle(
+                            fontSize: 8,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 1.5,
+                            color: t.accentColor.withAlpha(60),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildDayMoodsSummary(ThemeState t) {
     if (_dayMoods.isEmpty) return const SizedBox.shrink();
     final latestMood = _dayMoods.last;
@@ -805,6 +891,7 @@ class _MoodPageState extends State<MoodPage> {
       grouped.putIfAbsent(date, () => []).add(m);
     }
     final recentDates = grouped.keys.take(7).toList();
+    final appState = context.read<AppState>();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -818,26 +905,43 @@ class _MoodPageState extends State<MoodPage> {
         ),
         const SizedBox(height: 10),
         SizedBox(
-          height: 100,
+          height: 110,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             itemCount: recentDates.length,
-            separatorBuilder: (_, _) => const SizedBox(width: 10),
+            separatorBuilder: (_, _) => const SizedBox(width: 8),
             itemBuilder: (context, index) {
               final date = recentDates[index];
               final moods = grouped[date]!;
               final latest = moods.last;
               final score = _readMoodScore(latest['emotion_type']);
               final notes = latest['notes']?.toString() ?? '';
+              final isToday = date == appState.selectedDate;
+              final moodColor = Color(moodColors[score] ?? 0xFF90A4AE);
               return GestureDetector(
-                onTap: () => _showDayDetailSheet(date, moods),
+                onTap: () {
+                  if (isToday) {
+                    _changeDate(date);
+                    Future.delayed(
+                      const Duration(milliseconds: 200),
+                      _openCardMaker,
+                    );
+                  } else {
+                    _showDayDetailSheet(date, moods);
+                  }
+                },
                 child: Container(
-                  width: 180,
-                  padding: const EdgeInsets.all(12),
+                  width: 120,
+                  padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: t.cardColor,
+                    color: moodColor.withAlpha(18),
                     borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: t.borderColor),
+                    border: Border.all(
+                      color: isToday
+                          ? t.gold.withAlpha(80)
+                          : t.borderColor.withAlpha(60),
+                      width: isToday ? 1.5 : 1,
+                    ),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -845,78 +949,52 @@ class _MoodPageState extends State<MoodPage> {
                       Row(
                         children: [
                           Text(
-                            moodEmojis[score] ?? '',
-                            style: const TextStyle(fontSize: 18),
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            date,
+                            date.substring(5), // "MM-DD"
                             style: TextStyle(
-                              color: t.textSecondary,
-                              fontSize: 12,
+                              fontSize: 10,
+                              color: t.textTertiary,
                             ),
                           ),
                           if (moods.length > 1) ...[
                             const Spacer(),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 5,
-                                vertical: 1,
-                              ),
-                              decoration: BoxDecoration(
-                                color: t.accentColor.withAlpha(20),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Text(
-                                '${moods.length}条',
-                                style: TextStyle(
-                                  color: t.accentColor,
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w600,
-                                ),
+                            Text(
+                              '${moods.length}',
+                              style: TextStyle(
+                                fontSize: 9,
+                                color: t.accentColor.withAlpha(140),
+                                fontWeight: FontWeight.w600,
                               ),
                             ),
                           ],
                         ],
                       ),
-                      const SizedBox(height: 8),
-                      Expanded(
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            Expanded(
-                              child: Text(
-                                notes.isEmpty ? '未写文字' : notes,
-                                maxLines: 3,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  color: notes.isEmpty
-                                      ? t.textTertiary
-                                      : t.textSecondary,
-                                  fontSize: 12,
-                                  height: 1.4,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 4),
-                            GestureDetector(
-                              onTap: () {
-                                // Open card maker for this record
-                                _changeDate(date);
-                                Future.delayed(
-                                  const Duration(milliseconds: 200),
-                                  () => _openCardMaker(),
-                                );
-                              },
-                              child: Icon(
-                                Icons.auto_awesome,
-                                size: 14,
-                                color: t.gold.withAlpha(120),
-                              ),
-                            ),
-                          ],
+                      const Spacer(),
+                      Center(
+                        child: Text(
+                          moodEmojis[score] ?? '',
+                          style: const TextStyle(fontSize: 26),
                         ),
                       ),
+                      const Spacer(),
+                      Text(
+                        moodLabels[score] ?? '',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: moodColor.withAlpha(220),
+                        ),
+                      ),
+                      if (notes.isNotEmpty)
+                        Text(
+                          notes,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 9,
+                            color: t.textTertiary,
+                            height: 1.2,
+                          ),
+                        ),
                     ],
                   ),
                 ),

@@ -190,23 +190,9 @@ class _HomePageState extends State<HomePage> {
     double lon, {
     required String fallback,
   }) async {
-    // Priority: coordinate matching for Chinese city names
-    final nearest = findNearestCity(lat, lon, maxKm: 100);
+    // 始终返回最近城市（不再有距离限制）
+    final nearest = findNearestCity(lat, lon);
     if (nearest != null) return '${nearest.name}，${nearest.province}，中国';
-
-    // Fallback: IP geolocation (returns English names)
-    try {
-      final loc = await _clientIpLocation();
-      final ipCity = loc['city']?.toString() ?? '';
-      final ipRegion = loc['regionName']?.toString() ?? '';
-      if (ipCity.isNotEmpty && ipCity != '未知') {
-        if (ipRegion.isNotEmpty && ipRegion != '未知') {
-          return '$ipCity，$ipRegion，中国';
-        }
-        return '$ipCity，中国';
-      }
-    } catch (_) {}
-
     return fallback;
   }
 
@@ -263,12 +249,23 @@ class _HomePageState extends State<HomePage> {
       throw Exception('定位权限已被系统拒绝，请在设置中开启或手动选择城市');
     }
 
-    final position = await Geolocator.getCurrentPosition(
-      locationSettings: const LocationSettings(
-        accuracy: LocationAccuracy.low,
-        timeLimit: Duration(seconds: 8),
-      ),
-    );
+    Position position;
+    try {
+      position = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.medium,
+          timeLimit: Duration(seconds: 15),
+        ),
+      );
+    } catch (_) {
+      // 重试一次，降低精度要求
+      position = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.low,
+          timeLimit: Duration(seconds: 20),
+        ),
+      );
+    }
     final city = await _resolveCity(
       position.latitude,
       position.longitude,
@@ -288,13 +285,11 @@ class _HomePageState extends State<HomePage> {
     final lat = prefs.getDouble(_weatherLatKey);
     final lon = prefs.getDouble(_weatherLonKey);
     if (lat == null || lon == null) return null;
-    var city = prefs.getString(_weatherCityKey) ?? '';
     final updatedAt = DateTime.tryParse(
       prefs.getString(_weatherUpdatedAtKey) ?? '',
     );
-    if (_isGenericCity(city)) {
-      city = await _resolveCity(lat, lon, fallback: '上次位置');
-    }
+    // 始终从坐标反查城市名（不用缓存的字符串，避免换城市后名称不更新）
+    final city = await _resolveCity(lat, lon, fallback: '上次位置');
     if (mounted) {
       setState(() => _weatherUpdatedAt = updatedAt);
     }
@@ -313,7 +308,7 @@ class _HomePageState extends State<HomePage> {
       final res = await http
           .get(
             Uri.parse(
-              'http://ip-api.com/json/?fields=status,lat,lon,city,regionName,country',
+              'http://ip-api.com/json/?fields=status,lat,lon,city,regionName,country&lang=zh',
             ),
           )
           .timeout(const Duration(seconds: 5));
@@ -340,7 +335,7 @@ class _HomePageState extends State<HomePage> {
           ? '$ipCity，$ipRegion，中国'
           : '$ipCity，中国';
     } else {
-      final nearest = findNearestCity(ipLat, ipLng, maxKm: 200);
+      final nearest = findNearestCity(ipLat, ipLng);
       city = nearest != null
           ? '${nearest.name}，${nearest.province}，中国'
           : 'IP 定位城市';
@@ -674,90 +669,117 @@ class _HomePageState extends State<HomePage> {
             fontWeight: FontWeight.w700,
           ),
         ),
-        const SizedBox(height: 10),
-        Row(
-          children: [
-            Expanded(
-              child: _quickActionCard(
+        const SizedBox(height: 8),
+        Container(
+          decoration: BoxDecoration(
+            color: theme.cardColor,
+            borderRadius: BorderRadius.circular(XqDecorations.radiusCard),
+            border: Border.all(color: theme.borderColor.withAlpha(80)),
+          ),
+          child: Column(
+            children: [
+              _quickListTile(
                 theme,
                 icon: Icons.explore_outlined,
+                iconColor: theme.accentColor,
                 title: '城迹',
                 subtitle: '看看城市情绪',
-                accent: theme.accentColor,
                 onTap: _openCityMap,
               ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _quickActionCard(
+              Divider(height: 1, color: theme.borderColor.withAlpha(60)),
+              _quickListTile(
                 theme,
                 icon: Icons.hourglass_top_rounded,
+                iconColor: theme.gold,
                 title: '胶囊',
                 subtitle: '写给未来的自己',
-                accent: theme.gold,
                 onTap: _openCapsule,
               ),
-            ),
-          ],
+              Divider(height: 1, color: theme.borderColor.withAlpha(60)),
+              _quickListTile(
+                theme,
+                icon: Icons.auto_awesome,
+                iconColor: theme.gold,
+                title: '心情卡片',
+                subtitle: '去心情页制作精美卡片',
+                trailing: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: theme.gold.withAlpha(20),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Text(
+                    '新功能',
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                      color: theme.gold,
+                    ),
+                  ),
+                ),
+                onTap: null, // 不跳转
+              ),
+            ],
+          ),
         ),
       ],
     );
   }
 
-  Widget _quickActionCard(
+  Widget _quickListTile(
     ThemeState theme, {
     required IconData icon,
+    required Color iconColor,
     required String title,
     required String subtitle,
-    required Color accent,
-    required VoidCallback onTap,
+    Widget? trailing,
+    VoidCallback? onTap,
   }) {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        borderRadius: BorderRadius.circular(XqDecorations.radiusLarge),
         onTap: onTap,
-        child: Container(
-          constraints: const BoxConstraints(minHeight: 118),
-          padding: const EdgeInsets.all(14),
-          decoration: XqDecorations.actionCard(
-            theme.cardColor,
-            theme.borderColor,
-            dark: theme.isDark,
-            accent: accent,
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          child: Row(
             children: [
               Container(
-                width: 38,
-                height: 38,
+                width: 36,
+                height: 36,
                 decoration: BoxDecoration(
-                  color: accent.withAlpha(22),
-                  borderRadius: BorderRadius.circular(14),
+                  color: iconColor.withAlpha(18),
+                  borderRadius: BorderRadius.circular(10),
                 ),
-                child: Icon(icon, color: accent, size: 21),
+                child: Icon(icon, color: iconColor, size: 20),
               ),
-              const SizedBox(height: 13),
-              Text(
-                title,
-                style: TextStyle(
-                  color: theme.textPrimary,
-                  fontSize: 15,
-                  fontWeight: FontWeight.w700,
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: TextStyle(
+                        color: theme.textPrimary,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      style: TextStyle(
+                        color: theme.textSecondary,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 3),
-              Text(
-                subtitle,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  color: theme.textSecondary,
-                  fontSize: 12,
-                  height: 1.35,
-                ),
-              ),
+              if (trailing != null)
+                trailing
+              else
+                Icon(Icons.chevron_right, size: 18, color: theme.textTertiary),
             ],
           ),
         ),

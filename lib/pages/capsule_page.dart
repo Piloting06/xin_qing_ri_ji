@@ -339,8 +339,9 @@ class _CapsulePageState extends State<CapsulePage> {
                       ),
                     ),
                     const SizedBox(height: 10),
-                    // PageView
-                    Expanded(
+                    // PageView — 用 SizedBox 给固定高度
+                    SizedBox(
+                      height: 280,
                       child: PageView.builder(
                         controller: pageCtrl,
                         onPageChanged: (i) => setState(() => currentPage = i),

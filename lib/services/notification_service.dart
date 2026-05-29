@@ -212,7 +212,11 @@ class NotificationService {
     final android = _notifications
         .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
     final systemEnabled = await android?.areNotificationsEnabled();
-    if (systemEnabled == false) return '系统通知未开启';
+    if (systemEnabled != true) {
+      // 尝试请求权限
+      final granted = await android?.requestNotificationsPermission();
+      if (granted != true) return '系统通知未开启';
+    }
 
     final now = tz.TZDateTime.now(tz.local).add(const Duration(minutes: 1));
     await _notifications.zonedSchedule(

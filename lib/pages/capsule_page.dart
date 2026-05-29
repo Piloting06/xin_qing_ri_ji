@@ -125,40 +125,14 @@ class _CapsulePageState extends State<CapsulePage> {
       return;
     }
 
-    // 检测通知是否开启，未开启则弹出品牌引导
-    final notificationsOk = await NotificationService.areSystemNotificationsEnabled();
-    if (!mounted) return;
-    if (!notificationsOk) {
-      await _showNotificationGuide();
-      if (!mounted) return;
-      // 引导后重试检测，如果仍然未开启则继续创建但不保证提醒
-      final retryOk = await NotificationService.areSystemNotificationsEnabled();
-      if (!mounted) return;
-      if (!retryOk) {
-        final confirmed = await showDialog<bool>(
-          context: context,
-          builder: (ctx) => AlertDialog(
-            title: const Text('通知未开启'),
-            content: const Text('未开启通知将无法收到胶囊提醒。确定要直接封存吗？'),
-            actions: [
-              TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('我再调一下')),
-              TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('直接封存')),
-            ],
-          ),
-        );
-        if (!mounted || confirmed != true) return;
-      }
-    }
-
     setState(() => _creating = true);
     final openDate = DateTime.now().add(Duration(days: _days));
     final dateStr = DateFormat('yyyy-MM-dd').format(openDate);
     try {
       final data = await Api.createCapsule(text, dateStr);
       final capsuleId = readInt(data['id']);
-      var reminderReady = false;
       if (capsuleId != null) {
-        reminderReady = await NotificationService.scheduleCapsuleReminder(
+        await NotificationService.scheduleCapsuleReminder(
           capsuleId: capsuleId,
           openDate: data['open_date']?.toString() ?? dateStr,
           preview: _notificationPreview(text),
@@ -167,19 +141,15 @@ class _CapsulePageState extends State<CapsulePage> {
       _contentCtrl.clear();
       HapticFeedback.mediumImpact();
       if (mounted) {
-        if (reminderReady) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                _days == 1 ? '胶囊已封存，明天会提醒你' : '胶囊已封存，到时会提醒你回来打开'
-              ),
-            ),
-          );
-        } else {
-          _showNotificationGuide();
-        }
+        final msg = _days == 1 ? '胶囊已封存，明天会提醒你' : '胶囊已封存，到时会提醒你';
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
       }
       await _load();
+      // 封存成功后，弹出品牌引导（帮助用户确保通知能收到）
+      if (mounted) {
+        await Future.delayed(const Duration(milliseconds: 600));
+        await _showNotificationGuide();
+      }
     } on ApiException catch (e) {
       if (e.statusCode == 401) return;
       if (mounted) {

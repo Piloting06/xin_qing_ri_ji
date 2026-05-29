@@ -311,14 +311,14 @@ class _CapsulePageState extends State<CapsulePage> {
                     const SizedBox(height: 10),
                     // PageView — 用 SizedBox 给固定高度
                     SizedBox(
-                      height: 280,
+                      height: 320,
                       child: PageView.builder(
                         controller: pageCtrl,
                         onPageChanged: (i) => setState(() => currentPage = i),
                         itemCount: _brands.length,
                         itemBuilder: (_, i) {
                           final b = _brands[i];
-                          return Padding(
+                          return SingleChildScrollView(
                             padding: const EdgeInsets.symmetric(horizontal: 24),
                             child: Column(
                               children: [

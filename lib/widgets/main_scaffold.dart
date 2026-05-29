@@ -86,18 +86,8 @@ class _MainScaffoldState extends State<MainScaffold> {
     setState(() => _currentIndex = i);
   }
 
-  void _breatheTab() {
-    HapticFeedback.selectionClick();
-    _frostedCapsuleKey.currentState?.breathe();
-  }
-
-  final GlobalKey<_FrostedCapsuleState> _frostedCapsuleKey = GlobalKey<_FrostedCapsuleState>();
-
   void _onTabTap(int i) {
-    if (_currentIndex == i) {
-      _breatheTab();
-      return;
-    }
+    if (_currentIndex == i) return;
     goToTab(i);
   }
 
@@ -175,7 +165,6 @@ class _MainScaffoldState extends State<MainScaffold> {
               right: 0,
               child: Center(
                 child: _FrostedCapsule(
-                  key: _frostedCapsuleKey,
                   currentIndex: _currentIndex,
                   theme: theme,
                   onTap: _onTabTap,
@@ -196,7 +185,6 @@ class _FrostedCapsule extends StatefulWidget {
   final Function(int) onTap;
 
   const _FrostedCapsule({
-    super.key,
     required this.currentIndex,
     required this.theme,
     required this.onTap,
@@ -207,7 +195,7 @@ class _FrostedCapsule extends StatefulWidget {
 }
 
 class _FrostedCapsuleState extends State<_FrostedCapsule>
-    with TickerProviderStateMixin {
+    with SingleTickerProviderStateMixin {
   static const _icons = [
     _TabIcon(Icons.wb_sunny_outlined, Icons.wb_sunny),
     _TabIcon(Icons.favorite_border, Icons.favorite),
@@ -216,37 +204,31 @@ class _FrostedCapsuleState extends State<_FrostedCapsule>
   ];
   static const _labels = ['天气', '心情', '城迹', '我的'];
 
-  late final AnimationController _breatheCtrl;
-  late final Animation<double> _capsuleScale;
-  late final Animation<double> _iconBounce;
+  late final AnimationController _bounceCtrl;
+  late final Animation<double> _bounceTranslate;
 
   @override
   void initState() {
     super.initState();
-    _breatheCtrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 420));
+    _bounceCtrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 360));
 
-    _capsuleScale = TweenSequence<double>([
-      TweenSequenceItem(tween: Tween(begin: 1.0, end: 0.96), weight: 0.25),
-      TweenSequenceItem(tween: Tween(begin: 0.96, end: 1.02), weight: 0.55),
-      TweenSequenceItem(tween: Tween(begin: 1.02, end: 1.0), weight: 0.2),
-    ]).animate(CurvedAnimation(parent: _breatheCtrl, curve: Curves.easeOutQuart));
-
-    _iconBounce = TweenSequence<double>([
-      TweenSequenceItem(tween: Tween(begin: 1.0, end: 0.85), weight: 0.2),
-      TweenSequenceItem(tween: Tween(begin: 0.85, end: 1.15), weight: 0.6),
-      TweenSequenceItem(tween: Tween(begin: 1.15, end: 1.0), weight: 0.2),
-    ]).animate(CurvedAnimation(parent: _breatheCtrl, curve: Curves.easeOutBack));
+    _bounceTranslate = TweenSequence<double>([
+      TweenSequenceItem(tween: Tween(begin: 0, end: -6), weight: 0.3),
+      TweenSequenceItem(tween: Tween(begin: -6, end: 2), weight: 0.5),
+      TweenSequenceItem(tween: Tween(begin: 2, end: 0), weight: 0.2),
+    ]).animate(CurvedAnimation(parent: _bounceCtrl, curve: Curves.easeOut));
   }
 
   @override
   void dispose() {
-    _breatheCtrl.dispose();
+    _bounceCtrl.dispose();
     super.dispose();
   }
 
-  void breathe() {
-    if (_breatheCtrl.isAnimating) return;
-    _breatheCtrl.forward(from: 0);
+  void _onCapsuleTap() {
+    if (_bounceCtrl.isAnimating) return;
+    HapticFeedback.selectionClick();
+    _bounceCtrl.forward(from: 0);
   }
 
   @override
@@ -254,42 +236,44 @@ class _FrostedCapsuleState extends State<_FrostedCapsule>
     final t = widget.theme;
 
     return AnimatedBuilder(
-      animation: _breatheCtrl,
-      builder: (_, child) => Transform.scale(
-        scale: _capsuleScale.value,
-        child: RepaintBoundary(
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(28),
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-              child: Container(
-                height: 72,
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                decoration: BoxDecoration(
-                  color: t.isDark
-                      ? const Color(0xFF0E1222).withAlpha(120)
-                      : t.backgroundColor.withAlpha(140),
-                  borderRadius: BorderRadius.circular(28),
-                  border: Border.all(
-                    color: t.borderColor.withAlpha(40),
-                    width: 0.5,
-                  ),
+      animation: _bounceCtrl,
+      builder: (_, child) => Transform.translate(
+        offset: Offset(0, _bounceTranslate.value),
+        child: child,
+      ),
+      child: GestureDetector(
+        behavior: HitTestBehavior.translucent,
+        onTap: _onCapsuleTap,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(28),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+            child: Container(
+              height: 72,
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              decoration: BoxDecoration(
+                color: t.isDark
+                    ? const Color(0xFF0E1222).withAlpha(120)
+                    : t.backgroundColor.withAlpha(140),
+                borderRadius: BorderRadius.circular(28),
+                border: Border.all(
+                  color: t.borderColor.withAlpha(40),
+                  width: 0.5,
                 ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: List.generate(_icons.length, (i) {
-                    final active = widget.currentIndex == i;
-                    return _CapsuleTabItem(
-                      icon: _icons[i],
-                      label: _labels[i],
-                      active: active,
-                      iconBounce: _iconBounce,
-                      accentColor: t.accentColor,
-                      inactiveColor: t.textSecondary,
-                      onTap: () => widget.onTap(i),
-                    );
-                  }),
-                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: List.generate(_icons.length, (i) {
+                  final active = widget.currentIndex == i;
+                  return _CapsuleTabItem(
+                    icon: _icons[i],
+                    label: _labels[i],
+                    active: active,
+                    accentColor: t.accentColor,
+                    inactiveColor: t.textSecondary,
+                    onTap: () => widget.onTap(i),
+                  );
+                }),
               ),
             ),
           ),
@@ -309,7 +293,6 @@ class _CapsuleTabItem extends StatelessWidget {
   final _TabIcon icon;
   final String label;
   final bool active;
-  final Animation<double> iconBounce;
   final Color accentColor;
   final Color inactiveColor;
   final VoidCallback onTap;
@@ -318,7 +301,6 @@ class _CapsuleTabItem extends StatelessWidget {
     required this.icon,
     required this.label,
     required this.active,
-    required this.iconBounce,
     required this.accentColor,
     required this.inactiveColor,
     required this.onTap,
@@ -334,6 +316,7 @@ class _CapsuleTabItem extends StatelessWidget {
       selected: active,
       child: GestureDetector(
         onTap: onTap,
+        behavior: HitTestBehavior.opaque,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 260),
           curve: Curves.easeOutCubic,
@@ -342,63 +325,56 @@ class _CapsuleTabItem extends StatelessWidget {
             width: 64,
             height: 52,
             child: Center(
-              child: AnimatedBuilder(
-                animation: iconBounce,
-                builder: (_, child) => Transform.scale(
-                  scale: active ? iconBounce.value : 1.0,
-                  child: child,
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 260),
+                curve: Curves.easeOutCubic,
+                width: active ? 54 : 44,
+                height: active ? 48 : 44,
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                decoration: BoxDecoration(
+                  color: active ? accentColor.withAlpha(24) : Colors.transparent,
+                  borderRadius: BorderRadius.circular(22),
+                  border: Border.all(
+                    color: active ? accentColor.withAlpha(70) : Colors.transparent,
+                    width: 0.8,
+                  ),
+                  boxShadow: active
+                      ? [
+                          BoxShadow(
+                            color: accentColor.withAlpha(65),
+                            blurRadius: 16,
+                            spreadRadius: 1,
+                            offset: const Offset(0, 5),
+                          ),
+                        ]
+                      : null,
                 ),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 260),
-                  curve: Curves.easeOutCubic,
-                  width: active ? 54 : 44,
-                  height: active ? 48 : 44,
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: active ? accentColor.withAlpha(24) : Colors.transparent,
-                    borderRadius: BorderRadius.circular(22),
-                    border: Border.all(
-                      color: active ? accentColor.withAlpha(70) : Colors.transparent,
-                      width: 0.8,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 200),
+                      transitionBuilder: (child, anim) =>
+                          FadeTransition(opacity: anim, child: ScaleTransition(scale: anim, child: child)),
+                      child: Icon(
+                        active ? icon.filled : icon.outlined,
+                        key: ValueKey('${label}_$active'),
+                        size: 22,
+                        color: color,
+                      ),
                     ),
-                    boxShadow: active
-                        ? [
-                            BoxShadow(
-                              color: accentColor.withAlpha(65),
-                              blurRadius: 16,
-                              spreadRadius: 1,
-                              offset: const Offset(0, 5),
-                            ),
-                          ]
-                        : null,
-                  ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      AnimatedSwitcher(
-                        duration: const Duration(milliseconds: 200),
-                        transitionBuilder: (child, anim) =>
-                            FadeTransition(opacity: anim, child: ScaleTransition(scale: anim, child: child)),
-                        child: Icon(
-                          active ? icon.filled : icon.outlined,
-                          key: ValueKey('${label}_$active'),
-                          size: 22,
-                          color: color,
-                        ),
+                    const SizedBox(height: 2),
+                    AnimatedDefaultTextStyle(
+                      duration: const Duration(milliseconds: 200),
+                      curve: Curves.easeOutCubic,
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: active ? FontWeight.w600 : FontWeight.w400,
+                        color: color,
                       ),
-                      const SizedBox(height: 2),
-                      AnimatedDefaultTextStyle(
-                        duration: const Duration(milliseconds: 200),
-                        curve: Curves.easeOutCubic,
-                        style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: active ? FontWeight.w600 : FontWeight.w400,
-                          color: color,
-                        ),
-                        child: Text(label),
-                      ),
-                    ],
-                  ),
+                      child: Text(label),
+                    ),
+                  ],
                 ),
               ),
             ),

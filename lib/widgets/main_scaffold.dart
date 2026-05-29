@@ -188,7 +188,7 @@ class _MainScaffoldState extends State<MainScaffold> {
 }
 
 /// 毛玻璃悬浮胶囊导航栏
-class _FrostedCapsule extends StatefulWidget {
+class _FrostedCapsule extends StatelessWidget {
   final int currentIndex;
   final ThemeState theme;
   final Function(int) onTap;
@@ -199,11 +199,6 @@ class _FrostedCapsule extends StatefulWidget {
     required this.onTap,
   });
 
-  @override
-  State<_FrostedCapsule> createState() => _FrostedCapsuleState();
-}
-
-class _FrostedCapsuleState extends State<_FrostedCapsule> {
   static const _icons = [
     _TabIcon(Icons.wb_sunny_outlined, Icons.wb_sunny),
     _TabIcon(Icons.favorite_border, Icons.favorite),
@@ -212,52 +207,38 @@ class _FrostedCapsuleState extends State<_FrostedCapsule> {
   ];
   static const _labels = ['天气', '心情', '城迹', '我的'];
 
-  void _onSwipe(DragEndDetails details) {
-    if (details.primaryVelocity == null) return;
-    if (details.primaryVelocity! < -300 && widget.currentIndex < 3) {
-      widget.onTap(widget.currentIndex + 1);
-    } else if (details.primaryVelocity! > 300 && widget.currentIndex > 0) {
-      widget.onTap(widget.currentIndex - 1);
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    final t = widget.theme;
-    return GestureDetector(
-      onHorizontalDragEnd: _onSwipe,
-      behavior: HitTestBehavior.translucent,
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(28),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-          child: Container(
-            height: 72,
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            decoration: BoxDecoration(
-              color: t.isDark
-                  ? const Color(0xFF0E1222).withAlpha(120)
-                  : t.backgroundColor.withAlpha(140),
-              borderRadius: BorderRadius.circular(28),
-              border: Border.all(
-                color: t.borderColor.withAlpha(40),
-                width: 0.5,
-              ),
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(28),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+        child: Container(
+          height: 72,
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          decoration: BoxDecoration(
+            color: theme.isDark
+                ? const Color(0xFF0E1222).withAlpha(120)
+                : theme.backgroundColor.withAlpha(140),
+            borderRadius: BorderRadius.circular(28),
+            border: Border.all(
+              color: theme.borderColor.withAlpha(40),
+              width: 0.5,
             ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: List.generate(_icons.length, (i) {
-                final active = widget.currentIndex == i;
-                return _CapsuleTabItem(
-                  icon: _icons[i],
-                  label: _labels[i],
-                  active: active,
-                  accentColor: t.accentColor,
-                  inactiveColor: t.textSecondary,
-                  onTap: () => widget.onTap(i),
-                );
-              }),
-            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: List.generate(_icons.length, (i) {
+              final active = currentIndex == i;
+              return _CapsuleTabItem(
+                icon: _icons[i],
+                label: _labels[i],
+                active: active,
+                accentColor: theme.accentColor,
+                inactiveColor: theme.textSecondary,
+                onTap: () => onTap(i),
+              );
+            }),
           ),
         ),
       ),
@@ -297,8 +278,6 @@ class _CapsuleTabItem extends StatelessWidget {
       selected: active,
       child: GestureDetector(
         onTap: onTap,
-        // translucent: tap归自己处理，drag穿透到父层
-        behavior: HitTestBehavior.translucent,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 260),
           curve: Curves.easeOutCubic,

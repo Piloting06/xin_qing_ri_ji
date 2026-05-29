@@ -297,7 +297,8 @@ class _CapsuleTabItem extends StatelessWidget {
       selected: active,
       child: GestureDetector(
         onTap: onTap,
-        behavior: HitTestBehavior.opaque,
+        // translucent: tap归自己处理，drag穿透到父层
+        behavior: HitTestBehavior.translucent,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 260),
           curve: Curves.easeOutCubic,

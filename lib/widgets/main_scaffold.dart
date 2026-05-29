@@ -246,9 +246,7 @@ class _FrostedCapsuleState extends State<_FrostedCapsule>
 
   void breathe() {
     if (_breatheCtrl.isAnimating) return;
-    _breatheCtrl.forward(from: 0).then((_) {
-      if (mounted) _breatheCtrl.value = 0;
-    });
+    _breatheCtrl.forward(from: 0);
   }
 
   @override
@@ -259,37 +257,39 @@ class _FrostedCapsuleState extends State<_FrostedCapsule>
       animation: _breatheCtrl,
       builder: (_, child) => Transform.scale(
         scale: _capsuleScale.value,
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(28),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-            child: Container(
-              height: 72,
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              decoration: BoxDecoration(
-                color: t.isDark
-                    ? const Color(0xFF0E1222).withAlpha(120)
-                    : t.backgroundColor.withAlpha(140),
-                borderRadius: BorderRadius.circular(28),
-                border: Border.all(
-                  color: t.borderColor.withAlpha(40),
-                  width: 0.5,
+        child: RepaintBoundary(
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(28),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+              child: Container(
+                height: 72,
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                decoration: BoxDecoration(
+                  color: t.isDark
+                      ? const Color(0xFF0E1222).withAlpha(120)
+                      : t.backgroundColor.withAlpha(140),
+                  borderRadius: BorderRadius.circular(28),
+                  border: Border.all(
+                    color: t.borderColor.withAlpha(40),
+                    width: 0.5,
+                  ),
                 ),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: List.generate(_icons.length, (i) {
-                  final active = widget.currentIndex == i;
-                  return _CapsuleTabItem(
-                    icon: _icons[i],
-                    label: _labels[i],
-                    active: active,
-                    iconBounce: _iconBounce,
-                    accentColor: t.accentColor,
-                    inactiveColor: t.textSecondary,
-                    onTap: () => widget.onTap(i),
-                  );
-                }),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: List.generate(_icons.length, (i) {
+                    final active = widget.currentIndex == i;
+                    return _CapsuleTabItem(
+                      icon: _icons[i],
+                      label: _labels[i],
+                      active: active,
+                      iconBounce: _iconBounce,
+                      accentColor: t.accentColor,
+                      inactiveColor: t.textSecondary,
+                      onTap: () => widget.onTap(i),
+                    );
+                  }),
+                ),
               ),
             ),
           ),

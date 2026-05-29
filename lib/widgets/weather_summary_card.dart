@@ -406,6 +406,15 @@ class WeatherSummaryCard extends StatelessWidget {
                   ],
                 ),
               ),
+              const SizedBox(height: 6),
+              Text(
+                '试试去心情页制作卡片吧',
+                style: TextStyle(
+                  color: theme.textTertiary,
+                  fontSize: 11,
+                  height: 1.3,
+                ),
+              ),
               const SizedBox(height: 9),
               Row(
                 children: [

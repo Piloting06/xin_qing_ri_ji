@@ -214,10 +214,15 @@ class _MoodPageState extends State<MoodPage> {
           });
         }
       }
-    } catch (e) {
+    } on ApiException catch (e) {
       if (mounted) {
         setState(() => _saving = false);
-        XqToast.error(context, '保存失败: $e');
+        XqToast.error(context, '保存失败：${e.message}');
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() => _saving = false);
+        XqToast.error(context, '保存失败，请检查网络后重试');
       }
     }
   }
@@ -270,10 +275,18 @@ class _MoodPageState extends State<MoodPage> {
       body: SafeArea(
         child: Stack(
           children: [
-            ListView(
-              controller: _scrollCtrl,
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-              children: [
+            RefreshIndicator(
+              onRefresh: () async {
+                await _loadAllMoods();
+                if (!context.mounted) return;
+                final date = context.read<AppState>().selectedDate;
+                final dayMoods = await Api.getMoodsByDate(date);
+                if (mounted) setState(() => _dayMoods = dayMoods);
+              },
+              child: ListView(
+                controller: _scrollCtrl,
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+                children: [
                 // Header
                 Row(
                   children: [
@@ -538,6 +551,7 @@ class _MoodPageState extends State<MoodPage> {
                 ),
                 const SizedBox(height: 24),
               ],
+            ),
             ),
           ],
         ),
@@ -859,27 +873,42 @@ class _MoodPageState extends State<MoodPage> {
   }
 
   Future<void> _deleteDayMood(int id) async {
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('删除记录'),
-        content: const Text('确定删除这条心情记录吗？'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('取消')),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: Text('删除', style: TextStyle(color: Theme.of(context).colorScheme.error)),
-          ),
-        ],
+    final date = context.read<AppState>().selectedDate;
+    // Optimistic: remove from UI immediately
+    setState(() => _dayMoods.removeWhere((m) => m['id'] == id));
+
+    bool undone = false;
+
+    // Show undo via a separate mechanism — use ScaffoldMessenger for persistent SnackBar
+    final messenger = ScaffoldMessenger.of(context);
+    final accentColor = context.read<ThemeState>().accentColor;
+    final undoController = messenger.showSnackBar(
+      SnackBar(
+        content: const Text('已删除心情记录'),
+        duration: const Duration(seconds: 4),
+        action: SnackBarAction(
+          label: '撤销',
+          textColor: accentColor,
+          onPressed: () => undone = true,
+        ),
       ),
     );
-    if (ok != true || !mounted) return;
-    final date = context.read<AppState>().selectedDate;
+
+    // Wait for SnackBar to dismiss
+    await undoController.closed;
+
+    if (undone) {
+      // Restore: re-insert into list and reload
+      await _loadAllMoods();
+      final dayMoods = await Api.getMoodsByDate(date);
+      if (mounted) setState(() => _dayMoods = dayMoods);
+      return;
+    }
+
+    // Actually delete on server
     try {
       await Api.deleteMood(id);
-      final dayMoods = await Api.getMoodsByDate(date);
       await _loadAllMoods();
-      if (mounted) setState(() => _dayMoods = dayMoods);
     } catch (_) {}
   }
 

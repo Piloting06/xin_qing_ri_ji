@@ -662,7 +662,7 @@ class _HomePageState extends State<HomePage> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          '也可以顺手',
+          '值得一试',
           style: TextStyle(
             color: theme.textPrimary,
             fontSize: 16,
@@ -695,30 +695,6 @@ class _HomePageState extends State<HomePage> {
                 subtitle: '写给未来的自己',
                 onTap: _openCapsule,
               ),
-              Divider(height: 1, color: theme.borderColor.withAlpha(60)),
-              _quickListTile(
-                theme,
-                icon: Icons.auto_awesome,
-                iconColor: theme.gold,
-                title: '心情卡片',
-                subtitle: '去心情页制作精美卡片',
-                trailing: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: theme.gold.withAlpha(20),
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                  child: Text(
-                    '新功能',
-                    style: TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w600,
-                      color: theme.gold,
-                    ),
-                  ),
-                ),
-                onTap: null, // 不跳转
-              ),
             ],
           ),
         ),
@@ -740,7 +716,7 @@ class _HomePageState extends State<HomePage> {
       child: InkWell(
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
           child: Row(
             children: [
               Container(

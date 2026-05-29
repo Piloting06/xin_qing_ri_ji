@@ -500,9 +500,38 @@ class _CapsulePageState extends State<CapsulePage> {
               ),
             ),
           ),
+          const SizedBox(height: 8),
+          SizedBox(
+            width: double.infinity,
+            height: 40,
+            child: OutlinedButton.icon(
+              onPressed: _testNotification,
+              icon: const Icon(Icons.timer_outlined, size: 16),
+              label: const Text('测试通知 — 1分钟后推送'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: theme.gold,
+                side: BorderSide(color: theme.gold.withAlpha(80)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+              ),
+            ),
+          ),
         ],
       ),
     );
+  }
+
+  Future<void> _testNotification() async {
+    final err = await NotificationService.scheduleQuickTest();
+    if (!mounted) return;
+    if (err != null) {
+      XqToast.error(context, err == '系统通知未开启'
+          ? '通知权限未开启，请在系统设置中允许拾晴日记发送通知'
+          : err);
+    } else {
+      XqToast.success(context, '测试通知已设置，1分钟后弹出！关掉app回到桌面等待');
+    }
   }
 
   Widget _errorCard(ThemeState theme) {

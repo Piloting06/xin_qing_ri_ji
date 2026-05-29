@@ -197,6 +197,35 @@ class NotificationService {
     });
   }
 
+  /// 快速测试通知 — 1分钟后推送，用于验证通知功能
+  static Future<String?> scheduleQuickTest() async {
+    await initialize();
+    final android = _notifications
+        .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+    final systemEnabled = await android?.areNotificationsEnabled();
+    if (systemEnabled == false) return '系统通知未开启';
+
+    final now = tz.TZDateTime.now(tz.local).add(const Duration(minutes: 1));
+    await _notifications.zonedSchedule(
+      999999,
+      '测试胶囊提醒',
+      '如果你看到这条消息，说明通知功能正常！',
+      now,
+      const NotificationDetails(
+        android: AndroidNotificationDetails(
+          'capsule_reminders',
+          '时光胶囊提醒',
+          channelDescription: '用于提醒你按时打开写给未来的胶囊',
+          importance: Importance.max,
+          priority: Priority.high,
+        ),
+      ),
+      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
+    );
+    return null; // success
+  }
+
   static int? _capsuleIdFromPayload(String payload) {
     try {
       final map = jsonDecode(payload);

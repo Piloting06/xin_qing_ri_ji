@@ -204,7 +204,7 @@ class _FrostedCapsule extends StatelessWidget {
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
         child: Container(
-          height: 66,
+          height: 72,
           padding: const EdgeInsets.symmetric(horizontal: 20),
           decoration: BoxDecoration(
             color: theme.isDark
@@ -317,20 +317,20 @@ class _CapsuleTabItem extends StatelessWidget {
                       child: Icon(
                         active ? icon.filled : icon.outlined,
                         key: ValueKey('${label}_$active'),
-                        size: active ? 24 : 27,
+                        size: active ? 22 : 22,
                         color: color,
                       ),
                     ),
-                    AnimatedContainer(
-                      duration: const Duration(milliseconds: 240),
+                    const SizedBox(height: 2),
+                    AnimatedDefaultTextStyle(
+                      duration: const Duration(milliseconds: 200),
                       curve: Curves.easeOutCubic,
-                      margin: EdgeInsets.only(top: active ? 4 : 0),
-                      width: active ? 18 : 0,
-                      height: active ? 3 : 0,
-                      decoration: BoxDecoration(
-                        color: accentColor,
-                        borderRadius: BorderRadius.circular(999),
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: active ? FontWeight.w600 : FontWeight.w400,
+                        color: color,
                       ),
+                      child: Text(label),
                     ),
                   ],
                 ),

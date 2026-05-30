@@ -120,7 +120,7 @@ class AboutPage extends StatelessWidget {
               icon: Icons.mail_outline_rounded,
               title: '意见反馈',
               subtitle: '发送邮件告诉我们你的想法',
-              onTap: () => _launchUrl('mailto:3281607568@qq.com?subject=拾晴日记反馈'),
+              onTap: () => _showFeedbackSheet(context, theme),
             ),
           ]),
           const SizedBox(height: 22),
@@ -836,6 +836,90 @@ class AboutPage extends StatelessWidget {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  // ── 意见反馈弹窗 ──
+  static void _showFeedbackSheet(BuildContext context, ThemeState theme) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (_) => Container(
+        decoration: BoxDecoration(
+          color: theme.cardColor,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+        ),
+        child: SafeArea(
+          top: false,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(top: 10, bottom: 4),
+                child: Container(
+                  width: 36, height: 4,
+                  decoration: BoxDecoration(
+                    color: theme.borderColor,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
+                child: Text(
+                  '欢迎反馈，我们会认真对待每一条建议',
+                  style: TextStyle(color: theme.textSecondary, fontSize: 13),
+                ),
+              ),
+              // 复制邮箱
+              ListTile(
+                leading: Container(
+                  width: 40, height: 40,
+                  decoration: BoxDecoration(
+                    color: theme.accentColor.withAlpha(15),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(Icons.copy_rounded, color: theme.accentColor, size: 18),
+                ),
+                title: Text('复制邮箱地址', style: TextStyle(color: theme.textPrimary, fontSize: 14)),
+                subtitle: Text('3281607568@qq.com', style: TextStyle(color: theme.textTertiary, fontSize: 12)),
+                onTap: () {
+                  Clipboard.setData(const ClipboardData(text: '3281607568@qq.com'));
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: const Text('邮箱已复制到剪贴板'),
+                      backgroundColor: theme.textPrimary.withAlpha(180),
+                      behavior: SnackBarBehavior.floating,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      margin: const EdgeInsets.fromLTRB(60, 0, 60, 16),
+                      duration: const Duration(seconds: 2),
+                    ),
+                  );
+                },
+              ),
+              // 加入 QQ 群
+              ListTile(
+                leading: Container(
+                  width: 40, height: 40,
+                  decoration: BoxDecoration(
+                    color: theme.accentColor.withAlpha(15),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(Icons.chat_bubble_outline_rounded, color: theme.accentColor, size: 18),
+                ),
+                title: Text('加入交流群', style: TextStyle(color: theme.textPrimary, fontSize: 14)),
+                subtitle: Text('在 QQ 群里直接反馈', style: TextStyle(color: theme.textTertiary, fontSize: 12)),
+                onTap: () {
+                  Navigator.pop(context);
+                  _launchUrl('https://qm.qq.com/q/EKUVPDQV8Y');
+                },
+              ),
+              const SizedBox(height: 8),
+            ],
+          ),
         ),
       ),
     );

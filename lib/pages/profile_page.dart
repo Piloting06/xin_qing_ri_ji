@@ -23,6 +23,7 @@ import 'capsule_page.dart';
 import 'friends_page.dart';
 import 'legal_page.dart';
 import 'login_page.dart';
+import 'about_page.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -1208,6 +1209,18 @@ class _ProfilePageState extends State<ProfilePage> {
       theme,
       child: Column(
         children: [
+          _infoRow(
+            theme,
+            icon: Icons.info_outline_rounded,
+            title: '关于拾晴日记',
+            subtitle: '版本、合规、开源许可',
+            trailing: '查看',
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const AboutPage()),
+            ),
+          ),
+          _divider(theme),
           _infoRow(
             theme,
             icon: Icons.description_outlined,

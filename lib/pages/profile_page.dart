@@ -302,8 +302,13 @@ class _ProfilePageState extends State<ProfilePage> {
             child: Text('取消', style: TextStyle(color: theme.textSecondary)),
           ),
           TextButton(
-            onPressed: () => Navigator.pop(ctx, 'logout'),
+            onPressed: () => Navigator.pop(ctx, 'switch'),
             style: TextButton.styleFrom(foregroundColor: theme.accentColor),
+            child: const Text('切换账号'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, 'logout'),
+            style: TextButton.styleFrom(foregroundColor: theme.errorColor),
             child: const Text('退出'),
           ),
           // 注销入口藏在弹窗底部
@@ -325,13 +330,14 @@ class _ProfilePageState extends State<ProfilePage> {
         ],
       ),
     );
-    if (result == 'logout') {
+    if (result == 'logout' || result == 'switch') {
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove(StorageKeys.token);
       await prefs.remove(StorageKeys.phone);
       await prefs.remove(StorageKeys.username);
       await prefs.remove(StorageKeys.displayName);
       await prefs.remove(StorageKeys.email);
+      await prefs.remove(_avatarFileKey);
       if (!mounted) return;
       context.read<AppState>().clearUser();
       Navigator.pushAndRemoveUntil(

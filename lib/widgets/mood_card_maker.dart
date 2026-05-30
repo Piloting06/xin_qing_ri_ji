@@ -614,6 +614,8 @@ class _MoodCardMakerState extends State<MoodCardMaker> {
     final sheetTheme = widget.theme;
     final screenHeight = MediaQuery.of(context).size.height;
     final sheetHeight = _editMode ? screenHeight * 0.85 : screenHeight * 0.72;
+    final d = DateTime.tryParse(widget.date) ?? DateTime.now();
+    const enMonths = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 250),
@@ -707,10 +709,10 @@ class _MoodCardMakerState extends State<MoodCardMaker> {
                       const SizedBox(height: 10),
                       // Date format
                       _buildEditRow('日期格式', [
-                        _buildChip('2026年5月28日', 'cn_full'),
-                        _buildChip('May 28', 'en_full'),
-                        _buildChip('5/28', 'slash'),
-                        _buildChip('05.28', 'dot'),
+                        _buildChip('${d.year}年${d.month}月${d.day}日', 'cn_full'),
+                        _buildChip('${enMonths[d.month]} ${d.day}', 'en_full'),
+                        _buildChip('${d.month}/${d.day}', 'slash'),
+                        _buildChip('${d.month.toString().padLeft(2, '0')}.${d.day.toString().padLeft(2, '0')}', 'dot'),
                       ]),
                       const SizedBox(height: 10),
                       // Watermark

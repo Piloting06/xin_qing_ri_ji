@@ -676,10 +676,23 @@ class _ProfilePageState extends State<ProfilePage> {
               style: TextStyle(color: theme.textTertiary, fontSize: 11),
             ),
             const SizedBox(height: 4),
-            Text(
-              '赣ICP备2026009414号-3A',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: theme.textTertiary.withAlpha(150), fontSize: 10),
+            GestureDetector(
+              onTap: () async {
+                final url = Uri.parse('https://beian.miit.gov.cn/');
+                if (await canLaunchUrl(url)) {
+                  await launchUrl(url, mode: LaunchMode.externalApplication);
+                }
+              },
+              child: Text(
+                '赣ICP备2026009414号-3A',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: theme.textTertiary.withAlpha(150),
+                  fontSize: 10,
+                  decoration: TextDecoration.underline,
+                  decorationColor: theme.textTertiary.withAlpha(80),
+                ),
+              ),
             ),
           ],
         ),

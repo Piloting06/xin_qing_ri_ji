@@ -16,10 +16,6 @@
         android:icon="@mipmap/ic_launcher"
         android:usesCleartextTraffic="true"
         android:networkSecurityConfig="@xml/network_security_config">
-        <!-- ICP 备案号 -->
-        <meta-data
-            android:name="android.app.icp_number"
-            android:value="赣ICP备2026009414号-3A" />
         <activity
             android:name=".MainActivity"
             android:exported="true"

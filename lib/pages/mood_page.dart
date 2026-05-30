@@ -34,6 +34,7 @@ class _MoodPageState extends State<MoodPage> {
   bool _saved = false;
   bool _dirty = false;
   bool _hydrating = false;
+  bool _dateAutoCorrected = false;
   List<Map<String, dynamic>> _allMoods = [];
   List<Map<String, dynamic>> _dayMoods = []; // 当天所有记录
   bool _dayMoodsExpanded = false;
@@ -269,6 +270,20 @@ class _MoodPageState extends State<MoodPage> {
     final theme = context.watch<ThemeState>();
     final appState = context.watch<AppState>();
     final t = theme; // shorthand
+
+    // 跨天自动校正：app 隔夜运行时 selectedDate 会过期，仅校正一次
+    if (!_dateAutoCorrected) {
+      _dateAutoCorrected = true;
+      final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
+      if (appState.selectedDate != today) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            context.read<AppState>().setSelectedDate(today);
+            _loadDate(today);
+          }
+        });
+      }
+    }
 
     return Scaffold(
       backgroundColor: t.backgroundColor,

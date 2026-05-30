@@ -284,7 +284,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Future<void> _logout() async {
     final theme = context.read<ThemeState>();
-    final ok = await showDialog<bool>(
+    final result = await showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
@@ -297,33 +297,50 @@ class _ProfilePageState extends State<ProfilePage> {
         actionsPadding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
+            onPressed: () => Navigator.pop(ctx),
             child: Text('取消', style: TextStyle(color: theme.textSecondary)),
           ),
           TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            style: TextButton.styleFrom(
-              foregroundColor: theme.errorColor,
-            ),
+            onPressed: () => Navigator.pop(ctx, 'logout'),
+            style: TextButton.styleFrom(foregroundColor: theme.accentColor),
             child: const Text('退出'),
+          ),
+          // 注销入口藏在弹窗底部
+          Padding(
+            padding: const EdgeInsets.only(top: 4, bottom: 4),
+            child: GestureDetector(
+              onTap: () => Navigator.pop(ctx, 'delete'),
+              child: Text(
+                '彻底注销账号',
+                style: TextStyle(
+                  color: theme.textTertiary,
+                  fontSize: 12,
+                  decoration: TextDecoration.underline,
+                  decorationColor: theme.textTertiary.withAlpha(120),
+                ),
+              ),
+            ),
           ),
         ],
       ),
     );
-    if (ok != true) return;
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(StorageKeys.token);
-    await prefs.remove(StorageKeys.phone);
-    await prefs.remove(StorageKeys.username);
-    await prefs.remove(StorageKeys.displayName);
-    await prefs.remove(StorageKeys.email);
-    if (!mounted) return;
-    context.read<AppState>().clearUser();
-    Navigator.pushAndRemoveUntil(
-      context,
-      MaterialPageRoute(builder: (_) => const LoginPage()),
-      (_) => false,
-    );
+    if (result == 'logout') {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(StorageKeys.token);
+      await prefs.remove(StorageKeys.phone);
+      await prefs.remove(StorageKeys.username);
+      await prefs.remove(StorageKeys.displayName);
+      await prefs.remove(StorageKeys.email);
+      if (!mounted) return;
+      context.read<AppState>().clearUser();
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (_) => const LoginPage()),
+        (_) => false,
+      );
+    } else if (result == 'delete') {
+      _deleteAccount();
+    }
   }
 
   void _showEmailSheet(ThemeState theme) {
@@ -634,7 +651,23 @@ class _ProfilePageState extends State<ProfilePage> {
             _aboutGroup(theme),
             const SizedBox(height: 22),
 
-            _dangerZone(theme),
+            // 退出登录（低调 footer 样式）
+            Center(
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: _logout,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  child: Text(
+                    '退出登录',
+                    style: TextStyle(
+                      color: theme.textTertiary,
+                      fontSize: 13,
+                    ),
+                  ),
+                ),
+              ),
+            ),
 
             const SizedBox(height: 32),
             Text(
@@ -1191,57 +1224,6 @@ class _ProfilePageState extends State<ProfilePage> {
             subtitle: '和更多用户一起聊聊',
             trailing: '加入',
             onTap: _openQqGroup,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _dangerZone(ThemeState theme) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: theme.errorColor.withAlpha(theme.isDark ? 18 : 12),
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: theme.errorColor.withAlpha(55)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(
-                Icons.warning_amber_rounded,
-                color: theme.errorColor,
-                size: 18,
-              ),
-              const SizedBox(width: 7),
-              Text(
-                '危险操作',
-                style: TextStyle(
-                  color: theme.errorColor,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          _dangerButton(
-            theme,
-            '退出登录',
-            Icons.logout_rounded,
-            _logout,
-            filled: false,
-          ),
-          const SizedBox(height: 8),
-          _dangerButton(
-            theme,
-            '注销账号',
-            Icons.delete_outline_rounded,
-            _deleteAccount,
-            filled: true,
           ),
         ],
       ),
@@ -1965,46 +1947,6 @@ class _ProfilePageState extends State<ProfilePage> {
           ),
         ),
       ),
-    );
-  }
-
-  Widget _dangerButton(
-    ThemeState theme,
-    String label,
-    IconData icon,
-    VoidCallback onTap, {
-    required bool filled,
-  }) {
-    return SizedBox(
-      width: double.infinity,
-      height: 48,
-      child: filled
-          ? FilledButton.icon(
-              onPressed: onTap,
-              icon: Icon(icon, size: 18),
-              label: Text(label),
-              style: FilledButton.styleFrom(
-                backgroundColor: theme.errorColor,
-                foregroundColor: theme.isDark
-                    ? theme.backgroundColor
-                    : Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
-                ),
-              ),
-            )
-          : OutlinedButton.icon(
-              onPressed: onTap,
-              icon: Icon(icon, size: 18),
-              label: Text(label),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: theme.errorColor,
-                side: BorderSide(color: theme.errorColor.withAlpha(100)),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
-                ),
-              ),
-            ),
     );
   }
 }

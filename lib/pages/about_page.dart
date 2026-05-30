@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../api/api_client.dart';
 import '../stores/theme_state.dart';
 import '../theme/xq_decorations.dart';
 import 'legal_page.dart';
@@ -109,17 +110,9 @@ class AboutPage extends StatelessWidget {
           _card(theme, children: [
             _infoRow(
               theme,
-              icon: Icons.chat_bubble_outline_rounded,
-              title: '加入交流群',
-              subtitle: '和更多用户一起聊聊',
-              onTap: () => _launchUrl('https://qm.qq.com/q/EKUVPDQV8Y'),
-            ),
-            _divider(theme),
-            _infoRow(
-              theme,
               icon: Icons.mail_outline_rounded,
               title: '意见反馈',
-              subtitle: '发送邮件告诉我们你的想法',
+              subtitle: '告诉我们你的想法和建议',
               onTap: () => _showFeedbackSheet(context, theme),
             ),
           ]),
@@ -843,82 +836,165 @@ class AboutPage extends StatelessWidget {
 
   // ── 意见反馈弹窗 ──
   static void _showFeedbackSheet(BuildContext context, ThemeState theme) {
+    final ctrl = TextEditingController();
+    var sending = false;
+
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => Container(
-        decoration: BoxDecoration(
-          color: theme.cardColor,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-        ),
-        child: SafeArea(
-          top: false,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Padding(
-                padding: const EdgeInsets.only(top: 10, bottom: 4),
-                child: Container(
-                  width: 36, height: 4,
-                  decoration: BoxDecoration(
-                    color: theme.borderColor,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
-                child: Text(
-                  '欢迎反馈，我们会认真对待每一条建议',
-                  style: TextStyle(color: theme.textSecondary, fontSize: 13),
-                ),
-              ),
-              // 复制邮箱
-              ListTile(
-                leading: Container(
-                  width: 40, height: 40,
-                  decoration: BoxDecoration(
-                    color: theme.accentColor.withAlpha(15),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Icon(Icons.copy_rounded, color: theme.accentColor, size: 18),
-                ),
-                title: Text('复制邮箱地址', style: TextStyle(color: theme.textPrimary, fontSize: 14)),
-                subtitle: Text('3281607568@qq.com', style: TextStyle(color: theme.textTertiary, fontSize: 12)),
-                onTap: () {
-                  Clipboard.setData(const ClipboardData(text: '3281607568@qq.com'));
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: const Text('邮箱已复制到剪贴板'),
-                      backgroundColor: theme.textPrimary.withAlpha(180),
-                      behavior: SnackBarBehavior.floating,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                      margin: const EdgeInsets.fromLTRB(60, 0, 60, 16),
-                      duration: const Duration(seconds: 2),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSheetState) => Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(ctx).viewInsets.bottom,
+          ),
+          child: Container(
+            decoration: BoxDecoration(
+              color: theme.cardColor,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+            ),
+            child: SafeArea(
+              top: false,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // 拖拽条
+                  Padding(
+                    padding: const EdgeInsets.only(top: 10, bottom: 4),
+                    child: Container(
+                      width: 36, height: 4,
+                      decoration: BoxDecoration(
+                        color: theme.borderColor,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
                     ),
-                  );
-                },
-              ),
-              // 加入 QQ 群
-              ListTile(
-                leading: Container(
-                  width: 40, height: 40,
-                  decoration: BoxDecoration(
-                    color: theme.accentColor.withAlpha(15),
-                    borderRadius: BorderRadius.circular(10),
                   ),
-                  child: Icon(Icons.chat_bubble_outline_rounded, color: theme.accentColor, size: 18),
-                ),
-                title: Text('加入交流群', style: TextStyle(color: theme.textPrimary, fontSize: 14)),
-                subtitle: Text('在 QQ 群里直接反馈', style: TextStyle(color: theme.textTertiary, fontSize: 12)),
-                onTap: () {
-                  Navigator.pop(context);
-                  _launchUrl('https://qm.qq.com/q/EKUVPDQV8Y');
-                },
+
+                  // 标题
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 8, 20, 4),
+                    child: Row(
+                      children: [
+                        Icon(Icons.edit_note_rounded,
+                            color: theme.accentColor, size: 22),
+                        const SizedBox(width: 8),
+                        Text(
+                          '意见反馈',
+                          style: TextStyle(
+                            color: theme.textPrimary,
+                            fontSize: 17,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+                    child: Text(
+                      '写下你的想法，我们会认真阅读每一条反馈',
+                      style: TextStyle(color: theme.textTertiary, fontSize: 12),
+                    ),
+                  ),
+
+                  // 输入框
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: TextField(
+                      controller: ctrl,
+                      maxLength: 1000,
+                      maxLines: 5,
+                      minLines: 3,
+                      style: TextStyle(color: theme.textPrimary, fontSize: 14),
+                      decoration: InputDecoration(
+                        hintText: '例如：希望增加某某功能、某个页面不太方便...',
+                        hintStyle: TextStyle(
+                          color: theme.textTertiary.withAlpha(120),
+                          fontSize: 13,
+                        ),
+                        filled: true,
+                        fillColor: theme.backgroundColor,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: theme.borderColor),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: theme.borderColor.withAlpha(120)),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: theme.accentColor, width: 1.5),
+                        ),
+                        contentPadding: const EdgeInsets.all(14),
+                      ),
+                    ),
+                  ),
+
+                  // 提交按钮
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+                    child: SizedBox(
+                      width: double.infinity,
+                      height: 44,
+                      child: FilledButton(
+                        onPressed: sending
+                            ? null
+                            : () async {
+                                final text = ctrl.text.trim();
+                                if (text.isEmpty) return;
+                                setSheetState(() => sending = true);
+                                try {
+                                  await Api.sendFeedback(text);
+                                  if (ctx.mounted) Navigator.pop(ctx);
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: const Text('感谢反馈，我们会认真对待'),
+                                        backgroundColor: theme.successColor,
+                                        behavior: SnackBarBehavior.floating,
+                                        shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(8)),
+                                        margin: const EdgeInsets.fromLTRB(60, 0, 60, 16),
+                                      ),
+                                    );
+                                  }
+                                } catch (_) {
+                                  setSheetState(() => sending = false);
+                                  if (ctx.mounted) {
+                                    ScaffoldMessenger.of(ctx).showSnackBar(
+                                      SnackBar(
+                                        content: const Text('发送失败，请稍后重试'),
+                                        backgroundColor: theme.errorColor,
+                                        behavior: SnackBarBehavior.floating,
+                                        shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(8)),
+                                        margin: const EdgeInsets.fromLTRB(60, 0, 60, 16),
+                                      ),
+                                    );
+                                  }
+                                }
+                              },
+                        style: FilledButton.styleFrom(
+                          backgroundColor: theme.accentColor,
+                          foregroundColor: theme.textOnAccent,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: sending
+                            ? const SizedBox(
+                                width: 18, height: 18,
+                                child: CircularProgressIndicator(
+                                    strokeWidth: 2, color: Colors.white),
+                              )
+                            : const Text('提交反馈', style: TextStyle(fontSize: 15)),
+                      ),
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 8),
-            ],
+            ),
           ),
         ),
       ),

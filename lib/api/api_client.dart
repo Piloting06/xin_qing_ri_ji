@@ -7,6 +7,8 @@ export 'social_api.dart';
 export 'content_api.dart';
 export 'city_api.dart';
 
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import 'auth_api.dart';
 import 'weather_api.dart';
 import 'mood_api.dart';
@@ -246,4 +248,14 @@ class Api {
     String content,
   ) =>
       CityApi.postCityReply(commentId, content);
+
+  // ── Feedback ──
+  static Future<void> sendFeedback(String content) async {
+    final res = await http.post(
+      Uri.parse('${ApiBase.baseUrl}/feedback'),
+      headers: await ApiBase.headers(),
+      body: json.encode({'content': content}),
+    );
+    await ApiBase.handle(res);
+  }
 }

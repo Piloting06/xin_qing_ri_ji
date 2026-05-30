@@ -100,7 +100,7 @@ class XqTheme {
       ),
       dialogTheme: DialogThemeData(
         backgroundColor: card,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         titleTextStyle: XqTypography.headlineMedium.copyWith(color: text1),
         contentTextStyle: XqTypography.bodyMedium.copyWith(color: text2),
       ),
@@ -191,7 +191,7 @@ class XqTheme {
       ),
       dialogTheme: DialogThemeData(
         backgroundColor: XqColors.darkCard,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         titleTextStyle: XqTypography.headlineMedium.copyWith(color: XqColors.darkTextPrimary),
         contentTextStyle: XqTypography.bodyMedium.copyWith(color: XqColors.darkTextSecondary),
       ),

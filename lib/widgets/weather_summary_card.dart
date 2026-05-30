@@ -319,7 +319,7 @@ class WeatherSummaryCard extends StatelessWidget {
                       color: theme.cardColor.withAlpha(
                         theme.isDark ? 150 : 180,
                       ),
-                      borderRadius: BorderRadius.circular(20),
+                      borderRadius: BorderRadius.circular(14),
                       border: Border.all(
                         color: theme.borderColor.withAlpha(80),
                       ),

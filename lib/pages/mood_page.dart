@@ -1063,7 +1063,7 @@ class _MoodPageState extends State<MoodPage> {
         builder: (ctx, scrollCtrl) => Container(
           decoration: BoxDecoration(
             color: theme.cardColor,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(14)),
           ),
           child: Column(
             children: [

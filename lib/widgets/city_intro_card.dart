@@ -110,7 +110,7 @@ class _CityIntroCardState extends State<CityIntroCard>
           color: Colors.transparent,
           child: Container(
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(24),
+              borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
                   color: ct.primary.withAlpha(40),
@@ -120,7 +120,7 @@ class _CityIntroCardState extends State<CityIntroCard>
               ],
             ),
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(24),
+              borderRadius: BorderRadius.circular(16),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [

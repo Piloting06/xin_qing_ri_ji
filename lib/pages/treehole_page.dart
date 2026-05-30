@@ -288,7 +288,7 @@ class _TreeholePageState extends State<TreeholePage>
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: theme.cardColor,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(14),
         border: Border.all(color: theme.borderColor),
       ),
       child: Row(

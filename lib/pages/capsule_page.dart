@@ -277,7 +277,7 @@ class _CapsulePageState extends State<CapsulePage> {
               constraints: BoxConstraints(maxHeight: MediaQuery.of(ctx).size.height * 0.72),
               decoration: BoxDecoration(
                 color: theme.cardColor,
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
               ),
               child: SafeArea(
                 top: false,
@@ -432,7 +432,7 @@ class _CapsulePageState extends State<CapsulePage> {
           padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
           decoration: BoxDecoration(
             color: theme.cardColor,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
           ),
           child: SafeArea(
             top: false,
@@ -777,7 +777,7 @@ class _CapsulePageState extends State<CapsulePage> {
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
         decoration: BoxDecoration(
           color: active ? theme.accentColor.withAlpha(20) : Colors.transparent,
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(14),
           border: Border.all(
             color: active ? theme.accentColor.withAlpha(80) : theme.borderColor,
           ),

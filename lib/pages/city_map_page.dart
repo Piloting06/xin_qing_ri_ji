@@ -253,7 +253,7 @@ class _CityMapPageState extends State<CityMapPage>
                     theme.accentColor.withAlpha(6),
                   ],
                 ),
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(14),
                 border: Border.all(color: theme.accentColor.withAlpha(30)),
               ),
               child: Row(
@@ -321,7 +321,7 @@ class _CityMapPageState extends State<CityMapPage>
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: theme.cardColor.withAlpha(120),
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(14),
               ),
               child: Row(
                 children: [

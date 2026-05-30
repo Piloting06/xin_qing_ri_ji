@@ -5,13 +5,13 @@ import 'xq_colors.dart';
 class XqDecorations {
   XqDecorations._();
 
-  // ── 圆角 ──
-  static const radiusSmall = 8.0;
-  static const radiusMedium = 14.0;
-  static const radiusCard = 18.0;
-  static const radiusLarge = 20.0;
-  static const radiusHero = 28.0;
-  static const radiusSheet = 28.0;
+  // ── 圆角（微信风格：克制、精确）──
+  static const radiusSmall = 6.0;
+  static const radiusMedium = 10.0;
+  static const radiusCard = 14.0;
+  static const radiusLarge = 16.0;
+  static const radiusHero = 20.0;
+  static const radiusSheet = 16.0;
 
   // ── 阴影 ──
   static List<BoxShadow> shadowSubtle({bool dark = false}) => [

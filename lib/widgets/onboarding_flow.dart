@@ -67,7 +67,7 @@ class OnboardingFlow {
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
                 color: theme.cardColor,
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(14),
                 border: Border.all(color: theme.gold.withAlpha(60)),
               ),
               child: Column(
@@ -191,7 +191,7 @@ class OnboardingFlow {
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
                 color: theme.cardColor,
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(14),
                 border: Border.all(color: theme.gold.withAlpha(60)),
               ),
               child: Column(

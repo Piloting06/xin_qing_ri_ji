@@ -140,7 +140,36 @@ class _MainScaffoldState extends State<MainScaffold> {
         if (_lastBackPress == null ||
             now.difference(_lastBackPress!) > const Duration(seconds: 2)) {
           _lastBackPress = now;
-          XqToast.info(context, '再按一次退出');
+          ScaffoldMessenger.of(context).clearSnackBars();
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Row(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.exit_to_app_rounded, size: 14, color: Colors.white70),
+                  const SizedBox(width: 6),
+                  Text(
+                    '再按一次退出',
+                    style: TextStyle(
+                      color: Colors.white.withAlpha(200),
+                      fontSize: 13,
+                      fontWeight: FontWeight.w400,
+                    ),
+                  ),
+                ],
+              ),
+              backgroundColor: theme.textPrimary.withAlpha(160),
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              margin: EdgeInsets.fromLTRB(
+                80, 0, 80, 16 + MediaQuery.of(context).padding.bottom,
+              ),
+              duration: const Duration(seconds: 2),
+            ),
+          );
         } else {
           SystemNavigator.pop();
         }
@@ -267,7 +296,7 @@ class _FrostedCapsuleState extends State<_FrostedCapsule>
         behavior: HitTestBehavior.translucent,
         onTap: _onCapsuleTap,
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(28),
+          borderRadius: BorderRadius.circular(22),
           child: BackdropFilter(
             filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
             child: Container(
@@ -277,7 +306,7 @@ class _FrostedCapsuleState extends State<_FrostedCapsule>
                 color: t.isDark
                     ? const Color(0xFF0E1222).withAlpha(120)
                     : t.backgroundColor.withAlpha(140),
-                borderRadius: BorderRadius.circular(28),
+                borderRadius: BorderRadius.circular(22),
                 border: Border.all(
                   color: t.borderColor.withAlpha(40),
                   width: 0.5,

@@ -237,7 +237,7 @@ class _ProfilePageState extends State<ProfilePage> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         backgroundColor: theme.cardColor,
         title: Text(
           '注销账号',
@@ -287,7 +287,7 @@ class _ProfilePageState extends State<ProfilePage> {
     final result = await showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         backgroundColor: theme.cardColor,
         title: const Text(
           '退出登录',
@@ -372,7 +372,7 @@ class _ProfilePageState extends State<ProfilePage> {
             decoration: BoxDecoration(
               color: theme.cardColor,
               borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(24),
+                top: Radius.circular(16),
               ),
             ),
             child: SafeArea(
@@ -1345,7 +1345,7 @@ class _ProfilePageState extends State<ProfilePage> {
           ),
           decoration: BoxDecoration(
             color: theme.cardColor,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
           ),
           child: SafeArea(
             top: false,
@@ -1541,7 +1541,7 @@ class _ProfilePageState extends State<ProfilePage> {
           key: repaintKey,
           child: Container(
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(24),
+              borderRadius: BorderRadius.circular(16),
               color: colors[2],
               border: Border.all(color: colors[0].withAlpha(60), width: 0.5),
               boxShadow: [
@@ -1562,7 +1562,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     height: 80,
                     decoration: BoxDecoration(
                       borderRadius: const BorderRadius.vertical(
-                        top: Radius.circular(24),
+                        top: Radius.circular(16),
                       ),
                       gradient: LinearGradient(
                         begin: Alignment.topLeft,

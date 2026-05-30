@@ -623,7 +623,7 @@ class _MoodCardMakerState extends State<MoodCardMaker> {
       height: sheetHeight,
       decoration: BoxDecoration(
         color: sheetTheme.cardColor,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
       ),
       child: SafeArea(
         top: false,

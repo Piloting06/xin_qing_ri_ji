@@ -1,5 +1,7 @@
 import 'xq_toast.dart';
+import 'city_intro_card.dart';
 import '../utils/time_utils.dart';
+import '../theme/xq_hand_drawn.dart';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -59,6 +61,7 @@ class CityCommentSheet extends StatelessWidget {
 
     final mood = map.cityMood(city.code);
     final commentCount = map.cityCommentCount(city.code);
+    final moodColor = _moodTint(mood);
 
     return Padding(
       padding: EdgeInsets.only(
@@ -94,12 +97,57 @@ class CityCommentSheet extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 8),
-                    Text(
-                      city.name,
-                      style: TextStyle(
-                        color: theme.textPrimary,
-                        fontSize: 20,
-                        fontWeight: FontWeight.w700,
+                    GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: () {
+                        final count = map.cityCommentCount(city.code);
+                        CityIntroCard.show(
+                          context,
+                          city,
+                          count > 0 ? count : null,
+                        );
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 4),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              city.name,
+                              style: TextStyle(
+                                color: theme.textPrimary,
+                                fontSize: 20,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            Icon(
+                              Icons.arrow_forward_ios,
+                              size: 12,
+                              color: theme.textTertiary,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.only(top: 2),
+                      child: GestureDetector(
+                        onTap: () {
+                          final count = map.cityCommentCount(city.code);
+                          CityIntroCard.show(
+                            context,
+                            city,
+                            count > 0 ? count : null,
+                          );
+                        },
+                        child: Text(
+                          '轻触城市名，认识一下这座城市',
+                          style: TextStyle(
+                            color: theme.textTertiary.withAlpha(130),
+                            fontSize: 11,
+                          ),
+                        ),
                       ),
                     ),
                     if (mood != null && commentCount >= 5) ...[
@@ -114,9 +162,20 @@ class CityCommentSheet extends StatelessWidget {
                         fontSize: 12,
                       ),
                     ),
-                    Divider(color: theme.borderColor),
+                    SizedBox(
+                      height: 8,
+                      child: CustomPaint(
+                        size: const Size(double.infinity, 8),
+                        painter: HandDrawnDividerPainter(
+                          inkColor: theme.borderColor,
+                          amplitude: 2.5,
+                        ),
+                      ),
+                    ),
                     Expanded(
-                      child: map.comments.isEmpty
+                      child: Container(
+                        color: moodColor?.withAlpha(theme.isDark ? 8 : 5),
+                        child: map.comments.isEmpty
                           ? _emptyState(city.name, map.canPost, theme)
                           : ListView.builder(
                               controller: scrollCtrl,
@@ -143,6 +202,7 @@ class CityCommentSheet extends StatelessWidget {
                                 );
                               },
                             ),
+                        ),
                     ),
                     if (map.canPost) _composer(map, theme),
                   ],
@@ -380,4 +440,15 @@ class CityCommentSheet extends StatelessWidget {
   }
 
   String _fmt(String? iso) => TimeUtils.relative(iso);
+
+  static Color? _moodTint(String? mood) {
+    return switch (mood) {
+      'warm' => const Color(0xFFF0A830),
+      'sad' => const Color(0xFF7B9BB8),
+      'anxious' => const Color(0xFFB090C8),
+      'calm' => const Color(0xFF78B090),
+      'excited' => const Color(0xFFF08848),
+      _ => null,
+    };
+  }
 }

@@ -4,7 +4,9 @@ import 'package:provider/provider.dart';
 import '../stores/map_state.dart';
 import '../stores/theme_state.dart';
 import '../widgets/city_comment_sheet.dart';
+import '../widgets/xq_toast.dart';
 import '../theme/xq_decorations.dart';
+import '../data/city_intro_data.dart';
 
 class CityMapPage extends StatefulWidget {
   const CityMapPage({super.key});
@@ -220,12 +222,8 @@ class _CityMapPageState extends State<CityMapPage>
               // Footer
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 24),
-                  child: Text(
-                    '${MapState.allCityList.length} 座城市 · 更多城市陆续开放中',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(color: theme.textTertiary, fontSize: 11),
-                  ),
+                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
+                  child: _buildFooter(map, theme),
                 ),
               ),
             ],
@@ -414,6 +412,12 @@ class _CityMapPageState extends State<CityMapPage>
           map.selectCityCode(city.code);
           CityCommentSheet.show(context);
         },
+        onLongPress: () {
+          HapticFeedback.mediumImpact();
+          final intro = CityIntroData.get(city.code);
+          if (intro == null) return;
+          XqToast.info(context, '${city.name} · ${intro.vibe}');
+        },
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 300),
           padding: const EdgeInsets.all(14),
@@ -550,6 +554,72 @@ class _CityMapPageState extends State<CityMapPage>
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildFooter(MapState map, ThemeState theme) {
+    final total = MapState.allCityList.length;
+    final quotes = [
+      '$total 座城市 · 每座都有人在想事情',
+      '$total 座城市 · 此刻有人和你看同一片天',
+      '$total 座城市 · 总有一座懂你的心情',
+      '$total 座城市 · 今天你在哪里？',
+    ];
+    final quote = quotes[DateTime.now().day % quotes.length];
+
+    // 发现彩蛋：每天随机推荐一个安静城市
+    final quietCities = MapState.allCityList
+        .where((c) => map.cityCommentCount(c.code) == 0)
+        .toList();
+    final showEgg = quietCities.isNotEmpty &&
+        DateTime.now().millisecondsSinceEpoch % 3 == 0;
+    final eggCity = showEgg
+        ? quietCities[DateTime.now().day % quietCities.length]
+        : null;
+
+    return Column(
+      children: [
+        if (eggCity != null) ...[
+          GestureDetector(
+            onTap: () {
+              HapticFeedback.selectionClick();
+              map.selectCityCode(eggCity.code);
+              CityCommentSheet.show(context);
+            },
+            child: Container(
+              margin: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              decoration: BoxDecoration(
+                color: theme.cardColor.withAlpha(100),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: theme.borderColor.withAlpha(60)),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.explore, size: 14, color: theme.textTertiary),
+                  const SizedBox(width: 8),
+                  Text(
+                    '也许你想去${eggCity.name}看看？',
+                    style: TextStyle(
+                      color: theme.textSecondary,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+        Padding(
+          padding: const EdgeInsets.only(bottom: 24),
+          child: Text(
+            quote,
+            textAlign: TextAlign.center,
+            style: TextStyle(color: theme.textTertiary, fontSize: 11),
+          ),
+        ),
+      ],
     );
   }
 

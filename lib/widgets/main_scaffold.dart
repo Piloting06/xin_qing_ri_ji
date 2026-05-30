@@ -11,6 +11,7 @@ import '../pages/mood_page.dart';
 import '../pages/city_map_page.dart';
 import '../pages/profile_page.dart';
 import '../pages/login_page.dart';
+import '../widgets/xq_toast.dart';
 import 'onboarding_flow.dart';
 
 class MainScaffold extends StatefulWidget {
@@ -32,6 +33,7 @@ class _MainScaffoldState extends State<MainScaffold> {
   late final PageController _pageController;
   bool _onboardingChecked = false;
   bool _lockoutHandled = false;
+  DateTime? _lastBackPress;
 
   @override
   void initState() {
@@ -124,7 +126,26 @@ class _MainScaffoldState extends State<MainScaffold> {
 
     final bottomInsets = MediaQuery.of(context).padding.bottom;
 
-    return AnnotatedRegion<SystemUiOverlayStyle>(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) return;
+        // 不在首页 tab → 切回首页
+        if (_currentIndex != 0) {
+          goToTab(0);
+          return;
+        }
+        // 在首页 → 双击返回退出
+        final now = DateTime.now();
+        if (_lastBackPress == null ||
+            now.difference(_lastBackPress!) > const Duration(seconds: 2)) {
+          _lastBackPress = now;
+          XqToast.info(context, '再按一次退出');
+        } else {
+          SystemNavigator.pop();
+        }
+      },
+      child: AnnotatedRegion<SystemUiOverlayStyle>(
       value: overlayStyle,
       child: Scaffold(
         backgroundColor: theme.backgroundColor,
@@ -173,6 +194,7 @@ class _MainScaffoldState extends State<MainScaffold> {
             ),
           ],
         ),
+      ),
       ),
     );
   }

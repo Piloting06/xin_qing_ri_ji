@@ -675,6 +675,12 @@ class _ProfilePageState extends State<ProfilePage> {
               textAlign: TextAlign.center,
               style: TextStyle(color: theme.textTertiary, fontSize: 11),
             ),
+            const SizedBox(height: 4),
+            Text(
+              '赣ICP备2026009414号-3A',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: theme.textTertiary.withAlpha(150), fontSize: 10),
+            ),
           ],
         ),
       ),

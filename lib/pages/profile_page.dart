@@ -287,47 +287,152 @@ class _ProfilePageState extends State<ProfilePage> {
     final theme = context.read<ThemeState>();
     final result = await showDialog<String>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        backgroundColor: theme.cardColor,
-        title: const Text(
-          '退出登录',
-          style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
-        ),
-        content: const Text('确定要退出当前账号吗？'),
-        actionsPadding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text('取消', style: TextStyle(color: theme.textSecondary)),
+      builder: (ctx) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.symmetric(horizontal: 32),
+        child: Container(
+          decoration: BoxDecoration(
+            color: theme.cardColor,
+            borderRadius: BorderRadius.circular(XqDecorations.radiusCard),
+            border: Border.all(color: theme.borderColor.withAlpha(80)),
+            boxShadow: XqDecorations.shadowSubtle(dark: theme.isDark),
           ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, 'switch'),
-            style: TextButton.styleFrom(foregroundColor: theme.accentColor),
-            child: const Text('切换账号'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, 'logout'),
-            style: TextButton.styleFrom(foregroundColor: theme.errorColor),
-            child: const Text('退出'),
-          ),
-          // 注销入口藏在弹窗底部
-          Padding(
-            padding: const EdgeInsets.only(top: 4, bottom: 4),
-            child: GestureDetector(
-              onTap: () => Navigator.pop(ctx, 'delete'),
-              child: Text(
-                '彻底注销账号',
-                style: TextStyle(
-                  color: theme.textTertiary,
-                  fontSize: 12,
-                  decoration: TextDecoration.underline,
-                  decorationColor: theme.textTertiary.withAlpha(120),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(24, 28, 24, 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Icon
+                Container(
+                  width: 52,
+                  height: 52,
+                  decoration: BoxDecoration(
+                    color: theme.accentColor.withAlpha(22),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.logout_rounded,
+                    color: theme.accentColor,
+                    size: 24,
+                  ),
                 ),
-              ),
+                const SizedBox(height: 16),
+                Text(
+                  '退出登录',
+                  style: TextStyle(
+                    color: theme.textPrimary,
+                    fontSize: 17,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  '退出后会清除本地缓存的数据',
+                  style: TextStyle(
+                    color: theme.textSecondary,
+                    fontSize: 13,
+                    height: 1.4,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 24),
+                // 切换账号
+                SizedBox(
+                  width: double.infinity,
+                  height: 46,
+                  child: OutlinedButton(
+                    onPressed: () => Navigator.pop(ctx, 'switch'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: theme.accentColor,
+                      side: BorderSide(color: theme.accentColor.withAlpha(120)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.swap_horiz_rounded, size: 18, color: theme.accentColor),
+                        const SizedBox(width: 6),
+                        Text(
+                          '切换账号',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                // 退出
+                SizedBox(
+                  width: double.infinity,
+                  height: 46,
+                  child: FilledButton(
+                    onPressed: () => Navigator.pop(ctx, 'logout'),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: theme.errorColor,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.power_settings_new_rounded, size: 18),
+                        const SizedBox(width: 6),
+                        Text(
+                          '退出当前账号',
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 14),
+                // 取消
+                GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () => Navigator.pop(ctx),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 6),
+                    child: Text(
+                      '取消',
+                      style: TextStyle(
+                        color: theme.textTertiary,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 6),
+                // 彻底注销（低调）
+                GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () => Navigator.pop(ctx, 'delete'),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    child: Text(
+                      '彻底注销账号',
+                      style: TextStyle(
+                        color: theme.textTertiary.withAlpha(140),
+                        fontSize: 11,
+                        decoration: TextDecoration.underline,
+                        decorationColor: theme.textTertiary.withAlpha(100),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
-        ],
+        ),
       ),
     );
     if (result == 'logout' || result == 'switch') {

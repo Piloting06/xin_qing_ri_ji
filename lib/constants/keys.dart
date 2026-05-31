@@ -13,4 +13,5 @@ class StorageKeys {
   static const String capsuleNotify = 'capsuleNotify';
   static const String pendingCapsuleLaunch = 'pendingCapsuleLaunch';
   static const String mapStatsCache = 'map_stats_cache';
+  static const String moodPendingQueue = 'mood_pending_queue';
 }

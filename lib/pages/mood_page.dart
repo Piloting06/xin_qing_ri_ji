@@ -14,6 +14,9 @@ import '../stores/app_state.dart';
 import '../stores/theme_state.dart';
 import '../widgets/mood_card_maker.dart';
 import '../widgets/xq_toast.dart';
+import '../widgets/xq_save_glow.dart';
+import '../utils/mood_insight.dart';
+import '../services/mood_queue.dart';
 import 'treehole_page.dart';
 
 class MoodPage extends StatefulWidget {
@@ -28,6 +31,7 @@ class _MoodPageState extends State<MoodPage> {
   final _scrollCtrl = ScrollController();
   final _editorKey = GlobalKey();
   final _emotionsKey = GlobalKey();
+  final _glowKey = GlobalKey<XqSaveGlowState>();
   final Map<int, String> _emotionNotes = {}; // per-emotion independent text
   List<String> _selectedTags = [];
   bool _saving = false;
@@ -45,6 +49,7 @@ class _MoodPageState extends State<MoodPage> {
     _notesCtrl.addListener(_markDirty);
     _loadDate(context.read<AppState>().selectedDate);
     _loadAllMoods();
+    _flushQueue();
   }
 
   Future<void> _loadAllMoods() async {
@@ -191,8 +196,8 @@ class _MoodPageState extends State<MoodPage> {
   Future<void> _save() async {
     setState(() => _saving = true);
     HapticFeedback.mediumImpact();
+    final date = context.read<AppState>().selectedDate;
     try {
-      final date = context.read<AppState>().selectedDate;
       await Api.saveMood(date, _moodScore, _notesCtrl.text, _selectedTags, []);
 
       await _loadAllMoods();
@@ -205,6 +210,7 @@ class _MoodPageState extends State<MoodPage> {
           _dirty = false;
           _dayMoods = dayMoods;
         });
+        _triggerGlow();
         // First save toast
         final prefs = await SharedPreferences.getInstance();
         final hasSaved = prefs.getBool('mood_has_saved') ?? false;
@@ -216,15 +222,58 @@ class _MoodPageState extends State<MoodPage> {
         }
       }
     } on ApiException catch (e) {
+      // Server error (not network) - don't queue, show error
       if (mounted) {
         setState(() => _saving = false);
         XqToast.error(context, '保存失败：${e.message}');
       }
     } catch (_) {
+      // Network failure - save to local queue
+      await MoodQueue.enqueue({
+        'date': date,
+        'emotion_type': _moodScore,
+        'emotion_tags': _selectedTags.join(','),
+        'notes': _notesCtrl.text,
+      });
       if (mounted) {
-        setState(() => _saving = false);
-        XqToast.error(context, '保存失败，请检查网络后重试');
+        setState(() {
+          _saving = false;
+          _saved = true;
+          _dirty = false;
+        });
+        _triggerGlow();
+        XqToast.info(context, '已暂存，联网后自动同步');
       }
+    }
+  }
+
+  Future<void> _flushQueue() async {
+    final sent = await MoodQueue.flush();
+    if (sent > 0 && mounted) {
+      XqToast.success(context, '已同步 $sent 条离线记录');
+      _loadAllMoods();
+    }
+  }
+
+  Future<void> _triggerGlow() async {
+    final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
+    final prefs = await SharedPreferences.getInstance();
+    final count = prefs.getInt('mood_glow_count_$today') ?? 0;
+    if (count == 0) {
+      _glowKey.currentState?.pulse(
+        const Color(0xFFD4A76A), 60, const Duration(milliseconds: 2000),
+      );
+    } else if (count == 1) {
+      _glowKey.currentState?.pulse(
+        const Color(0xFFE8A0A0), 45, const Duration(milliseconds: 1750),
+      );
+    } else if (count == 2) {
+      _glowKey.currentState?.pulse(
+        const Color(0xFF8EBFAA), 35, const Duration(milliseconds: 1500),
+      );
+    }
+    if (count < 3) {
+      await prefs.setInt('mood_glow_count_$today', count + 1);
     }
   }
 
@@ -377,6 +426,8 @@ class _MoodPageState extends State<MoodPage> {
                 const SizedBox(height: 16),
                 // Recent records - mini cards
                 _buildRecentDaysHorizontal(t),
+                // One-line mood insight
+                ..._buildInsightRow(t),
                 const SizedBox(height: 16),
                 // 4-column emotion pills
                 GridView.count(
@@ -568,10 +619,39 @@ class _MoodPageState extends State<MoodPage> {
               ],
             ),
             ),
+            // Save glow overlay
+            XqSaveGlow(key: _glowKey),
           ],
         ),
       ),
     );
+  }
+
+  List<Widget> _buildInsightRow(ThemeState t) {
+    final insight = computeMoodInsight(_allMoods, DateTime.now());
+    if (insight == null) return [];
+    return [
+      const SizedBox(height: 8),
+      Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 2),
+        child: Row(
+          children: [
+            Icon(insight.icon, size: 14, color: t.gold),
+            const SizedBox(width: 6),
+            Expanded(
+              child: Text(
+                insight.text,
+                style: TextStyle(
+                  color: t.textSecondary,
+                  fontSize: 12,
+                  height: 1.4,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    ];
   }
 
   Widget _buildInlineSaveBar(ThemeState t) {

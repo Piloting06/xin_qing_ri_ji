@@ -14,7 +14,6 @@ import '../stores/app_state.dart';
 import '../stores/theme_state.dart';
 import '../widgets/mood_card_maker.dart';
 import '../widgets/xq_toast.dart';
-import '../widgets/xq_save_glow.dart';
 import '../utils/mood_insight.dart';
 import '../services/mood_queue.dart';
 import 'treehole_page.dart';
@@ -31,7 +30,6 @@ class _MoodPageState extends State<MoodPage> {
   final _scrollCtrl = ScrollController();
   final _editorKey = GlobalKey();
   final _emotionsKey = GlobalKey();
-  final _glowKey = GlobalKey<XqSaveGlowState>();
   final Map<int, String> _emotionNotes = {}; // per-emotion independent text
   List<String> _selectedTags = [];
   bool _saving = false;
@@ -210,7 +208,6 @@ class _MoodPageState extends State<MoodPage> {
           _dirty = false;
           _dayMoods = dayMoods;
         });
-        _triggerGlow();
         // First save toast
         final prefs = await SharedPreferences.getInstance();
         final hasSaved = prefs.getBool('mood_has_saved') ?? false;
@@ -241,7 +238,6 @@ class _MoodPageState extends State<MoodPage> {
           _saved = true;
           _dirty = false;
         });
-        _triggerGlow();
         XqToast.info(context, '已暂存，联网后自动同步');
       }
     }
@@ -252,28 +248,6 @@ class _MoodPageState extends State<MoodPage> {
     if (sent > 0 && mounted) {
       XqToast.success(context, '已同步 $sent 条离线记录');
       _loadAllMoods();
-    }
-  }
-
-  Future<void> _triggerGlow() async {
-    final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
-    final prefs = await SharedPreferences.getInstance();
-    final count = prefs.getInt('mood_glow_count_$today') ?? 0;
-    if (count == 0) {
-      _glowKey.currentState?.pulse(
-        const Color(0xFFD4A76A), 60, const Duration(milliseconds: 2000),
-      );
-    } else if (count == 1) {
-      _glowKey.currentState?.pulse(
-        const Color(0xFFE8A0A0), 45, const Duration(milliseconds: 1750),
-      );
-    } else if (count == 2) {
-      _glowKey.currentState?.pulse(
-        const Color(0xFF8EBFAA), 35, const Duration(milliseconds: 1500),
-      );
-    }
-    if (count < 3) {
-      await prefs.setInt('mood_glow_count_$today', count + 1);
     }
   }
 
@@ -619,8 +593,6 @@ class _MoodPageState extends State<MoodPage> {
               ],
             ),
             ),
-            // Save glow overlay
-            XqSaveGlow(key: _glowKey),
           ],
         ),
       ),

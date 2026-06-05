@@ -11,7 +11,6 @@ import '../pages/mood_page.dart';
 import '../pages/city_map_page.dart';
 import '../pages/profile_page.dart';
 import '../pages/login_page.dart';
-import '../widgets/xq_toast.dart';
 import 'onboarding_flow.dart';
 
 class MainScaffold extends StatefulWidget {

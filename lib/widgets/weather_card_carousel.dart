@@ -181,7 +181,6 @@ class _WeatherCard extends StatelessWidget {
                         fontSize: 30,
                         fontWeight: FontWeight.w300,
                         color: theme.textPrimary,
-                        fontFamily: 'LXGW WenKai',
                         letterSpacing: 1,
                       ),
                     ),

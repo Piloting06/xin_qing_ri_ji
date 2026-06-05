@@ -4,51 +4,106 @@ import 'xq_colors.dart';
 import 'xq_typography.dart';
 
 /// 拾晴日记 — ThemeData 构建器
-/// 按主题模式动态生成 ThemeData，确保输入框/按钮/AppBar 等 M3 组件跟随主题变色
+/// 统一 _build() 消除亮色/暗色重复，所有主题走同一管线
 class XqTheme {
   XqTheme._();
 
   /// 根据模式返回对应 ThemeData
   static ThemeData forMode(String mode) {
-    if (mode == 'dark') return _dark();
-    final bg = _bg(mode);
-    final card = _card(mode);
-    final accent = _accent(mode);
-    final border = _border(mode);
-    final focus = _focus(mode);
-    final text1 = _textPrimary(mode);
-    final text2 = _textSecondary(mode);
-    final text3 = _textTertiary(mode);
-    final onAccent = _textOnAccent(mode);
-    final error = _error(mode);
+    if (mode == 'dark') {
+      return _build(
+        brightness: Brightness.dark,
+        overlay: SystemUiOverlayStyle.light,
+        bg: XqColors.darkBackground,
+        card: XqColors.darkCard,
+        accent: XqColors.darkAccent,
+        accentLight: XqColors.darkAccentLight,
+        border: XqColors.darkBorder,
+        focus: XqColors.darkBorderFocus,
+        text1: XqColors.darkTextPrimary,
+        text2: XqColors.darkTextSecondary,
+        text3: XqColors.darkTextTertiary,
+        onAccent: XqColors.darkTextOnAccent,
+        error: XqColors.darkError,
+      );
+    }
+    return _build(
+      brightness: Brightness.light,
+      overlay: SystemUiOverlayStyle.dark,
+      bg: _bg(mode),
+      card: _card(mode),
+      accent: _accent(mode),
+      accentLight: _accentLight(mode),
+      border: _border(mode),
+      focus: _focus(mode),
+      text1: _textPrimary(mode),
+      text2: _textSecondary(mode),
+      text3: _textTertiary(mode),
+      onAccent: _textOnAccent(),
+      error: _error(),
+    );
+  }
+
+  // ── Legacy compat ──
+  static ThemeData light() => forMode('warm');
+  static ThemeData dark() => forMode('dark');
+
+  // ── Single build pipeline ──
+  static ThemeData _build({
+    required Brightness brightness,
+    required SystemUiOverlayStyle overlay,
+    required Color bg,
+    required Color card,
+    required Color accent,
+    required Color accentLight,
+    required Color border,
+    required Color focus,
+    required Color text1,
+    required Color text2,
+    required Color text3,
+    required Color onAccent,
+    required Color error,
+  }) {
+    final isDark = brightness == Brightness.dark;
+    final scheme = isDark
+        ? ColorScheme.dark(
+            primary: accent,
+            secondary: accentLight,
+            surface: card,
+            error: error,
+            onPrimary: onAccent,
+            onSecondary: text1,
+            onSurface: text1,
+          )
+        : ColorScheme.light(
+            primary: accent,
+            secondary: accentLight,
+            surface: card,
+            error: error,
+            onPrimary: onAccent,
+            onSecondary: text1,
+            onSurface: text1,
+          );
 
     return ThemeData(
       useMaterial3: true,
-      brightness: Brightness.light,
+      brightness: brightness,
       scaffoldBackgroundColor: bg,
-      colorScheme: ColorScheme.light(
-        primary: accent,
-        secondary: _accentLight(mode),
-        surface: card,
-        error: error,
-        onPrimary: onAccent,
-        onSecondary: text1,
-        onSurface: text1,
-      ),
-      fontFamily: '',
-      textTheme: const TextTheme(
-        displayLarge: XqTypography.displayLarge,
-        displayMedium: XqTypography.displayMedium,
-        displaySmall: XqTypography.displaySmall,
-        headlineLarge: XqTypography.headlineLarge,
-        headlineMedium: XqTypography.headlineMedium,
-        headlineSmall: XqTypography.headlineSmall,
-        bodyLarge: XqTypography.bodyLarge,
-        bodyMedium: XqTypography.bodyMedium,
-        bodySmall: XqTypography.bodySmall,
-        labelLarge: XqTypography.labelLarge,
-        labelMedium: XqTypography.labelMedium,
-        labelSmall: XqTypography.labelSmall,
+      colorScheme: scheme,
+      fontFamily: 'LXGW WenKai',
+      textTheme: TextTheme(
+        displayLarge: XqTypography.displayLarge.copyWith(color: text1),
+        displayMedium: XqTypography.displayMedium.copyWith(color: text1),
+        displaySmall: XqTypography.displaySmall.copyWith(color: text1),
+        headlineLarge: XqTypography.headlineLarge.copyWith(color: text1),
+        headlineMedium: XqTypography.headlineMedium.copyWith(color: text1),
+        headlineSmall: XqTypography.headlineSmall.copyWith(color: text1),
+        bodyLarge: XqTypography.bodyLarge.copyWith(color: text1),
+        bodyMedium: XqTypography.bodyMedium.copyWith(color: text2),
+        bodySmall: XqTypography.bodySmall.copyWith(color: text3),
+        labelLarge: XqTypography.labelLarge.copyWith(color: text1),
+        labelMedium: XqTypography.labelMedium.copyWith(color: text2),
+        labelSmall: XqTypography.labelSmall.copyWith(color: text3),
       ),
       inputDecorationTheme: InputDecorationTheme(
         border: OutlineInputBorder(
@@ -63,7 +118,8 @@ class XqTheme {
           borderRadius: BorderRadius.circular(14),
           borderSide: BorderSide(color: focus, width: 1.5),
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         filled: true,
         fillColor: card,
         hintStyle: XqTypography.bodyMedium.copyWith(color: text3),
@@ -83,8 +139,9 @@ class XqTheme {
         backgroundColor: Colors.transparent,
         elevation: 0,
         scrolledUnderElevation: 0,
-        systemOverlayStyle: SystemUiOverlayStyle.dark,
-        titleTextStyle: XqTypography.headlineMedium.copyWith(color: text1),
+        systemOverlayStyle: overlay,
+        titleTextStyle:
+            XqTypography.headlineMedium.copyWith(color: text1),
         iconTheme: IconThemeData(color: text1),
       ),
       dividerTheme: DividerThemeData(
@@ -101,104 +158,14 @@ class XqTheme {
       dialogTheme: DialogThemeData(
         backgroundColor: card,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        titleTextStyle: XqTypography.headlineMedium.copyWith(color: text1),
+        titleTextStyle:
+            XqTypography.headlineMedium.copyWith(color: text1),
         contentTextStyle: XqTypography.bodyMedium.copyWith(color: text2),
       ),
     );
   }
 
-  // ── Legacy compat (used by existing code that calls XqTheme.light() / XqTheme.dark()) ──
-
-  static ThemeData light() => forMode('warm');
-  static ThemeData dark() => _dark();
-
-  static ThemeData _dark() {
-    return ThemeData(
-      useMaterial3: true,
-      brightness: Brightness.dark,
-      scaffoldBackgroundColor: XqColors.darkBackground,
-      colorScheme: const ColorScheme.dark(
-        primary: XqColors.darkAccent,
-        secondary: XqColors.darkAccentLight,
-        surface: XqColors.darkCard,
-        error: XqColors.darkError,
-        onPrimary: XqColors.darkTextOnAccent,
-        onSecondary: XqColors.darkTextPrimary,
-        onSurface: XqColors.darkTextPrimary,
-      ),
-      fontFamily: '',
-      textTheme: TextTheme(
-        displayLarge: XqTypography.displayLarge.copyWith(color: XqColors.darkTextPrimary),
-        displayMedium: XqTypography.displayMedium.copyWith(color: XqColors.darkTextPrimary),
-        displaySmall: XqTypography.displaySmall.copyWith(color: XqColors.darkTextPrimary),
-        headlineLarge: XqTypography.headlineLarge.copyWith(color: XqColors.darkTextPrimary),
-        headlineMedium: XqTypography.headlineMedium.copyWith(color: XqColors.darkTextPrimary),
-        headlineSmall: XqTypography.headlineSmall.copyWith(color: XqColors.darkTextPrimary),
-        bodyLarge: XqTypography.bodyLarge.copyWith(color: XqColors.darkTextPrimary),
-        bodyMedium: XqTypography.bodyMedium.copyWith(color: XqColors.darkTextPrimary),
-        bodySmall: XqTypography.bodySmall.copyWith(color: XqColors.darkTextSecondary),
-        labelLarge: XqTypography.labelLarge.copyWith(color: XqColors.darkTextPrimary),
-        labelMedium: XqTypography.labelMedium.copyWith(color: XqColors.darkTextSecondary),
-        labelSmall: XqTypography.labelSmall.copyWith(color: XqColors.darkTextTertiary),
-      ),
-      inputDecorationTheme: InputDecorationTheme(
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: XqColors.darkBorder),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: XqColors.darkBorder, width: 0.5),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: XqColors.darkBorderFocus, width: 1.5),
-        ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        filled: true,
-        fillColor: XqColors.darkCard,
-        hintStyle: XqTypography.bodyMedium.copyWith(color: XqColors.darkTextTertiary),
-      ),
-      elevatedButtonTheme: ElevatedButtonThemeData(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: XqColors.darkAccent,
-          foregroundColor: XqColors.darkTextOnAccent,
-          minimumSize: const Size(double.infinity, 48),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
-          ),
-          textStyle: XqTypography.labelLarge,
-        ),
-      ),
-      appBarTheme: AppBarTheme(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        systemOverlayStyle: SystemUiOverlayStyle.light,
-        titleTextStyle: XqTypography.headlineMedium.copyWith(color: XqColors.darkTextPrimary),
-        iconTheme: const IconThemeData(color: XqColors.darkTextPrimary),
-      ),
-      dividerTheme: const DividerThemeData(
-        color: XqColors.darkBorder,
-        thickness: 0.5,
-        space: 0,
-      ),
-      snackBarTheme: SnackBarThemeData(
-        backgroundColor: XqColors.darkCard,
-        contentTextStyle: XqTypography.bodyMedium.copyWith(color: XqColors.darkTextPrimary),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-        behavior: SnackBarBehavior.floating,
-      ),
-      dialogTheme: DialogThemeData(
-        backgroundColor: XqColors.darkCard,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        titleTextStyle: XqTypography.headlineMedium.copyWith(color: XqColors.darkTextPrimary),
-        contentTextStyle: XqTypography.bodyMedium.copyWith(color: XqColors.darkTextSecondary),
-      ),
-    );
-  }
-
-  // ── Color resolvers ──
+  // ── Color resolvers (light themes only) ──
 
   static Color _bg(String m) => switch (m) {
     'mint' => XqColors.mintBackground,
@@ -245,6 +212,6 @@ class XqTheme {
     'blush' => XqColors.blushTextTertiary,
     _ => XqColors.lightTextTertiary,
   };
-  static Color _textOnAccent(String m) => const Color(0xFFFFFFFF);
-  static Color _error(String _) => XqColors.lightError;
+  static Color _textOnAccent() => const Color(0xFFFFFFFF);
+  static Color _error() => XqColors.lightError;
 }

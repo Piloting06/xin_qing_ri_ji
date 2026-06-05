@@ -11,6 +11,9 @@ import 'package:share_plus/share_plus.dart';
 import 'package:provider/provider.dart';
 import '../stores/theme_state.dart';
 import '../theme/xq_decorations.dart';
+import '../theme/xq_typography.dart';
+import '../theme/xq_paper_textures.dart';
+import '../constants/mood.dart';
 
 class MoodCardMaker extends StatefulWidget {
   final String date;
@@ -91,8 +94,7 @@ class _MoodCardMakerState extends State<MoodCardMaker> {
   bool _showTagPicker = false;
 
   static const _cardThemes = ['warm', 'dark', 'mint', 'blush'];
-  static const _allMoodEmojis = {1: '🎉', 2: '😌', 3: '😔', 4: '😤', 5: '😰', 6: '😴', 7: '🌟', 8: '💭'};
-  static const _allMoodLabels = {1: '开心', 2: '平静', 3: '低落', 4: '生气', 5: '焦虑', 6: '疲惫', 7: '期待', 8: '想念'};
+  // 统一引用 mood.dart，不再本地维护一套 emoji/label
   static const _allTags = [
     '达成目标', '学习进步', '运动健身', '美食享受', '旅行出游',
     '朋友聚会', '家人陪伴', '独处时光', '工作顺利', '创作表达',
@@ -281,21 +283,38 @@ class _MoodCardMakerState extends State<MoodCardMaker> {
                     const SizedBox(height: 6),
 
                     Expanded(
-                      child: Center(
-                        child: Text(
-                          widget.text.isNotEmpty ? widget.text : '写点什么吧',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: widget.text.isNotEmpty
-                                ? _textColor
-                                : _textColor.withAlpha(60),
-                            fontSize: widget.text.isNotEmpty ? 14.8 : 13.4,
-                            height: 1.46,
-                            fontWeight: FontWeight.w500,
+                      child: Stack(
+                        children: [
+                          Positioned.fill(
+                            child: CustomPaint(
+                              painter: LinedPaperPainter(
+                                lineColor: _accentColor.withAlpha(
+                                  _cardTheme == 'dark' ? 18 : 30,
+                                ),
+                                lineSpacing: 28,
+                                marginLeft: 0,
+                                showMarginLine: false,
+                              ),
+                            ),
                           ),
-                          maxLines: 4,
-                          overflow: TextOverflow.ellipsis,
-                        ),
+                          Padding(
+                            padding: const EdgeInsets.only(top: 2, left: 4),
+                            child: Text(
+                              widget.text.isNotEmpty
+                                  ? widget.text
+                                  : '写点什么吧',
+                              textAlign: TextAlign.left,
+                              style: XqTypography.handwrittenBody.copyWith(
+                                color: widget.text.isNotEmpty
+                                    ? _textColor
+                                    : _textColor.withAlpha(60),
+                                fontSize: widget.text.isNotEmpty ? 15 : 14,
+                              ),
+                              maxLines: 4,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
 
@@ -755,7 +774,7 @@ class _MoodCardMakerState extends State<MoodCardMaker> {
                         }),
                         child: _buildEditRow('情绪', [
                           Text(
-                            '${_allMoodEmojis[_activeMoodScore] ?? ''} ${_allMoodLabels[_activeMoodScore] ?? ''}',
+                            '${moodEmojis[_activeMoodScore] ?? ''} ${moodLabels[_activeMoodScore] ?? ''}',
                             style: TextStyle(color: _accentColor, fontSize: 13, fontWeight: FontWeight.w500),
                           ),
                           Icon(_showEmojiPicker ? Icons.expand_less : Icons.expand_more, size: 18, color: sheetTheme.textTertiary),
@@ -766,7 +785,7 @@ class _MoodCardMakerState extends State<MoodCardMaker> {
                         Wrap(
                           spacing: 8,
                           runSpacing: 6,
-                          children: _allMoodEmojis.entries.map((e) {
+                          children: moodEmojis.entries.map((e) {
                             final isActive = e.key == _activeMoodScore;
                             return GestureDetector(
                               onTap: () => setState(() {
@@ -783,7 +802,7 @@ class _MoodCardMakerState extends State<MoodCardMaker> {
                                     width: isActive ? 1.2 : 0.8,
                                   ),
                                 ),
-                                child: Text('${e.value} ${_allMoodLabels[e.key]}', style: const TextStyle(fontSize: 12)),
+                                child: Text('${e.value} ${moodLabels[e.key]}', style: const TextStyle(fontSize: 12)),
                               ),
                             );
                           }).toList(),

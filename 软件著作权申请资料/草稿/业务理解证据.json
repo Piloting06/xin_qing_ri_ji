@@ -1,0 +1,329 @@
+{
+  "software_name": "拾晴日记",
+  "project_root": "D:\\xin_qing_ri_ji",
+  "instruction": "本文件只收集证据，不决定行业、功能或手册结构。请由模型阅读这些证据以及必要的项目源码后，另行编写业务理解模型稿。",
+  "documents": [
+    {
+      "path": "CLAUDE.md",
+      "size": 28121,
+      "headings": [
+        "心晴日记 – 开发速查表",
+        "服务器信息",
+        "团队服务器规则（铁律，不可违反）",
+        "我们的端口和 API 全貌",
+        "GitHub",
+        "上传文件后重启",
+        "查看日志",
+        "数据库备份 (sql.js → .db文件直接cp即可)",
+        "创建管理员账号 (首次部署)",
+        "树洞敏感词模块更新后需重启",
+        "后端技术栈与约定",
+        "核心框架",
+        "数据库wrapper (server/db.js)",
+        "鉴权中间件 (server/middleware/auth.js)",
+        "错误响应格式",
+        "CST时间处理约定",
+        "SQLite 时间函数",
+        "数据库表结构",
+        "users",
+        "moods (心情记录)",
+        "diaries (日记)",
+        "checkins (签到)",
+        "friendships (好友关系)",
+        "friend_notes (好友小纸条)"
+      ],
+      "opening": "心晴日记 – 开发速查表 每次新任务开始时必读。避免重复造轮子、端口冲突、表结构记错、API约定遗忘。 服务器信息 项目 值 ------ ----- 服务器IP 114.55.138.55 Nginx对外端口 8888 Express内部端口 3001 PM2进程名 xinqingriji 代码路径 /www/wwwroot/xinqingriji/server/ 数据库文件 server/xinqingriji.db (SQLite, sql.js) 部署方式 宝塔面板 → Nginx 反向代理 localhost:3001 宝塔面板 https://114.55.138.55:14454/f5df3d43 面板账号 ehq1qt6c 面板密码 8729fbf9 管理后台 http://114.55.138.55:8888/api/admin/panel 管理员账号 hyf / 20061208hu 管理后台API http://114.55.138.55:8888/api/admin/ 城迹评论管理 http://114.55.138.55:8888/api/admin/panel → 城迹管理 Tab ⚠️ 面板信息属敏感信息，不要泄露给第三方。 团队服务器规则（铁律，不可违反） 规则 说明 ------ ------ 不新增端口 Express 始终 3001 ，Nginx 始终 8888 。任何新功能只能挂载到 /api/ 下，不开新端口。 不修改已有路由 队友的 /api/auth 、 /api/weather 、 /api/mood 、 /api/diary 、 /api/checkin 、 /api/friends 、 /api/treehole 、 /api/capsule 不可改动。 不碰服务器终端 运维操作只在明确授权时通过宝塔面板执行，不动队友代码和配置。 不碰 Nginx 我们的 Nginx 规则只负责 8888→3001 ，不新增 location 块。 3 人共享服务器 114.55.138.55 ，团队 3 人，各管各的 PM2 进程。"
+    },
+    {
+      "path": "README.md",
+      "size": 1631,
+      "headings": [
+        "拾晴日记",
+        "功能",
+        "技术栈",
+        "项目结构",
+        "开始",
+        "安装依赖",
+        "运行调试",
+        "构建 APK",
+        "环境变量",
+        "许可"
+      ],
+      "opening": "拾晴日记 一款将天气与心情融合的日记应用。记录每一天的情感，生成精美卡片，与朋友分享你的晴雨。 功能 - 天气日记 — 自动获取当前天气，将天气与心情绑定记录 - 心情卡片 — 8 种情绪，自动生成可分享的心情卡片，支持温润/方寸两种风格 - 时光胶囊 — 给未来的自己写一封信，到期自动提醒开启 - 城迹地图 — 记录你到过的城市，生成专属足迹 - 好友圈 — 添加好友，查看彼此的心情动态 - 心情曲线 — 可视化你的情绪变化趋势 - 隐私优先 — 数据存储在自有服务器，不接入第三方分析 技术栈 层 技术 --- ------ 前端 Flutter 3.x / Dart 状态管理 Provider 后端 Node.js / Express 数据库 SQLite 推送 flutter local notifications 定位 geolocator + 高德 Web API 邮件 Resend API 项目结构 开始 环境变量 在项目根目录创建 .env ： 许可 本项目为个人作品，暂不开源许可。"
+    },
+    {
+      "path": "docs/API接口文档.md",
+      "size": 2254,
+      "headings": [
+        "心晴日记 — API接口文档",
+        "认证",
+        "天气",
+        "心情",
+        "日记",
+        "签到",
+        "友人",
+        "树洞",
+        "胶囊",
+        "其他"
+      ],
+      "opening": "心晴日记 — API接口文档 版本：v1.0 更新：2026-05-12 基础URL: http://114.55.138.55:8888/api 除 register/login/health 外均需 Header: Authorization: Bearer <token 认证 路由 方法 说明 限流 ------ ------ ------ ------ /auth/register POST 注册 3次/分 /auth/login POST 登录 10次/分 /auth/change-password POST 改密码 - /auth/change-username POST 改用户名 - /auth/change-phone POST 改手机号 - /auth/delete-account POST 注销 - 天气 路由 方法 说明 ------ ------ ------ /weather?lat=X&lon=Y GET 3天天气(10min缓存) /weather/search?q=城市 GET 城市搜索(高德API) /location GET IP定位 心情 路由 方法 说明 ------ ------ ------ /mood POST 记录/更新心情 /mood?date=YYYY-MM-DD GET 获取某天心情 /mood/all GET 所有心情 /mood/ai-respond POST AI回应(DeepSeek) 日记 路由 方法 说明 ------ ------ ------ /diary POST 创建/更新日记 /diary?date=YYYY-MM-DD GET 获取某天日记 /diary/all GET 所有日记 /diary/search?q=关键词 GET 搜索日记 签到 路由 方法 说明 ------ ------ ------ /checkin POST 签到 /checkin/status GET 签到状态 /checkin/card/today GET 今日天气心情卡 友人 路由 方法 说明 ------ ----"
+    },
+    {
+      "path": "docs/UI设计规范.md",
+      "size": 2088,
+      "headings": [
+        "心晴日记 — UI设计规范",
+        "一、设计原则",
+        "二、3套主题",
+        "基础款（暖白）",
+        "护眼款（柔绿）",
+        "深夜款（纯黑 OLED友好）",
+        "三、霓虹登录页",
+        "四、动画标准",
+        "五、触感反馈",
+        "六、视觉规范"
+      ],
+      "opening": "心晴日记 — UI设计规范 版本：v1.0 更新：2026-05-12 一、设计原则 - iOS/ColorOS 极简风格，干净克制有温度 - 不使用emoji作为功能图标 → Material Icons - 暖金色为主调，不搞赛博朋克紫蓝粉 - \"夜里的暖灯\" ——不是\"赛博网吧\" 二、3套主题 基础款（暖白） 属性 值 ------ ----- 底色 FAF8F4 卡片 白色+浅灰 强调 暖金 C4A46C 主文字 深棕 2A2218 次文字 8C7E6F 护眼款（柔绿） 属性 值 ------ ----- 底色 F5F9F3 卡片 淡绿白 E8F0E5 强调 松绿 6B8F71 主文字 深绿 1C2E1C 次文字 6B8F71 深夜款（纯黑 OLED友好） 属性 值 ------ ----- 底色 0A0A0A 卡片 1A1A1A 强调 暗金 A08050 主文字 浅灰 D0CDC6 次文字 A09888 三、霓虹登录页 - 底色： 0A0A0A - 霓虹线条：暖金 C4A46C - 入场动画：Logo逐笔画圆+射线(600ms ease-out) - 输入框聚焦：边框亮度60%→100%(300ms) + 12px暖金辉光 - 按钮：表单完整时心跳脉冲(1200ms循环) - 错误：淡红小字淡入，不弹窗打断 四、动画标准 类型 缓动 时长 场景 ------ ------ ------ ------ 入场 ease-out (0.33,0,0.1,1) 300ms 弹窗、页面、卡片 退出 ease-in (0.33,0,0.67,1) 250ms 弹窗关闭 微交互 ease-out 150ms 按钮、涟漪 溶解过渡 ease-out 600ms 主题切换 轮播吸附 ease-out 400ms 3D天气轮播 五、触感反馈 - 按钮： lightImpact() - 保存成功： mediumImpact() - 签到： heavyImpact() - 错误： lightImpact() × 2 六、视觉规范 - 卡片圆角：16px - 按钮圆角：12px - 标"
+    },
+    {
+      "path": "docs/产品需求文档.md",
+      "size": 3291,
+      "headings": [
+        "心晴日记 — 产品需求文档 (PRD)",
+        "一、产品定位",
+        "二、信息架构（5 Tab）",
+        "三、核心功能清单",
+        "3.1 登录与注册",
+        "3.2 天气与定位",
+        "3.3 心情记录",
+        "3.4 签到与卡片",
+        "3.5 可视化",
+        "3.6 AI小精灵",
+        "3.7 轻社交",
+        "3.8 时光胶囊",
+        "3.9 推送通知",
+        "3.10 设置与合规",
+        "四、数据存储原则"
+      ],
+      "opening": "心晴日记 — 产品需求文档 (PRD) 版本：v1.0 更新：2026-05-12 一、产品定位 Flutter 手机端天气+心情记录 App。iOS/ColorOS 风格，动画流畅与质量并重。手机端专属。 核心原则： \"你的情绪数据只属于你自己\" 二、信息架构（5 Tab） Tab 名称 功能 ----- ------ ------ 1 天气 仪表盘：3D弧形天气轮播、城市搜索、签到、天气心情卡、AI小精灵 2 心情 记录+回顾：8款情绪、碎碎念、照片、AI回应、日记、时间轴 3 树洞 匿名温暖：匿名留言、云拥抱/云咖啡、敏感词过滤 4 友人 轻社交：手机号加好友、查看好友心情（需授权7天过期） 5 我的 个人中心：设置、时光胶囊、壁纸、合规 三、核心功能清单 3.1 登录与注册 - 暖金单色霓虹UI（深黑底 0A0A0A + 暖金 C4A46C） - 手机号作为账号 - 3种安全问题题型（选择/日期/自定义） - 首次使用：起用户名 → 权限公告 → 功能引导气泡 3.2 天气与定位 - 4层定位：本地缓存 → GPS → IP定位 → 默认北京 - 高德地图API城市搜索（覆盖全国地级市+县级市） - Open-Meteo 3天天气数据 - 弧形3D轮播卡片 + Canvas天气动画 + 音效 3.3 心情记录 - 8款基础情绪（单选）：开心/平静/难过/生气/焦虑/疲惫/期待/思念 - 情绪标签（多选，跟基础情绪动态切换） - 碎碎念 + 照片上传（本地存储） - DeepSeek Flash AI回应 - 负面情绪三阶梯干预 - 日记（心情记录扩展） 3.4 签到与卡片 - 每日签到 + 连续签到计数 - 每日天气心情卡（自动生成、可保存/分享） - 连续7天解锁限定壁纸（季节/节日/纪念日关联、有期限） 3.5 可视化 - 心情曲线图（fl chart，周/月视图，叠加天气图标） - 情绪时间轴（与曲线双向联动） - 情绪分布饼图 - 记忆相册（季节合辑+那年今日+心情地图） 3.6 AI小精灵 - 暖金像素小狐狸形象 - 5阶段成长：光点→雏形→幼体→成长"
+    },
+    {
+      "path": "docs/开发执行步骤.md",
+      "size": 3044,
+      "headings": [
+        "心晴日记 — 开发执行步骤",
+        "阶段一：基础骨架",
+        "阶段二：天气+定位",
+        "阶段三：心情记录核心",
+        "阶段四：签到+卡片+壁纸",
+        "阶段五：可视化",
+        "阶段六：AI小精灵",
+        "阶段七：轻社交",
+        "阶段八：时光胶囊+推送",
+        "阶段九：合规+打磨"
+      ],
+      "opening": "心晴日记 — 开发执行步骤 版本：v1.0 更新：2026-05-12 规则： 每次只做一个小模块，做完编译验证，写日志，停 --- 阶段一：基础骨架 - [x] 1.1 Flutter项目创建 + 依赖安装 - [x] 1.2 核心常量（keys, mood） - [x] 1.3 API客户端（19个接口） - [x] 1.4 状态管理（AppState, ThemeState） - [x] 1.5 App入口 + 启动页动画 - [x] 1.6 登录页（暖金霓虹） - [x] 1.7 注册页（霓虹同风格） - [x] 1.8 5Tab主框架（底部导航） - [x] 1.9 天气首页（3天卡片+城市搜索+签到） - [x] 1.10 占位页面（心情/树洞/友人/我的） - [x] 1.11 首次使用流程（用户名弹窗 + 权限公告） - [x] 1.12 功能引导气泡 - [x] 1.13 设置页面（用户名/密码/主题/退出） - [x] 1.14 隐私政策+用户协议页面 + 注销账号 - [x] 1.15 Express后端项目创建 - [x] 1.16 SQLite数据库建表 + 种子数据 阶段二：天气+定位 - [x] 2.1 后端天气API + 城市搜索API - [x] 2.2 3D弧形天气轮播（PageView+Transform） - [x] 2.3 Canvas自绘天气图标（6种，嵌入轮播卡片） - [x] 2.4 Canvas天气动画（6种完整场景+全屏覆盖+粒子系统） - [ ] 2.5 天气音效系统（已取消） 阶段三：心情记录核心 - [x] 3.1 8款情绪选择UI + 标签动态切换 - [x] 3.2 碎碎念 + 照片上传（本地存储） - [x] 3.3 AI回应 - [x] 3.4 负面情绪三阶梯干预（一阶AI+二阶放松引导） - [x] 3.5 日记（扩展记录+搜索，自动保存） 阶段四：签到+卡片+壁纸 - [x] 4.1 签到动画 + 连续计数 + 状态显示 - [x] 4.2 天气心情卡生成 + 每日首次弹出 - [x] 4.3 限定壁"
+    },
+    {
+      "path": "docs/技术架构规范.md",
+      "size": 2112,
+      "headings": [
+        "心晴日记 — 技术架构规范",
+        "一、技术栈",
+        "前端：Flutter (Dart)",
+        "后端：Node.js Express",
+        "二、服务器",
+        "三、数据库表",
+        "四、数据存储分类",
+        "五、内存与包体积目标"
+      ],
+      "opening": "心晴日记 — 技术架构规范 版本：v1.0 更新：2026-05-12 一、技术栈 前端：Flutter (Dart) 层 技术 ---- ------ 状态管理 Provider KV存储 shared preferences 结构化存储 sqflite（照片路径、AI精灵数据） 图表 fl chart 网络 http 图片选择 image picker 本地通知 flutter local notifications Canvas CustomPainter（天气动画、精灵、图标） 触感 HapticFeedback 后端：Node.js Express 层 技术 ---- ------ 框架 Express 数据库 SQLite 认证 JWT + bcryptjs 安全 Helmet + express-rate-limit AI DeepSeek Flash API 城市搜索 高德地图API 天气数据 Open-Meteo 反向代理 Nginx (端口8888→后端) 二、服务器 - 阿里云ECS: 114.55.138.55 - Nginx: 端口8888 → 后端Express - 所有第三方API key存服务器环境变量 三、数据库表 四、数据存储分类 位置 数据 ------ ------ 云端 SQLite 用户账号、心情、日记、签到、友人、树洞、胶囊、天气缓存、推送缓存 本地 sqflite 照片路径、AI精灵成长数据 本地 shared prefs token、主题、通知开关、定位缓存 五、内存与包体积目标 - APK ≤ 30MB（split per ABI） - 运行内存 ≤ 150MB（空闲 ≤ 60MB） - 策略：Canvas自绘替代图片、64kbps AAC音频、懒加载、tree-shaking、不用额外字体"
+    },
+    {
+      "path": "linux/CMakeLists.txt",
+      "size": 4899,
+      "headings": [
+        "Project-level configuration.",
+        "The name of the executable created for the application. Change this to change",
+        "the on-disk name of your application.",
+        "The unique GTK application identifier for this application. See:",
+        "https://wiki.gnome.org/HowDoI/ChooseApplicationID",
+        "Explicitly opt in to modern CMake behaviors to avoid warnings with recent",
+        "versions of CMake.",
+        "Load bundled libraries from the lib/ directory relative to the binary.",
+        "Root filesystem for cross-building.",
+        "Define build configuration options.",
+        "Compilation settings that should be applied to most targets.",
+        "Be cautious about adding new options here, as plugins use this function by",
+        "default. In most cases, you should add new options to specific targets instead",
+        "of modifying this function.",
+        "Flutter library and tool build rules.",
+        "System-level dependencies.",
+        "Application build; see runner/CMakeLists.txt.",
+        "Run the Flutter tool portions of the build. This must not be removed.",
+        "Only the install-generated bundle's copy of the executable will launch",
+        "correctly, since the resources must in the right relative locations. To avoid",
+        "people trying to run the unbundled copy, put it in a subdirectory instead of",
+        "the default top-level location.",
+        "Generated plugin build rules, which manage building the plugins and adding",
+        "them to the application."
+      ],
+      "opening": "Project-level configuration. cmake minimum required(VERSION 3.13) project(runner LANGUAGES CXX) The name of the executable created for the application. Change this to change the on-disk name of your application. set(BINARY NAME \"xin qing ri ji\") The unique GTK application identifier for this application. See: https://wiki.gnome.org/HowDoI/ChooseApplicationID set(APPLICATION ID \"com.xinqingriji.xin qing ri ji\") Explicitly opt in to modern CMake behaviors to avoid warnings with recent versions of CMake. cmake policy(SET CMP0063 NEW) Load bundled libraries from the lib/ directory relative to the binary. set(CMAKE INSTALL RPATH \"$ORIGIN/lib\") Root filesystem for cross-building. if(FLUTTER TARGET PLATFORM SYSROOT) set(CMAKE SYSROOT ${FLUTTER TARGET PLATFORM SYSROOT}) set(CMAKE FIND ROOT PATH ${CMAKE SYSROOT}) set(CMAKE FIND ROOT PATH MODE PROGRAM NEVER) set(CMAKE FIND ROOT PATH MODE PACKAGE O"
+    },
+    {
+      "path": "windows/CMakeLists.txt",
+      "size": 4272,
+      "headings": [
+        "Project-level configuration.",
+        "The name of the executable created for the application. Change this to change",
+        "the on-disk name of your application.",
+        "Explicitly opt in to modern CMake behaviors to avoid warnings with recent",
+        "versions of CMake.",
+        "Define build configuration option.",
+        "Define settings for the Profile build mode.",
+        "Use Unicode for all projects.",
+        "Compilation settings that should be applied to most targets.",
+        "Be cautious about adding new options here, as plugins use this function by",
+        "default. In most cases, you should add new options to specific targets instead",
+        "of modifying this function.",
+        "Flutter library and tool build rules.",
+        "Application build; see runner/CMakeLists.txt.",
+        "Generated plugin build rules, which manage building the plugins and adding",
+        "them to the application.",
+        "=== Installation ===",
+        "Support files are copied into place next to the executable, so that it can",
+        "run in place. This is done instead of making a separate bundle (as on Linux)",
+        "so that building and running from within Visual Studio will work.",
+        "Make the \"install\" step default, as it's required to run.",
+        "Copy the native assets provided by the build.dart from all packages.",
+        "Fully re-copy the assets directory on each build to avoid having stale files",
+        "from a previous install."
+      ],
+      "opening": "Project-level configuration. cmake minimum required(VERSION 3.14) project(xin qing ri ji LANGUAGES CXX) The name of the executable created for the application. Change this to change the on-disk name of your application. set(BINARY NAME \"xin qing ri ji\") Explicitly opt in to modern CMake behaviors to avoid warnings with recent versions of CMake. cmake policy(VERSION 3.14...3.25) Define build configuration option. get property(IS MULTICONFIG GLOBAL PROPERTY GENERATOR IS MULTI CONFIG) if(IS MULTICONFIG) set(CMAKE CONFIGURATION TYPES \"Debug;Profile;Release\" CACHE STRING \"\" FORCE) else() if(NOT CMAKE BUILD TYPE AND NOT CMAKE CONFIGURATION TYPES) set(CMAKE BUILD TYPE \"Debug\" CACHE STRING \"Flutter build mode\" FORCE) set property(CACHE CMAKE BUILD TYPE PROPERTY STRINGS \"Debug\" \"Profile\" \"Release\") endif() endif() Define settings for the Profile build mode. set(CMAKE EXE LINKER FLAGS PROFILE \"${C"
+    },
+    {
+      "path": "开发日志/2026-05-12.md",
+      "size": 1113,
+      "headings": [
+        "开发日志 — 2026-05-12",
+        "今日完成",
+        "部署问题与解决",
+        "当前状态",
+        "已知问题（明天修）",
+        "明天待办"
+      ],
+      "opening": "开发日志 — 2026-05-12 今日完成 - [x] 全部 Flutter 前端代码（10阶段） - [x] Express 后端 + SQLite 数据库 - [x] GitHub 推送（Piloting06/xin qing ri ji） - [x] 阿里云服务器部署（PM2管理，端口3001，Nginx 8888转发） - [x] APK v1.0 构建（arm64-v8a 18MB） - [x] 注册登录联调通过 部署问题与解决 - better-sqlite3 编译失败 → 换 sql.js 纯JS数据库 - PM2 自动重启旧项目 → pm2 delete weather-mood - Android HTTP 被禁 → network security config + usesCleartextTraffic - 网络错误无详情 → 改报错显示具体异常信息 - Nginx 8888 端口转发冲突 → 修正 proxy pass 指向新后端 当前状态 - 服务器：运行中（PM2: xinqingriji，端口3001） - 数据库：xinqingriji.db - APK：D:\\心晴日记 v1.0.apk - GitHub：https://github.com/Piloting06/xin qing ri ji - 编译：零 error 已知问题（明天修） - 登录后界面有多个 bug 和不满意的地方（待具体排查） 明天待办 - [ ] 逐个排查用户反馈的 bug - [ ] UI 细节打磨 - [ ] 全部功能实机测试"
+    },
+    {
+      "path": "linux/flutter/CMakeLists.txt",
+      "size": 2903,
+      "headings": [
+        "This file controls Flutter-level build steps. It should not be edited.",
+        "Configuration provided via flutter tool.",
+        "TODO: Move the rest of this into files in ephemeral. See",
+        "https://github.com/flutter/flutter/issues/57146.",
+        "Serves the same purpose as list(TRANSFORM ... PREPEND ...),",
+        "which isn't available in 3.10.",
+        "=== Flutter Library ===",
+        "System-level dependencies.",
+        "Published to parent scope for install step.",
+        "=== Flutter tool backend ===",
+        "_phony_ is a non-existent file to force this command to run every time,",
+        "since currently there's no way to get a full input/output list from the",
+        "flutter tool."
+      ],
+      "opening": "This file controls Flutter-level build steps. It should not be edited. cmake minimum required(VERSION 3.10) set(EPHEMERAL DIR \"${CMAKE CURRENT SOURCE DIR}/ephemeral\") Configuration provided via flutter tool. include(${EPHEMERAL DIR}/generated config.cmake) TODO: Move the rest of this into files in ephemeral. See https://github.com/flutter/flutter/issues/57146. Serves the same purpose as list(TRANSFORM ... PREPEND ...), which isn't available in 3.10. function(list prepend LIST NAME PREFIX) set(NEW LIST \"\") foreach(element ${${LIST NAME}}) list(APPEND NEW LIST \"${PREFIX}${element}\") endforeach(element) set(${LIST NAME} \"${NEW LIST}\" PARENT SCOPE) endfunction() === Flutter Library === System-level dependencies. find package(PkgConfig REQUIRED) pkg check modules(GTK REQUIRED IMPORTED TARGET gtk+-3.0) pkg check modules(GLIB REQUIRED IMPORTED TARGET glib-2.0) pkg check modules(GIO REQUIRED IMP"
+    },
+    {
+      "path": "linux/runner/CMakeLists.txt",
+      "size": 1000,
+      "headings": [
+        "Define the application target. To change its name, change BINARY_NAME in the",
+        "top-level CMakeLists.txt, not the value here, or `flutter run` will no longer",
+        "work.",
+        "Any new source files that you add to the application should be added here.",
+        "Apply the standard set of build settings. This can be removed for applications",
+        "that need different build settings.",
+        "Add preprocessor definitions for the application ID.",
+        "Add dependency libraries. Add any application-specific dependencies here."
+      ],
+      "opening": "cmake minimum required(VERSION 3.13) project(runner LANGUAGES CXX) Define the application target. To change its name, change BINARY NAME in the top-level CMakeLists.txt, not the value here, or flutter run will no longer work. Any new source files that you add to the application should be added here. add executable(${BINARY NAME} \"main.cc\" \"my application.cc\" \"${FLUTTER MANAGED DIR}/generated plugin registrant.cc\" ) Apply the standard set of build settings. This can be removed for applications that need different build settings. apply standard settings(${BINARY NAME}) Add preprocessor definitions for the application ID. add definitions(-DAPPLICATION ID=\"${APPLICATION ID}\") Add dependency libraries. Add any application-specific dependencies here. target link libraries(${BINARY NAME} PRIVATE flutter) target link libraries(${BINARY NAME} PRIVATE PkgConfig::GTK) target include directories(${B"
+    },
+    {
+      "path": "windows/flutter/CMakeLists.txt",
+      "size": 3851,
+      "headings": [
+        "This file controls Flutter-level build steps. It should not be edited.",
+        "Configuration provided via flutter tool.",
+        "TODO: Move the rest of this into files in ephemeral. See",
+        "https://github.com/flutter/flutter/issues/57146.",
+        "Set fallback configurations for older versions of the flutter tool.",
+        "=== Flutter Library ===",
+        "Published to parent scope for install step.",
+        "=== Wrapper ===",
+        "Wrapper sources needed for a plugin.",
+        "Wrapper sources needed for the runner.",
+        "=== Flutter tool backend ===",
+        "_phony_ is a non-existent file to force this command to run every time,",
+        "since currently there's no way to get a full input/output list from the",
+        "flutter tool."
+      ],
+      "opening": "This file controls Flutter-level build steps. It should not be edited. cmake minimum required(VERSION 3.14) set(EPHEMERAL DIR \"${CMAKE CURRENT SOURCE DIR}/ephemeral\") Configuration provided via flutter tool. include(${EPHEMERAL DIR}/generated config.cmake) TODO: Move the rest of this into files in ephemeral. See https://github.com/flutter/flutter/issues/57146. set(WRAPPER ROOT \"${EPHEMERAL DIR}/cpp client wrapper\") Set fallback configurations for older versions of the flutter tool. if (NOT DEFINED FLUTTER TARGET PLATFORM) set(FLUTTER TARGET PLATFORM \"windows-x64\") endif() === Flutter Library === set(FLUTTER LIBRARY \"${EPHEMERAL DIR}/flutter windows.dll\") Published to parent scope for install step. set(FLUTTER LIBRARY ${FLUTTER LIBRARY} PARENT SCOPE) set(FLUTTER ICU DATA FILE \"${EPHEMERAL DIR}/icudtl.dat\" PARENT SCOPE) set(PROJECT BUILD DIR \"${PROJECT DIR}/build/\" PARENT SCOPE) set(AOT LI"
+    },
+    {
+      "path": "windows/runner/CMakeLists.txt",
+      "size": 1836,
+      "headings": [
+        "Define the application target. To change its name, change BINARY_NAME in the",
+        "top-level CMakeLists.txt, not the value here, or `flutter run` will no longer",
+        "work.",
+        "Any new source files that you add to the application should be added here.",
+        "Apply the standard set of build settings. This can be removed for applications",
+        "that need different build settings.",
+        "Add preprocessor definitions for the build version.",
+        "Disable Windows macros that collide with C++ standard library functions.",
+        "Add dependency libraries and include directories. Add any application-specific",
+        "dependencies here.",
+        "Run the Flutter tool portions of the build. This must not be removed."
+      ],
+      "opening": "cmake minimum required(VERSION 3.14) project(runner LANGUAGES CXX) Define the application target. To change its name, change BINARY NAME in the top-level CMakeLists.txt, not the value here, or flutter run will no longer work. Any new source files that you add to the application should be added here. add executable(${BINARY NAME} WIN32 \"flutter window.cpp\" \"main.cpp\" \"utils.cpp\" \"win32 window.cpp\" \"${FLUTTER MANAGED DIR}/generated plugin registrant.cc\" \"Runner.rc\" \"runner.exe.manifest\" ) Apply the standard set of build settings. This can be removed for applications that need different build settings. apply standard settings(${BINARY NAME}) Add preprocessor definitions for the build version. target compile definitions(${BINARY NAME} PRIVATE \"FLUTTER VERSION=\\\"${FLUTTER VERSION}\\\"\") target compile definitions(${BINARY NAME} PRIVATE \"FLUTTER VERSION MAJOR=${FLUTTER VERSION MAJOR}\") target co"
+    },
+    {
+      "path": "ios/Runner/Assets.xcassets/LaunchImage.imageset/README.md",
+      "size": 340,
+      "headings": [
+        "Launch Screen Assets"
+      ],
+      "opening": "Launch Screen Assets You can customize the launch screen with your own desired assets by replacing the image files in this directory. You can also do it by opening your Flutter project's Xcode project with open ios/Runner.xcworkspace , selecting Runner/Assets.xcassets in the Project Navigator and dropping in the desired images."
+    }
+  ],
+  "code_evidence": {
+    "project_name": "xin_qing_ri_ji",
+    "software_name_candidate": "xin qing ri ji",
+    "frameworks": [],
+    "language": "JavaScript、Python、Java、Kotlin、Swift、Shell",
+    "routes": [
+      "/"
+    ],
+    "feature_name_candidates": [
+      "plugins GeneratedPluginRegistrant",
+      "xin qing ri ji MainActivity"
+    ],
+    "entry_files": [],
+    "page_files": [
+      "android/app/src/main/java/io/flutter/plugins/GeneratedPluginRegistrant.java",
+      "android/app/src/main/kotlin/com/xinqingriji/xin_qing_ri_ji/MainActivity.kt"
+    ],
+    "component_files": [],
+    "api_files": [],
+    "run_command_candidates": [],
+    "package": {
+      "name": "",
+      "path": "",
+      "version": "V1.0",
+      "scripts": {},
+      "dependency_names": []
+    }
+  },
+  "external_research_notes": ""
+}

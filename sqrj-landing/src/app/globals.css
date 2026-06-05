@@ -1,0 +1,93 @@
+@import "tailwindcss";
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+:root {
+  /* Apple 雾感奶油 */
+  --bg-cream: #FAFAF6;
+  --bg-card: #FFFFFF;
+  --bg-warm: #F5F0E8;
+  /* 文字 — Apple 近黑灰系 */
+  --text-primary: #1C1C1E;
+  --text-secondary: #505052;
+  --text-muted: #8E8E93;
+  /* 强调色 */
+  --accent-orange: #E8986E;
+  --accent-honey: #F0B27A;
+  --accent-mint: #7EC8C0;
+  --accent-blush: #D4A0A0;
+  --accent-ink: #3D3226;
+}
+
+@theme inline {
+  --color-bg-cream: var(--bg-cream);
+  --color-bg-card: var(--bg-card);
+  --color-bg-warm: var(--bg-warm);
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-muted);
+  --color-accent-orange: var(--accent-orange);
+  --color-accent-honey: var(--accent-honey);
+  --color-accent-mint: var(--accent-mint);
+  --color-accent-blush: var(--accent-blush);
+  --color-accent-ink: var(--accent-ink);
+  --font-cn: var(--font-zcool), var(--font-noto-sans-sc), "PingFang SC", sans-serif;
+  --font-en: var(--font-inter), "Inter", -apple-system, sans-serif;
+  --font-body: var(--font-noto-sans-sc), "PingFang SC", sans-serif;
+}
+
+body {
+  background: var(--bg-cream);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  overflow-x: hidden;
+}
+
+/* 纸质纹理 */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  opacity: 0.02;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='5' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 256px;
+}
+
+::-webkit-scrollbar { width: 2px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--accent-honey); border-radius: 1px; }
+::selection { background: rgba(240, 178, 122, 0.3); color: var(--text-primary); }
+:focus-visible { outline: 2px solid var(--accent-honey); outline-offset: 2px; }
+
+@media (pointer: fine) { html { overscroll-behavior: none; scroll-snap-type: y proximity; } }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@media (hover: none) and (pointer: coarse) {
+  button:active, a:active {
+    transform: scale(0.97);
+    filter: brightness(0.95);
+    transition: transform 0.1s ease-out, filter 0.1s ease-out;
+  }
+}
+
+.snap-container {
+  scroll-snap-type: y proximity;
+  overflow-y: auto;
+  height: 100vh;
+}
+.snap-section {
+  scroll-snap-align: start;
+}

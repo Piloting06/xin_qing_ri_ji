@@ -1,0 +1,32 @@
+{
+  "software_name": "拾晴日记",
+  "version": "V2.0.0",
+  "total_pages": 60,
+  "lines_per_page": 50,
+  "front_pages": 30,
+  "back_pages": 30,
+  "front_file": "代码-前30页.md",
+  "back_file": "代码-后30页.md",
+  "front_files": [
+    {"path": "lib/main.dart", "pages": "1-2"},
+    {"path": "lib/pages/login_page.dart", "pages": "3-8"},
+    {"path": "lib/pages/home_page.dart", "pages": "9-25"},
+    {"path": "lib/pages/mood_page.dart", "pages": "26-28"},
+    {"path": "lib/pages/city_map_page.dart", "pages": "29-30"}
+  ],
+  "back_files": [
+    {"path": "lib/theme/xq_decorations.dart", "pages": "31-33"},
+    {"path": "lib/theme/xq_colors.dart", "pages": "34-36"},
+    {"path": "lib/services/notification_service.dart", "pages": "37-40"},
+    {"path": "lib/api/api_base.dart", "pages": "41-42"},
+    {"path": "lib/api/api_client.dart", "pages": "43-47"},
+    {"path": "lib/stores/theme_state.dart", "pages": "48-49"},
+    {"path": "lib/stores/app_state.dart", "pages": "50-51"},
+    {"path": "lib/widgets/main_scaffold.dart", "pages": "52-56"},
+    {"path": "lib/pages/profile_page.dart", "pages": "57-59"},
+    {"path": "lib/pages/about_page.dart", "pages": "60"}
+  ],
+  "source_language": "Dart",
+  "total_source_lines": 21323,
+  "total_source_files": 58
+}

@@ -1,0 +1,186 @@
+{
+  "project_root": "D:\\xin_qing_ri_ji",
+  "selection_required": true,
+  "model_selection_required": true,
+  "confirmation_required": true,
+  "user_confirmed": true,
+  "target_pages": 60,
+  "lines_per_page": 50,
+  "target_lines": 3000,
+  "estimated_selected_lines": 3200,
+  "estimated_selected_pages": 64,
+  "supplement_rule": "模型优先选择能体现软件核心功能和真实运行逻辑的源码",
+  "confirmation_stage": "code-selection",
+  "files": [
+    {
+      "path": "lib/main.dart",
+      "selected": true,
+      "line_count": 120,
+      "priority": 1,
+      "evidence": "应用入口",
+      "model_reason": "Flutter应用入口，包含初始化、主题加载、路由配置"
+    },
+    {
+      "path": "lib/pages/home_page.dart",
+      "selected": true,
+      "line_count": 450,
+      "priority": 2,
+      "evidence": "天气首页",
+      "model_reason": "核心页面，天气展示、签到、快捷入口"
+    },
+    {
+      "path": "lib/pages/mood_page.dart",
+      "selected": true,
+      "line_count": 900,
+      "priority": 3,
+      "evidence": "心情记录页",
+      "model_reason": "核心功能页面，情绪选择、文字记录、卡片制作入口"
+    },
+    {
+      "path": "lib/pages/city_map_page.dart",
+      "selected": true,
+      "line_count": 500,
+      "priority": 4,
+      "evidence": "城迹页",
+      "model_reason": "城市足迹地图，城市卡片、评论入口、氛围文案"
+    },
+    {
+      "path": "lib/pages/profile_page.dart",
+      "selected": true,
+      "line_count": 900,
+      "priority": 5,
+      "evidence": "个人中心",
+      "model_reason": "设置、主题切换、签到统计、关于页面入口"
+    },
+    {
+      "path": "lib/pages/capsule_page.dart",
+      "selected": true,
+      "line_count": 400,
+      "priority": 6,
+      "evidence": "时光胶囊",
+      "model_reason": "胶囊创建、封存、开启、通知提醒"
+    },
+    {
+      "path": "lib/pages/login_page.dart",
+      "selected": true,
+      "line_count": 300,
+      "priority": 7,
+      "evidence": "登录页",
+      "model_reason": "用户认证入口，登录逻辑"
+    },
+    {
+      "path": "lib/pages/friends_page.dart",
+      "selected": true,
+      "line_count": 500,
+      "priority": 8,
+      "evidence": "好友页",
+      "model_reason": "好友管理、心情查看、评论互动"
+    },
+    {
+      "path": "lib/pages/about_page.dart",
+      "selected": true,
+      "line_count": 300,
+      "priority": 9,
+      "evidence": "关于页",
+      "model_reason": "版本信息、合规声明、意见反馈"
+    },
+    {
+      "path": "lib/widgets/main_scaffold.dart",
+      "selected": true,
+      "line_count": 400,
+      "priority": 10,
+      "evidence": "主框架",
+      "model_reason": "底部导航栏、页面切换、胶囊提醒调度"
+    },
+    {
+      "path": "lib/widgets/mood_card_maker.dart",
+      "selected": true,
+      "line_count": 500,
+      "priority": 11,
+      "evidence": "卡片制作器",
+      "model_reason": "心情卡片生成、风格切换、分享功能"
+    },
+    {
+      "path": "lib/stores/app_state.dart",
+      "selected": true,
+      "line_count": 60,
+      "priority": 12,
+      "evidence": "应用状态",
+      "model_reason": "全局状态管理，日期、用户信息"
+    },
+    {
+      "path": "lib/stores/theme_state.dart",
+      "selected": true,
+      "line_count": 120,
+      "priority": 13,
+      "evidence": "主题状态",
+      "model_reason": "4套主题切换逻辑"
+    },
+    {
+      "path": "lib/api/api_client.dart",
+      "selected": true,
+      "line_count": 260,
+      "priority": 14,
+      "evidence": "API客户端",
+      "model_reason": "所有API接口封装"
+    },
+    {
+      "path": "lib/api/api_base.dart",
+      "selected": true,
+      "line_count": 70,
+      "priority": 15,
+      "evidence": "API基础",
+      "model_reason": "HTTP请求基础、认证Token管理"
+    },
+    {
+      "path": "lib/services/notification_service.dart",
+      "selected": true,
+      "line_count": 200,
+      "priority": 16,
+      "evidence": "通知服务",
+      "model_reason": "本地推送通知、胶囊提醒"
+    },
+    {
+      "path": "lib/theme/xq_colors.dart",
+      "selected": true,
+      "line_count": 120,
+      "priority": 17,
+      "evidence": "颜色系统",
+      "model_reason": "4主题色彩Token定义"
+    },
+    {
+      "path": "lib/theme/xq_decorations.dart",
+      "selected": true,
+      "line_count": 120,
+      "priority": 18,
+      "evidence": "装饰系统",
+      "model_reason": "圆角、阴影、边框等设计Token"
+    },
+    {
+      "path": "server/routes/auth.js",
+      "selected": false,
+      "line_count": 238,
+      "priority": 20,
+      "evidence": "认证路由",
+      "model_reason": "如前端代码不足60页则补充"
+    },
+    {
+      "path": "server/routes/capsule.js",
+      "selected": false,
+      "line_count": 107,
+      "priority": 21,
+      "evidence": "胶囊路由",
+      "model_reason": "如前端代码不足60页则补充"
+    },
+    {
+      "path": "server/db.js",
+      "selected": false,
+      "line_count": 257,
+      "priority": 22,
+      "evidence": "数据库",
+      "model_reason": "如前端代码不足60页则补充"
+    }
+  ],
+  "confirmation_note": "确认18个Dart核心文件，约64页",
+  "confirmed_at": "2026-05-30T22:20:10+00:00"
+}

@@ -8,7 +8,7 @@ import '../api/api_client.dart';
 import '../stores/app_state.dart';
 import '../stores/theme_state.dart';
 import '../theme/xq_decorations.dart';
-import '../theme/xq_hand_drawn.dart';
+
 import '../theme/xq_paper_textures.dart';
 import '../utils/weather_utils.dart';
 import '../utils/geo_utils.dart';
@@ -29,6 +29,10 @@ class _HomePageState extends State<HomePage> {
   static const _weatherCityKey = 'weather_city';
   static const _weatherUpdatedAtKey = 'weather_updated_at';
   static const _weatherDataKey = 'weather_data';
+  static const _locCacheVerKey = 'loc_cache_ver';
+  // v2：旧版 IP 定位兜底曾把服务器所在城市（杭州）的坐标写入缓存，
+  // 升级后清一次位置缓存，强制按真实位置重新定位。
+  static const _locCacheVer = 2;
 
   Map<String, dynamic>? _weather;
   String? _weatherError;
@@ -50,6 +54,20 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> _loadCachedFirst() async {
     final prefs = await SharedPreferences.getInstance();
+    if (prefs.getInt(_locCacheVerKey) != _locCacheVer) {
+      for (final key in [
+        _weatherLatKey,
+        _weatherLonKey,
+        _weatherCityKey,
+        _weatherUpdatedAtKey,
+        _weatherDataKey,
+        'cityLat',
+        'cityLon',
+      ]) {
+        await prefs.remove(key);
+      }
+      await prefs.setInt(_locCacheVerKey, _locCacheVer);
+    }
     final lat = prefs.getDouble(_weatherLatKey);
     final lon = prefs.getDouble(_weatherLonKey);
     final city = prefs.getString(_weatherCityKey);
@@ -121,8 +139,10 @@ class _HomePageState extends State<HomePage> {
       return;
     }
 
+    // 真实 GPS 定位优先：打开/刷新先拿当前所在城市，
+    // 只有 GPS 失败（未开定位/未授权/无信号）才回退到上次位置，再退到 IP。
     final failures = <String>[];
-    for (final resolver in [_cachedLocation, _systemLocation, _ipLocation]) {
+    for (final resolver in [_systemLocation, _cachedLocation, _ipLocation]) {
       try {
         final location = await resolver();
         if (location == null) continue;
@@ -418,13 +438,32 @@ class _HomePageState extends State<HomePage> {
     if (_weather == null) return;
     final action = await Navigator.push<WeatherDetailAction>(
       context,
-      MaterialPageRoute(
-        builder: (_) => WeatherDetailPage(
+      PageRouteBuilder(
+        transitionDuration: const Duration(milliseconds: 350),
+        pageBuilder: (_, _, _) => WeatherDetailPage(
           weather: _weather!,
           cityName: _currentCity,
           locationStatus: _locationStatus,
           updatedAt: _weatherUpdatedAt,
         ),
+        transitionsBuilder: (_, animation, _, child) {
+          return FadeTransition(
+            opacity: CurvedAnimation(
+              parent: animation,
+              curve: Curves.easeOutCubic,
+            ),
+            child: SlideTransition(
+              position: Tween<Offset>(
+                begin: const Offset(0, 0.03),
+                end: Offset.zero,
+              ).animate(CurvedAnimation(
+                parent: animation,
+                curve: Curves.easeOutCubic,
+              )),
+              child: child,
+            ),
+          );
+        },
       ),
     );
     if (!mounted) return;
@@ -544,6 +583,7 @@ class _HomePageState extends State<HomePage> {
             borderRadius: BorderRadius.circular(XqDecorations.radiusHero),
             child: Stack(
               children: [
+                // 纸张纹理
                 Positioned.fill(
                   child: IgnorePointer(
                     child: CustomPaint(
@@ -556,28 +596,58 @@ class _HomePageState extends State<HomePage> {
                     ),
                   ),
                 ),
+                // 底部情绪微光渐变条
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  height: 3,
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          theme.accentColor.withAlpha(0),
+                          theme.accentColor.withAlpha(80),
+                          theme.accentColor.withAlpha(0),
+                        ],
+                        stops: const [0.0, 0.5, 1.0],
+                      ),
+                    ),
+                  ),
+                ),
+                // 内容
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+                  padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Container(
-                            width: 40,
-                            height: 40,
-                            decoration: BoxDecoration(
-                              color: theme.accentColor.withAlpha(20),
-                              borderRadius: BorderRadius.circular(15),
-                              border: Border.all(
-                                color: theme.accentColor.withAlpha(38),
+                          // 脉冲心形图标
+                          TweenAnimationBuilder<double>(
+                            tween: Tween(begin: 1.0, end: 1.08),
+                            duration: const Duration(milliseconds: 1200),
+                            curve: Curves.easeInOut,
+                            builder: (context, pulse, child) {
+                              return Transform.scale(scale: pulse, child: child);
+                            },
+                            onEnd: () {}, // 静态一次性动画
+                            child: Container(
+                              width: 42,
+                              height: 42,
+                              decoration: BoxDecoration(
+                                color: theme.accentColor.withAlpha(22),
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(
+                                  color: theme.accentColor.withAlpha(42),
+                                ),
                               ),
-                            ),
-                            child: Icon(
-                              Icons.favorite_rounded,
-                              color: theme.accentColor,
-                              size: 20,
+                              child: Icon(
+                                Icons.favorite_rounded,
+                                color: theme.accentColor,
+                                size: 21,
+                              ),
                             ),
                           ),
                           const SizedBox(width: 10),
@@ -597,7 +667,7 @@ class _HomePageState extends State<HomePage> {
                                 const SizedBox(height: 4),
                                 Text(
                                   prompt,
-                                  maxLines: 1,
+                                  maxLines: 2,
                                   overflow: TextOverflow.ellipsis,
                                   style: TextStyle(
                                     color: theme.textSecondary,
@@ -610,19 +680,26 @@ class _HomePageState extends State<HomePage> {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 10),
+                      const SizedBox(height: 12),
+                      // 按钮 + 手绘波浪装饰
                       Row(
                         children: [
                           Expanded(
                             child: SizedBox(
-                              height: 42,
+                              height: 44,
                               child: FilledButton.icon(
                                 onPressed: _openMood,
                                 icon: const Icon(
                                   Icons.edit_note_rounded,
-                                  size: 16,
+                                  size: 17,
                                 ),
-                                label: const Text('记录此刻'),
+                                label: const Text(
+                                  '记录此刻',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    letterSpacing: 0.5,
+                                  ),
+                                ),
                                 style: FilledButton.styleFrom(
                                   backgroundColor: theme.accentColor,
                                   foregroundColor: theme.textOnAccent,
@@ -633,14 +710,14 @@ class _HomePageState extends State<HomePage> {
                               ),
                             ),
                           ),
-                          const SizedBox(width: 10),
+                          const SizedBox(width: 12),
+                          // 手绘波浪装饰
                           SizedBox(
-                            width: 32,
-                            height: 32,
+                            width: 48,
+                            height: 24,
                             child: CustomPaint(
-                              painter: InkDotPainter(
-                                inkColor: theme.accentColor.withAlpha(90),
-                                radius: 4,
+                              painter: _HandWavePainter(
+                                color: theme.accentColor.withAlpha(70),
                               ),
                             ),
                           ),
@@ -834,6 +911,46 @@ class _HomePageState extends State<HomePage> {
       ),
     );
   }
+}
+
+/// 手绘波浪线装饰
+class _HandWavePainter extends CustomPainter {
+  final Color color;
+  _HandWavePainter({required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = 1.8
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
+
+    final path = Path();
+    final w = size.width;
+    final h = size.height;
+    final mid = h / 2;
+    final amp = h * 0.3;
+
+    path.moveTo(0, mid);
+    for (double x = 0; x <= w; x += 1) {
+      // 手绘感：微随机振幅 + 正弦波
+      final progress = x / w;
+      final y = mid +
+          amp * _handSine(progress * 3.5 * 3.14159) +
+          (x % 7 < 2 ? 0.6 : 0); // 微抖动
+      path.lineTo(x, y);
+    }
+    canvas.drawPath(path, paint);
+  }
+
+  double _handSine(double v) {
+    final r = v % (2 * 3.14159);
+    return r < 3.14159 ? (r / 3.14159 - 0.5) * 2 : (1 - (r - 3.14159) / 3.14159) * -2;
+  }
+
+  @override
+  bool shouldRepaint(covariant _HandWavePainter old) => old.color != color;
 }
 
 class _WeatherLocation {

@@ -1,12 +1,12 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:geolocator/geolocator.dart';
 import '../api/api_client.dart';
 import '../constants/keys.dart';
-import '../utils/geo_utils.dart';
+import '../utils/geo_utils.dart' show haversineKm, findNearestCity;
 import '../models/city.dart';
 
 /// 城市数据（精简）
@@ -587,6 +587,10 @@ class MapState extends ChangeNotifier {
   String? cityMood(String code) => _cityMoods[code];
   double cityMoodScore(String code) => _cityMoodScore[code] ?? 0;
   int cityCommentCount(String code) => _cityCommentCounts[code] ?? 0;
+  double? distanceTo(CityData target) {
+    if (_myCity == null) return null;
+    return haversineKm(_myCity!.lat, _myCity!.lng, target.lat, target.lng);
+  }
   bool get introPlayed => _introPlayed;
   bool get isVisible => _isVisible;
   List<CityData> get allCities => _allCities;
@@ -727,17 +731,26 @@ class MapState extends ChangeNotifier {
         notifyListeners();
       }
 
-      // 4. IP 定位兜底
+      // 4. IP 定位兜底（客户端直连 ip-api；走服务端会解析到服务器所在城市）
       try {
-        final loc = await Api.getLocation();
-        if (loc['lat'] != null && loc['lon'] != null) {
-          final ipLat = (loc['lat'] as num).toDouble();
-          final ipLng = (loc['lon'] as num).toDouble();
+        final res = await http
+            .get(
+              Uri.parse(
+                'http://ip-api.com/json/?fields=status,lat,lon,city,regionName,country&lang=zh',
+              ),
+            )
+            .timeout(const Duration(seconds: 5));
+        final j = json.decode(res.body);
+        if (j is Map && j['status'] == 'success' && j['lat'] != null && j['lon'] != null) {
+          final ipLat = (j['lat'] as num).toDouble();
+          final ipLng = (j['lon'] as num).toDouble();
           final city = _cityFromGeo(findNearestCity(ipLat, ipLng, maxKm: 200));
           if (city != null) {
             _myCity = city;
             _locating = false;
             _locationError = null;
+            await prefs.setDouble('cityLat', ipLat);
+            await prefs.setDouble('cityLon', ipLng);
             notifyListeners();
             return;
           }

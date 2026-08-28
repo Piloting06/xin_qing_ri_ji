@@ -247,7 +247,7 @@ class CityCommentSheet extends StatelessWidget {
             Icon(Icons.explore_outlined, size: 48, color: theme.borderColor),
             const SizedBox(height: 12),
             Text(
-              canPost ? '这是你的城市，说点什么吧' : '这座城市还没有足迹，等你来留第一笔',
+              canPost ? '这是你的城市，说点什么吧' : '还没有人来过，做第一个留下足迹的人吧',
               style: TextStyle(color: theme.textSecondary, fontSize: 14),
               textAlign: TextAlign.center,
             ),

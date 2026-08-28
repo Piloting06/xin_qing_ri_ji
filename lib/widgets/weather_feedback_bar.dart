@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../api/api_client.dart';
 import '../stores/theme_state.dart';
 import '../theme/xq_decorations.dart';
+import 'glow_wrap.dart';
 
 class WeatherFeedbackBar extends StatefulWidget {
   final String weatherText;
@@ -256,7 +257,7 @@ class _WeatherFeedbackBarState extends State<WeatherFeedbackBar> {
         const SizedBox(width: 8),
         Expanded(
           child: Text(
-            '记下来了，之后会帮你校准这座城市的天气感受。',
+            '收到啦！下次会更准的～',
             style: TextStyle(
               color: theme.successColor,
               fontSize: 13,
@@ -278,7 +279,9 @@ class _WeatherFeedbackBarState extends State<WeatherFeedbackBar> {
   }) {
     return Material(
       color: Colors.transparent,
-      child: InkWell(
+      child: GlowWrap(
+        accentColor: theme.accentColor,
+        radius: 30,
         borderRadius: BorderRadius.circular(999),
         onTap: onTap,
         child: Container(

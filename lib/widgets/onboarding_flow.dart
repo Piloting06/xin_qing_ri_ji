@@ -94,7 +94,7 @@ class OnboardingFlow {
                     textAlign: TextAlign.center,
                     cursorColor: theme.gold,
                     decoration: InputDecoration(
-                      hintText: '你的名字',
+                      hintText: '给自己取个名字吧',
                       hintStyle: TextStyle(
                         color: theme.textSecondary.withAlpha(120),
                       ),
@@ -148,7 +148,7 @@ class OnboardingFlow {
       {
         'icon': Icons.location_on_outlined,
         'title': '定位',
-        'desc': '获取你所在的城市，展示准确的天气信息',
+        'desc': '看看你窗外的天气，不用手动选城市',
       },
       {
         'icon': Icons.photo_library_outlined,
@@ -158,7 +158,7 @@ class OnboardingFlow {
       {
         'icon': Icons.notifications_outlined,
         'title': '通知',
-        'desc': '早晚安提醒、时光胶囊到期通知',
+        'desc': '时光胶囊到期时通知你',
       },
       {'icon': Icons.folder_outlined, 'title': '存储', 'desc': '保存天气心情卡和限定壁纸到本地'},
     ];
@@ -200,7 +200,7 @@ class OnboardingFlow {
                 children: [
                   Center(
                     child: Text(
-                      '我们需要以下权限',
+                      '为了更好地陪伴你',
                       style: XqTypography.headlineMedium.copyWith(
                         color: theme.gold,
                       ),

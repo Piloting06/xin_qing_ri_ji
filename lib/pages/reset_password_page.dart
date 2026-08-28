@@ -257,8 +257,8 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                                     const SizedBox(width: 8),
                                     Expanded(
                                       child: Text(
-                                        '短信服务正在申请中，暂时无法接收验证码。'
-                                        '如有需要请先联系客服。',
+                                        '短信功能还在准备中，暂时可以用邮箱登录哦。'
+                                        '有问题随时在交流群里找我们～',
                                         style: TextStyle(
                                           color: theme.gold,
                                           fontSize: 11,

@@ -262,7 +262,7 @@ class _FriendsPageState extends State<FriendsPage> {
       await Api.addFriend(phone);
       if (mounted) {
         HapticFeedback.mediumImpact();
-        XqToast.success(context, '好友请求已发送');
+        XqToast.success(context, '申请发出去啦～');
       }
       return true;
     } on ApiException catch (e) {
@@ -417,7 +417,7 @@ class _FriendsPageState extends State<FriendsPage> {
                         onChanged: (_) => setSheetState(() {}),
                         decoration: InputDecoration(
                           counterText: '',
-                          hintText: '比如：今天辛苦啦，希望你今晚能睡个好觉。',
+                          hintText: '写一句想对TA说的话...',
                           hintStyle: TextStyle(
                             color: theme.textSecondary.withAlpha(150),
                           ),

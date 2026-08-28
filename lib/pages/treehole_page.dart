@@ -12,6 +12,7 @@ import '../stores/theme_state.dart';
 import '../theme/xq_decorations.dart';
 import '../theme/xq_typography.dart';
 import '../widgets/ink_writing_loader.dart';
+import '../widgets/glow_wrap.dart';
 
 class TreeholePage extends StatefulWidget {
   const TreeholePage({super.key});
@@ -728,7 +729,9 @@ class _TreeholePageState extends State<TreeholePage>
     VoidCallback? onTap,
   ) {
     final color = active ? theme.accentColor : theme.textSecondary;
-    return InkWell(
+    return GlowWrap(
+      accentColor: theme.accentColor,
+      radius: 30,
       borderRadius: BorderRadius.circular(999),
       onTap: onTap,
       child: Container(
@@ -835,7 +838,7 @@ class _TreeholePageState extends State<TreeholePage>
               children: [
                 Expanded(
                   child: Text(
-                    _postError ?? '今天不需要写很多，只要一句真实的话。',
+                    _postError ?? '一句就够，写什么都行。',
                     style: TextStyle(
                       color: _postError == null
                           ? theme.textSecondary

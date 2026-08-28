@@ -118,7 +118,7 @@ class _MainScaffoldState extends State<MainScaffold> {
           (_) => false,
         );
         ScaffoldMessenger.maybeOf(context)?.showSnackBar(
-          const SnackBar(content: Text('登录已过期，请重新登录')),
+          const SnackBar(content: Text('登录过期了，重新登一下吧')),
         );
       });
     }
@@ -404,6 +404,7 @@ class _FrostedCapsuleState extends State<_FrostedCapsule>
   @override
   Widget build(BuildContext context) {
     final t = widget.theme;
+    final animActive = context.watch<AppState>().animActive;
 
     return AnimatedBuilder(
       animation: _bounceCtrl,
@@ -441,24 +442,25 @@ class _FrostedCapsuleState extends State<_FrostedCapsule>
               child: Stack(
                 alignment: Alignment.center,
                 children: [
-                  // Light glow layer
-                  Positioned.fill(
-                    child: AnimatedBuilder(
-                      animation: Listenable.merge([_breatheCtrl, _rippleCtrl]),
-                      builder: (context, _) => CustomPaint(
-                        painter: _LightGlowPainter(
-                          glowX: _glowX,
-                          touchAlpha: _touchAlpha,
-                          breatheAlpha: 60 + _breatheCtrl.value * 60,
-                          activeIndex: widget.currentIndex,
-                          accentColor: t.accentColor,
-                          height: _capsuleHeight,
-                          rippleRadius: _rippleRadiusAnim.value,
-                          rippleAlpha: _rippleAlphaAnim.value,
+                  // Light glow layer — 仅在 animActive 时渲染
+                  if (animActive)
+                    Positioned.fill(
+                      child: AnimatedBuilder(
+                        animation: Listenable.merge([_breatheCtrl, _rippleCtrl]),
+                        builder: (context, _) => CustomPaint(
+                          painter: _LightGlowPainter(
+                            glowX: _glowX,
+                            touchAlpha: _touchAlpha,
+                            breatheAlpha: 60 + _breatheCtrl.value * 60,
+                            activeIndex: widget.currentIndex,
+                            accentColor: t.accentColor,
+                            height: _capsuleHeight,
+                            rippleRadius: _rippleRadiusAnim.value,
+                            rippleAlpha: _rippleAlphaAnim.value,
+                          ),
                         ),
                       ),
                     ),
-                  ),
                   // Tab content — Expanded 等分宽度，与 Painter 坐标对齐
                   RepaintBoundary(
                     child: Row(

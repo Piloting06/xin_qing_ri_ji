@@ -45,7 +45,7 @@ MoodInsight? computeMoodInsight(
   // Priority 1: Full week
   if (thisWeekDays == 7) {
     return const MoodInsight(
-      '连续 7 天都在和自己对话，真棒',
+      '整整一周都没落下，你在认真对自己好',
       Icons.emoji_events_outlined,
     );
   }
@@ -86,7 +86,7 @@ MoodInsight? computeMoodInsight(
       .length;
   if (toughWeekCount >= 4) {
     return const MoodInsight(
-      '这周辛苦了，你已经做得很好了',
+      '这几天不容易，但你都撑过来了',
       Icons.favorite_outline,
     );
   }

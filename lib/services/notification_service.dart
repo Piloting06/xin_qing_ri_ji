@@ -222,7 +222,7 @@ class NotificationService {
     await _notifications.zonedSchedule(
       999999,
       '测试胶囊提醒',
-      '如果你看到这条消息，说明通知功能正常！',
+      '叮～通知成功啦！以后胶囊到期就能收到提醒了',
       now,
       const NotificationDetails(
         android: AndroidNotificationDetails(

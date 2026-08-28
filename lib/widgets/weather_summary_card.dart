@@ -4,8 +4,9 @@ import '../stores/theme_state.dart';
 import '../theme/xq_decorations.dart';
 import '../utils/weather_utils.dart';
 import 'weather_illustration.dart';
+import 'glow_wrap.dart';
 
-class WeatherSummaryCard extends StatelessWidget {
+class WeatherSummaryCard extends StatefulWidget {
   final bool loading;
   final bool refreshing;
   final String? statusText;
@@ -34,75 +35,150 @@ class WeatherSummaryCard extends StatelessWidget {
   });
 
   @override
+  State<WeatherSummaryCard> createState() => _WeatherSummaryCardState();
+}
+
+class _WeatherSummaryCardState extends State<WeatherSummaryCard>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _shimmerCtrl;
+  late final Animation<double> _shimmerAnim;
+
+  // Refresh flash state
+  bool _showFlash = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _shimmerCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1400),
+    )..repeat();
+    _shimmerAnim = Tween<double>(begin: -1.0, end: 2.0).animate(
+      CurvedAnimation(parent: _shimmerCtrl, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _shimmerCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  void didUpdateWidget(covariant WeatherSummaryCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Detect refresh ended → trigger flash
+    if (oldWidget.refreshing && !widget.refreshing && !widget.loading) {
+      setState(() => _showFlash = true);
+      Future.delayed(const Duration(milliseconds: 400), () {
+        if (mounted) setState(() => _showFlash = false);
+      });
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final theme = context.watch<ThemeState>();
     return AnimatedSwitcher(
       duration: const Duration(milliseconds: 220),
-      child: loading && weather == null
-          ? _buildLoading(theme)
-          : error != null && weather == null
-          ? _buildError(theme)
-          : _buildWeather(theme),
+      child: widget.loading && widget.weather == null
+          ? _buildSkeleton(theme)
+          : widget.error != null && widget.weather == null
+              ? _buildError(theme)
+              : _buildWeather(theme),
     );
   }
 
-  Widget _buildLoading(ThemeState theme) {
+  // ── Skeleton Shimmer Loading ──
+
+  Widget _buildSkeleton(ThemeState theme) {
     return _shell(
       theme,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: theme.accentColor.withAlpha(18),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: CircularProgressIndicator(
-                  strokeWidth: 2.3,
-                  color: theme.accentColor,
-                ),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+      child: AnimatedBuilder(
+        animation: _shimmerAnim,
+        builder: (context, child) {
+          return ShaderMask(
+            blendMode: BlendMode.srcATop,
+            shaderCallback: (bounds) {
+              return LinearGradient(
+                begin: Alignment(-1.0 + _shimmerAnim.value, 0),
+                end: Alignment(_shimmerAnim.value, 0),
+                colors: [
+                  theme.cardColor.withAlpha(0),
+                  theme.accentColor.withAlpha(25),
+                  theme.cardColor.withAlpha(0),
+                ],
+                stops: const [0.0, 0.5, 1.0],
+              ).createShader(bounds);
+            },
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // City name placeholder
+                _shimmerBox(theme, width: 100, height: 21),
+                const SizedBox(height: 6),
+                _shimmerBox(theme, width: 70, height: 12),
+                const SizedBox(height: 18),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    Text(
-                      '正在准备今天的天气',
-                      style: TextStyle(
-                        color: theme.textPrimary,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      '会优先使用系统定位，失败后自动尝试缓存和 IP 定位。',
-                      style: TextStyle(
-                        color: theme.textSecondary,
-                        fontSize: 12,
-                      ),
+                    // Big temperature placeholder
+                    _shimmerBox(theme, width: 80, height: 42),
+                    const SizedBox(width: 12),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _shimmerBox(theme, width: 60, height: 12),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            _shimmerPill(theme),
+                            const SizedBox(width: 7),
+                            _shimmerPill(theme),
+                            const SizedBox(width: 7),
+                            _shimmerPill(theme),
+                          ],
+                        ),
+                      ],
                     ),
                   ],
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 14),
-          LinearProgressIndicator(
-            color: theme.accentColor.withAlpha(80),
-            backgroundColor: theme.accentColor.withAlpha(15),
-            minHeight: 2,
-            borderRadius: BorderRadius.circular(1),
-          ),
-        ],
+                const SizedBox(height: 18),
+                // Prompt placeholder
+                _shimmerBox(theme, width: double.infinity, height: 14),
+                const SizedBox(height: 10),
+                _shimmerBox(theme, width: 120, height: 11),
+              ],
+            ),
+          );
+        },
       ),
     );
   }
+
+  Widget _shimmerBox(ThemeState theme, {double? width, double height = 14}) {
+    return Container(
+      width: width,
+      height: height,
+      decoration: BoxDecoration(
+        color: theme.borderColor.withAlpha(30),
+        borderRadius: BorderRadius.circular(4),
+      ),
+    );
+  }
+
+  Widget _shimmerPill(ThemeState theme) {
+    return Container(
+      width: 48,
+      height: 22,
+      decoration: BoxDecoration(
+        color: theme.borderColor.withAlpha(20),
+        borderRadius: BorderRadius.circular(999),
+      ),
+    );
+  }
+
+  // ── Error State ──
 
   Widget _buildError(ThemeState theme) {
     return _shell(
@@ -116,7 +192,7 @@ class WeatherSummaryCard extends StatelessWidget {
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
-                  error ?? '天气加载失败',
+                  widget.error ?? '天气加载失败',
                   style: TextStyle(
                     color: theme.textPrimary,
                     fontSize: 16,
@@ -128,7 +204,7 @@ class WeatherSummaryCard extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           Text(
-            '可以重新定位，或手动选择城市。',
+            '没关系，试试重新定位或选一个城市吧～',
             style: TextStyle(color: theme.textSecondary, fontSize: 13),
           ),
           const SizedBox(height: 14),
@@ -136,7 +212,7 @@ class WeatherSummaryCard extends StatelessWidget {
             children: [
               Expanded(
                 child: OutlinedButton.icon(
-                  onPressed: onRetry,
+                  onPressed: widget.onRetry,
                   icon: const Icon(Icons.my_location, size: 18),
                   label: const Text('重新定位'),
                   style: OutlinedButton.styleFrom(
@@ -148,7 +224,7 @@ class WeatherSummaryCard extends StatelessWidget {
               const SizedBox(width: 10),
               Expanded(
                 child: OutlinedButton.icon(
-                  onPressed: onChooseCity,
+                  onPressed: widget.onChooseCity,
                   icon: const Icon(Icons.search, size: 18),
                   label: const Text('手动选城市'),
                   style: OutlinedButton.styleFrom(
@@ -164,18 +240,18 @@ class WeatherSummaryCard extends StatelessWidget {
     );
   }
 
+  // ── Weather Content ──
+
   Widget _buildWeather(ThemeState theme) {
-    final current = weatherCurrent(weather);
-    final today = weatherDay(weather);
-    final weatherText = (current['weather'] ?? today['weather'] ?? '未知天气')
-        .toString();
-    final code =
-        weatherInt(current['weather_code']) ??
+    final current = weatherCurrent(widget.weather);
+    final today = weatherDay(widget.weather);
+    final weatherText =
+        (current['weather'] ?? today['weather'] ?? '未知天气').toString();
+    final code = weatherInt(current['weather_code']) ??
         weatherInt(today['weather_code']) ??
         0;
     final currentTemp =
-        weatherInt(current['temp_current']) ??
-        weatherInt(today['temp_current']);
+        weatherInt(current['temp_current']) ?? weatherInt(today['temp_current']);
     final high = weatherInt(today['temp_max']);
     final low = weatherInt(today['temp_min']);
     final humidity =
@@ -183,15 +259,18 @@ class WeatherSummaryCard extends StatelessWidget {
     final feelsLike = weatherInt(current['feels_like']);
     final wind =
         weatherInt(current['wind_current']) ?? weatherInt(today['wind']);
-    final prompt = weatherCardPrompt(weather);
+    final prompt = weatherCardPrompt(widget.weather);
 
     return Material(
       color: Colors.transparent,
-      child: InkWell(
+      child: GlowWrap(
+        accentColor: theme.accentColor,
+        radius: 50,
         borderRadius: BorderRadius.circular(XqDecorations.radiusHero),
-        onTap: onOpenDetail,
+        onTap: widget.onOpenDetail,
         child: _shell(
           theme,
+          flash: _showFlash,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -202,7 +281,7 @@ class WeatherSummaryCard extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          cityName.isEmpty ? '城市待确认' : cityName,
+                          widget.cityName.isEmpty ? '城市待确认' : widget.cityName,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
@@ -213,7 +292,7 @@ class WeatherSummaryCard extends StatelessWidget {
                         ),
                         const SizedBox(height: 3),
                         Text(
-                          locationStatus,
+                          widget.locationStatus,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
@@ -271,12 +350,17 @@ class WeatherSummaryCard extends StatelessWidget {
                               child: FittedBox(
                                 fit: BoxFit.scaleDown,
                                 child: Text(
-                                  currentTemp == null ? '--°' : '$currentTemp°',
+                                  currentTemp == null
+                                      ? '--°'
+                                      : '$currentTemp°',
                                   style: TextStyle(
                                     color: theme.textPrimary,
                                     fontSize: 42,
                                     height: 1,
                                     fontWeight: FontWeight.w300,
+                                    fontFeatures: const [
+                                      FontFeature.tabularFigures(),
+                                    ],
                                   ),
                                 ),
                               ),
@@ -289,6 +373,9 @@ class WeatherSummaryCard extends StatelessWidget {
                                 style: TextStyle(
                                   color: theme.textSecondary,
                                   fontSize: 12,
+                                  fontFeatures: const [
+                                    FontFeature.tabularFigures(),
+                                  ],
                                 ),
                               ),
                             ),
@@ -335,6 +422,7 @@ class WeatherSummaryCard extends StatelessWidget {
                                 inkColor: theme.ink,
                                 accentColor: theme.gold,
                                 size: const Size(72, 50),
+                                isNight: _isNight(),
                               ),
                             ),
                           ),
@@ -421,10 +509,10 @@ class WeatherSummaryCard extends StatelessWidget {
                   Icon(Icons.schedule, size: 14, color: theme.textSecondary),
                   const SizedBox(width: 5),
                   Text(
-                    weatherUpdatedText(updatedAt),
+                    weatherUpdatedText(widget.updatedAt),
                     style: TextStyle(color: theme.textSecondary, fontSize: 11),
                   ),
-                  if (statusText != null) ...[
+                  if (widget.statusText != null) ...[
                     const SizedBox(width: 8),
                     Container(
                       padding: const EdgeInsets.symmetric(
@@ -432,7 +520,7 @@ class WeatherSummaryCard extends StatelessWidget {
                         vertical: 2,
                       ),
                       decoration: BoxDecoration(
-                        color: refreshing
+                        color: widget.refreshing
                             ? theme.accentColor.withAlpha(20)
                             : theme.textSecondary.withAlpha(18),
                         borderRadius: BorderRadius.circular(6),
@@ -440,7 +528,7 @@ class WeatherSummaryCard extends StatelessWidget {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          if (refreshing)
+                          if (widget.refreshing)
                             SizedBox(
                               width: 9,
                               height: 9,
@@ -449,11 +537,11 @@ class WeatherSummaryCard extends StatelessWidget {
                                 color: theme.accentColor,
                               ),
                             ),
-                          if (refreshing) const SizedBox(width: 4),
+                          if (widget.refreshing) const SizedBox(width: 4),
                           Text(
-                            statusText!,
+                            widget.statusText!,
                             style: TextStyle(
-                              color: refreshing
+                              color: widget.refreshing
                                   ? theme.accentColor
                                   : theme.textSecondary,
                               fontSize: 10,
@@ -470,6 +558,12 @@ class WeatherSummaryCard extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  bool _isNight() {
+    final now = DateTime.now();
+    final hour = now.hour;
+    return hour < 6 || hour >= 19;
   }
 
   Widget _metricPill(ThemeState theme, String label, String value) {
@@ -491,9 +585,9 @@ class WeatherSummaryCard extends StatelessWidget {
     );
   }
 
-  Widget _shell(ThemeState theme, {required Widget child}) {
+  Widget _shell(ThemeState theme, {required Widget child, bool flash = false}) {
     return Container(
-      key: ValueKey('${loading}_${error}_$cityName'),
+      key: ValueKey('${widget.loading}_${widget.error}_${widget.cityName}'),
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: XqDecorations.heroCard(
@@ -501,7 +595,7 @@ class WeatherSummaryCard extends StatelessWidget {
         theme.isDark ? theme.cardElevated : theme.cardColor,
         theme.borderColor,
         dark: theme.isDark,
-        glow: theme.accentColor,
+        glow: flash ? theme.successColor : theme.accentColor,
       ),
       child: child,
     );

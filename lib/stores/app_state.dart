@@ -1,12 +1,24 @@
 import 'package:flutter/foundation.dart';
 import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../constants/keys.dart';
 
 class AppState extends ChangeNotifier {
   String _selectedDate = DateFormat('yyyy-MM-dd').format(DateTime.now());
   String _displayName = '';
   int _windowWidth = 0;
-  bool _animActive = false;
+  bool _animActive = true;
   bool _lockedOut = false;
+
+  AppState() {
+    _loadAnimActive();
+  }
+
+  Future<void> _loadAnimActive() async {
+    final prefs = await SharedPreferences.getInstance();
+    _animActive = prefs.getBool(StorageKeys.animActive) ?? true;
+    notifyListeners();
+  }
 
   String get selectedDate => _selectedDate;
   String get displayName => _displayName;
@@ -46,10 +58,12 @@ class AppState extends ChangeNotifier {
     _windowWidth = w;
   }
 
-  void setAnimActive(bool a) {
+  Future<void> setAnimActive(bool a) async {
     if (_animActive != a) {
       _animActive = a;
       notifyListeners();
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(StorageKeys.animActive, a);
     }
   }
 }

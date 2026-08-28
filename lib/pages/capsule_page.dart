@@ -287,7 +287,7 @@ class _CapsulePageState extends State<CapsulePage> {
                     const SizedBox(height: 8),
                     Container(width: 36, height: 4, decoration: BoxDecoration(color: theme.borderColor, borderRadius: BorderRadius.circular(2))),
                     const SizedBox(height: 12),
-                    Text('开启通知才不会错过胶囊', style: XqTypography.headlineMedium.copyWith(color: theme.textPrimary)),
+                    Text('别让未来的自己等太久', style: XqTypography.headlineMedium.copyWith(color: theme.textPrimary)),
                     const SizedBox(height: 6),
                     Text('左右滑动查看你的手机品牌', style: TextStyle(color: theme.textSecondary, fontSize: 13)),
                     const SizedBox(height: 14),
@@ -573,7 +573,7 @@ class _CapsulePageState extends State<CapsulePage> {
           ),
           const SizedBox(height: 6),
           Text(
-            '封存后到期前不能打开，现在可以自由选几天后再见。',
+            '封好之后就不能偷看了哦，选一个日子再见面吧。',
             style: TextStyle(color: theme.textSecondary, fontSize: 13),
           ),
           const SizedBox(height: 14),

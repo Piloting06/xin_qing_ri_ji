@@ -220,7 +220,7 @@ class _LoginPageState extends State<LoginPage> {
                               ),
                               const SizedBox(height: 6),
                               Text(
-                                '记录今天的天气，也记录今天的你。',
+                                '欢迎回来，今天想记点什么？',
                                 style: XqTypography.bodySmall.copyWith(
                                   color: theme.textSecondary,
                                 ),

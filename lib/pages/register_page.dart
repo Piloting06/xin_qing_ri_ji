@@ -322,8 +322,8 @@ class _RegisterPageState extends State<RegisterPage> {
                               const SizedBox(height: 6),
                               Text(
                                 _useEmail
-                                    ? '用邮箱注册，保存你的心情和天气日记。'
-                                    : '用一个手机号保存你的心情、天气和友人关系。',
+                                    ? '用邮箱注册，给心情找一个安心的地方。'
+                                    : '一个手机号就够了，帮你记住每一天的自己。',
                                 style: XqTypography.bodySmall.copyWith(
                                   color: theme.textSecondary,
                                 ),
@@ -719,14 +719,14 @@ class _RegisterPageState extends State<RegisterPage> {
             XqAuthInput(
               controller: _customQuestionCtrl,
               label: '自定义问题',
-              hint: '输入你的问题',
+              hint: '比如：我最怕什么动物？',
               icon: Icons.help_outline_rounded,
             ),
             const SizedBox(height: 10),
             XqAuthInput(
               controller: _customAnswerCtrl,
               label: '答案',
-              hint: '输入答案',
+              hint: '只有你知道的答案',
               icon: Icons.edit_note_rounded,
             ),
           ],

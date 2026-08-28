@@ -7,6 +7,7 @@ class AnimatedWeatherIllustration extends StatefulWidget {
   final Color accentColor;
   final Size size;
   final bool animate;
+  final bool isNight;
 
   const AnimatedWeatherIllustration({
     super.key,
@@ -15,6 +16,7 @@ class AnimatedWeatherIllustration extends StatefulWidget {
     required this.accentColor,
     this.size = const Size(120, 82),
     this.animate = true,
+    this.isNight = false,
   });
 
   @override
@@ -82,6 +84,7 @@ class _AnimatedWeatherIllustrationState
           code: widget.code,
           inkColor: widget.inkColor,
           accentColor: widget.accentColor,
+          isNight: widget.isNight,
         ),
       );
     }
@@ -95,6 +98,7 @@ class _AnimatedWeatherIllustrationState
           inkColor: widget.inkColor,
           accentColor: widget.accentColor,
           progress: _controller.value,
+          isNight: widget.isNight,
         ),
       ),
     );
@@ -106,12 +110,14 @@ class WeatherIllustrationPainter extends CustomPainter {
   final Color inkColor;
   final Color accentColor;
   final double progress;
+  final bool isNight;
 
   WeatherIllustrationPainter({
     required this.code,
     required this.inkColor,
     required this.accentColor,
     this.progress = 0,
+    this.isNight = false,
   });
 
   @override
@@ -130,7 +136,13 @@ class WeatherIllustrationPainter extends CustomPainter {
 
     const cx = 60.0;
     const cy = 41.0;
-    if (code <= 1) {
+
+    // Night: draw moon + stars for clear/cloudy, or use normal for rain/snow
+    if (isNight && code <= 3) {
+      _drawMoon(canvas, cx, cy);
+    } else if (isNight && (code == 45 || code == 48)) {
+      _drawFog(canvas, cx, cy); // fog looks same at night
+    } else if (code <= 1) {
       _drawSun(canvas, cx, cy);
     } else if (code <= 3) {
       _drawCloudy(canvas, cx, cy);
@@ -148,7 +160,11 @@ class WeatherIllustrationPainter extends CustomPainter {
     } else if (code == 45 || code == 48) {
       _drawFog(canvas, cx, cy);
     } else {
-      _drawSun(canvas, cx, cy);
+      if (isNight) {
+        _drawMoon(canvas, cx, cy);
+      } else {
+        _drawSun(canvas, cx, cy);
+      }
     }
 
     canvas.restore();
@@ -159,6 +175,8 @@ class WeatherIllustrationPainter extends CustomPainter {
     ..style = PaintingStyle.stroke
     ..strokeWidth = width
     ..strokeCap = StrokeCap.round;
+
+  // ── Day: Sun ──
 
   void _drawSun(Canvas canvas, double cx, double cy) {
     final breath = (sin(progress * pi * 2) + 1) / 2;
@@ -181,19 +199,72 @@ class WeatherIllustrationPainter extends CustomPainter {
     }
     canvas.drawArc(
       Rect.fromCenter(center: Offset(cx - 32, cy + 15), width: 16, height: 10),
-      0,
-      pi,
-      false,
-      _inkPaint(1.0, 0.5),
+      0, pi, false, _inkPaint(1.0, 0.5),
     );
     canvas.drawArc(
       Rect.fromCenter(center: Offset(cx + 35, cy + 20), width: 12, height: 8),
-      0,
-      pi,
-      false,
-      _inkPaint(1.0, 0.4),
+      0, pi, false, _inkPaint(1.0, 0.4),
     );
   }
+
+  // ── Night: Moon + Stars ──
+
+  void _drawMoon(Canvas canvas, double cx, double cy) {
+    final breath = (sin(progress * pi * 2) + 1) / 2;
+    final center = Offset(cx, cy + 1);
+
+    // Glow
+    canvas.drawCircle(
+      center,
+      28 + breath * 3,
+      Paint()..color = accentColor.withAlpha((12 + breath * 12).round()),
+    );
+
+    // Crescent moon: draw full circle, then cover with background-approximation
+    canvas.drawCircle(center, 16, _inkPaint(2.0));
+
+    // Inner crescent shadow (offset circle to create crescent)
+    canvas.drawCircle(
+      Offset(center.dx + 8, center.dy - 2),
+      13,
+      Paint()..color = inkColor.withAlpha(15), // subtle fill
+    );
+
+    // Stars
+    final rng = Random(42); // fixed seed for deterministic positions
+    for (int i = 0; i < 6; i++) {
+      final sx = cx - 40 + rng.nextDouble() * 80;
+      final sy = cy - 25 + rng.nextDouble() * 50;
+      // Skip stars too close to moon
+      if ((sx - cx).abs() < 20 && (sy - cy).abs() < 18) continue;
+      final twinkle = (sin(progress * pi * 2 + i * 1.2) + 1) / 2;
+      final alpha = 0.2 + twinkle * 0.4;
+      // 4-point star
+      final starSize = 1.5 + rng.nextDouble() * 1.5;
+      canvas.drawLine(
+        Offset(sx, sy - starSize),
+        Offset(sx, sy + starSize),
+        _inkPaint(0.8, alpha),
+      );
+      canvas.drawLine(
+        Offset(sx - starSize, sy),
+        Offset(sx + starSize, sy),
+        _inkPaint(0.8, alpha),
+      );
+    }
+
+    // Decorative arcs (same as sun for style consistency)
+    canvas.drawArc(
+      Rect.fromCenter(center: Offset(cx - 32, cy + 15), width: 16, height: 10),
+      0, pi, false, _inkPaint(1.0, 0.4),
+    );
+    canvas.drawArc(
+      Rect.fromCenter(center: Offset(cx + 35, cy + 20), width: 12, height: 8),
+      0, pi, false, _inkPaint(1.0, 0.3),
+    );
+  }
+
+  // ── Cloudy ──
 
   void _drawCloudy(Canvas canvas, double cx, double cy) {
     final drift = sin(progress * pi * 2) * 3;
@@ -210,6 +281,20 @@ class WeatherIllustrationPainter extends CustomPainter {
         canvas.drawPath(path, _inkPaint(1.2, 0.4));
       }
     }
+    // Night: add small stars behind clouds
+    if (isNight) {
+      final rng = Random(7);
+      for (int i = 0; i < 3; i++) {
+        final sx = cx - 35 + rng.nextDouble() * 20;
+        final sy = cy - 20 + rng.nextDouble() * 15;
+        final twinkle = (sin(progress * pi * 2 + i * 2.0) + 1) / 2;
+        canvas.drawCircle(
+          Offset(sx, sy),
+          1.0,
+          Paint()..color = inkColor.withAlpha((30 + twinkle * 40).round()),
+        );
+      }
+    }
   }
 
   void _drawCloud(Canvas canvas, double cx, double cy, double alpha) {
@@ -223,6 +308,8 @@ class WeatherIllustrationPainter extends CustomPainter {
     path.close();
     canvas.drawPath(path, paint);
   }
+
+  // ── Rain ──
 
   void _drawRain(Canvas canvas, double cx, double cy) {
     _drawCloud(canvas, cx, cy - 14, 0.8);
@@ -245,6 +332,8 @@ class WeatherIllustrationPainter extends CustomPainter {
     }
   }
 
+  // ── Snow ──
+
   void _drawSnow(Canvas canvas, double cx, double cy) {
     _drawCloud(canvas, cx, cy - 14, 0.8);
     final rng = Random(code);
@@ -264,13 +353,12 @@ class WeatherIllustrationPainter extends CustomPainter {
       final y = cy + 8 + i * 6;
       canvas.drawArc(
         Rect.fromCenter(center: Offset(x, y), width: 10, height: 6),
-        0,
-        pi,
-        false,
-        _inkPaint(1.0, 0.3),
+        0, pi, false, _inkPaint(1.0, 0.3),
       );
     }
   }
+
+  // ── Thunder ──
 
   void _drawThunder(Canvas canvas, double cx, double cy) {
     _drawCloud(canvas, cx, cy - 14, 0.9);
@@ -291,6 +379,8 @@ class WeatherIllustrationPainter extends CustomPainter {
       Paint()..color = accentColor.withAlpha((55 + flash * 60).round()),
     );
   }
+
+  // ── Fog ──
 
   void _drawFog(Canvas canvas, double cx, double cy) {
     final drift = sin(progress * pi * 2) * 5;
@@ -319,5 +409,6 @@ class WeatherIllustrationPainter extends CustomPainter {
       old.code != code ||
       old.inkColor != inkColor ||
       old.accentColor != accentColor ||
-      old.progress != progress;
+      old.progress != progress ||
+      old.isNight != isNight;
 }

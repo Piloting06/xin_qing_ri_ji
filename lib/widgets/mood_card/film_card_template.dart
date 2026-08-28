@@ -59,7 +59,7 @@ class FilmCardTemplate {
                                     ),
                                     const Spacer(),
                                     Text(
-                                      'FRAME ${data.moodEn}',
+                                      'SQ·36 — FRAME ${data.moodEn}',
                                       style: TextStyle(
                                         color: _cream.withAlpha(90),
                                         fontSize: 8,

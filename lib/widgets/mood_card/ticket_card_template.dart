@@ -4,12 +4,12 @@ import '../../theme/xq_typography.dart';
 import 'mood_card_data.dart';
 
 /// 车票：复古车票版式（心情=开往的到站，日期=发车时间，天气=检票口）
-const _ticketPaper = Color(0xFFF6EFDF);
-const _ticketInk = Color(0xFF4A3A28);
-const _ticketStamp = Color(0xFFC04848);
+const _ink = Color(0xFF4A3A28);
 
 class TicketCardTemplate {
   TicketCardTemplate._();
+
+  static const _stamp = Color(0xFFC04848);
 
   static Widget build(MoodCardData data) {
     final br = data.square ? 0.0 : 14.0;
@@ -17,9 +17,9 @@ class TicketCardTemplate {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: _ticketPaper,
+        color: const Color(0xFFF6EFDF),
         borderRadius: BorderRadius.circular(br),
-        border: Border.all(color: _ticketInk.withAlpha(50), width: 0.6),
+        border: Border.all(color: _ink.withAlpha(50), width: 0.6),
         boxShadow: XqDecorations.shadowStrong(),
       ),
       child: ClipRRect(
@@ -29,101 +29,140 @@ class TicketCardTemplate {
           child: Row(
             children: [
               Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(14, 10, 10, 10),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
+                child: Stack(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(14, 10, 10, 10),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            '拾晴日记 · 心情专列',
-                            style: TextStyle(
-                              color: _ticketInk.withAlpha(150),
-                              fontSize: 8.5,
-                              fontWeight: FontWeight.w700,
-                              letterSpacing: 1,
-                            ),
-                          ),
-                          const Spacer(),
-                          Text(
-                            'SQ-${data.dateText.replaceAll(RegExp(r'[^0-9]'), '').padLeft(4, '0').substring(0, 4)}',
-                            style: TextStyle(
-                              color: _ticketStamp.withAlpha(190),
-                              fontSize: 8.5,
-                              fontWeight: FontWeight.w700,
-                              letterSpacing: 1,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 2),
-                      Divider(height: 6, thickness: 0.6, color: _ticketInk.withAlpha(40)),
-                      const SizedBox(height: 6),
-                      Text(
-                        '开往 · ${data.moodLabel}站',
-                        style: TextStyle(
-                          color: _ticketInk.withAlpha(120),
-                          fontSize: 9.5,
-                        ),
-                      ),
-                      Text(
-                        data.moodEmoji,
-                        style: const TextStyle(fontSize: 32, height: 1.2),
-                      ),
-                      const SizedBox(height: 2),
-                      Expanded(
-                        child: Text(
-                          data.bodyText.isNotEmpty ? data.bodyText : '写点什么吧',
-                          style: XqTypography.handwrittenBody.copyWith(
-                            color: data.bodyText.isNotEmpty
-                                ? _ticketInk
-                                : _ticketInk.withAlpha(60),
-                            fontSize: 13,
-                            height: 1.3,
-                          ),
-                          maxLines: 3,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      Row(
-                        children: [
-                          if (data.tags.isNotEmpty)
-                            Expanded(
-                              child: Text(
-                                data.tags.take(2).join(' · '),
+                          Row(
+                            children: [
+                              Text(
+                                '拾晴日记 · 心情专列',
                                 style: TextStyle(
-                                  color: _ticketInk.withAlpha(110),
+                                  color: _ink.withAlpha(150),
                                   fontSize: 8.5,
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: 1,
                                 ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
                               ),
-                            ),
-                          if (data.tags.isEmpty) const Spacer(),
+                              const Spacer(),
+                              Text(
+                                'SQ-${data.dateText.replaceAll(RegExp(r'[^0-9]'), '').padLeft(4, '0').substring(0, 4)}',
+                                style: TextStyle(
+                                  color: _stamp.withAlpha(190),
+                                  fontSize: 8.5,
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: 1,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 2),
+                          Divider(
+                              height: 6,
+                              thickness: 0.6,
+                              color: _ink.withAlpha(40)),
+                          const SizedBox(height: 6),
                           Text(
-                            watermarkTextFor(data.watermark),
+                            '开往 · ${data.moodLabel}站',
                             style: TextStyle(
-                              color: _ticketInk.withAlpha(90),
-                              fontSize: 8.2,
-                              fontWeight: FontWeight.w700,
-                              letterSpacing:
-                                  data.watermark == 'sqrj' ? 1.5 : 1.15,
+                              color: _ink.withAlpha(120),
+                              fontSize: 9.5,
                             ),
+                          ),
+                          Text(
+                            data.moodEmoji,
+                            style:
+                                const TextStyle(fontSize: 32, height: 1.2),
+                          ),
+                          const SizedBox(height: 2),
+                          Expanded(
+                            child: Text(
+                              data.bodyText.isNotEmpty
+                                  ? data.bodyText
+                                  : '写点什么吧',
+                              style: XqTypography.handwrittenBody.copyWith(
+                                color: data.bodyText.isNotEmpty
+                                    ? _ink
+                                    : _ink.withAlpha(60),
+                                fontSize: 13,
+                                height: 1.3,
+                              ),
+                              maxLines: 3,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          Row(
+                            children: [
+                              if (data.tags.isNotEmpty)
+                                Expanded(
+                                  child: Text(
+                                    data.tags.take(2).join(' · '),
+                                    style: TextStyle(
+                                      color: _ink.withAlpha(110),
+                                      fontSize: 8.5,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              if (data.tags.isEmpty) const Spacer(),
+                              Text(
+                                watermarkTextFor(data.watermark),
+                                style: TextStyle(
+                                  color: _ink.withAlpha(90),
+                                  fontSize: 8.2,
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing:
+                                      data.watermark == 'sqrj' ? 1.5 : 1.15,
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),
-                    ],
-                  ),
+                    ),
+                    Positioned(
+                      right: 6,
+                      top: 6,
+                      child: Transform.rotate(
+                        angle: -0.16,
+                        child: Container(
+                          width: 42,
+                          height: 42,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: _stamp.withAlpha(120),
+                              width: 1.4,
+                            ),
+                          ),
+                          alignment: Alignment.center,
+                          child: Text(
+                            '拾晴',
+                            style: TextStyle(
+                              color: _stamp.withAlpha(150),
+                              fontSize: 12,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 1,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
               const _Perforation(),
               Container(
                 width: 86,
-                padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
+                padding:
+                    const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
                 decoration: BoxDecoration(
                   border: Border(
-                    left: BorderSide(color: _ticketInk.withAlpha(40), width: 0.6),
+                    left: BorderSide(color: _ink.withAlpha(40), width: 0.6),
                   ),
                 ),
                 child: Column(
@@ -131,7 +170,7 @@ class TicketCardTemplate {
                     Text(
                       'SHI QING',
                       style: TextStyle(
-                        color: _ticketStamp.withAlpha(170),
+                        color: _stamp.withAlpha(170),
                         fontSize: 8,
                         fontWeight: FontWeight.w800,
                         letterSpacing: 1.4,
@@ -150,7 +189,7 @@ class TicketCardTemplate {
                     Text(
                       '凭此票回忆今日',
                       style: TextStyle(
-                        color: _ticketInk.withAlpha(90),
+                        color: _ink.withAlpha(90),
                         fontSize: 7.5,
                       ),
                     ),
@@ -172,7 +211,7 @@ class TicketCardTemplate {
           Text(
             label,
             style: TextStyle(
-              color: _ticketInk.withAlpha(100),
+              color: _ink.withAlpha(100),
               fontSize: 7.5,
               letterSpacing: 1,
             ),
@@ -183,7 +222,7 @@ class TicketCardTemplate {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: const TextStyle(
-              color: _ticketInk,
+              color: _ink,
               fontSize: 9.5,
               fontWeight: FontWeight.w700,
             ),
@@ -217,7 +256,7 @@ class _Perforation extends StatelessWidget {
                       width: 1,
                       height: 6,
                       margin: const EdgeInsets.symmetric(vertical: 3),
-                      color: _ticketInk.withAlpha(60),
+                      color: _ink.withAlpha(60),
                     ),
                   ),
                 );
@@ -242,7 +281,7 @@ class _PunchHole extends StatelessWidget {
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         color: Colors.white,
-        border: Border.all(color: _ticketInk.withAlpha(40), width: 0.5),
+        border: Border.all(color: _ink.withAlpha(40), width: 0.5),
       ),
     );
   }

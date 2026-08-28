@@ -91,6 +91,7 @@ class _MoodCardMakerState extends State<MoodCardMaker> {
   bool _squareCard = false; // false=圆角(温润), true=方形(方寸)
   int _templateIndex = 0;
   bool _shareWithQr = false;
+  String? _weatherOverride; // null=跟随真实天气
 
   // Edit options
   String _dateStyle = 'cn_full'; // cn_full | en_full | slash | dot
@@ -120,6 +121,8 @@ class _MoodCardMakerState extends State<MoodCardMaker> {
     };
   }
 
+  String? get _effectiveWeather => _weatherOverride ?? widget.weatherText;
+
   MoodCardData get _cardData => MoodCardData(
         dateText: _formattedDate,
         moodScore: _activeMoodScore,
@@ -130,7 +133,7 @@ class _MoodCardMakerState extends State<MoodCardMaker> {
         tags: _activeTags,
         username: _username,
         watermark: _watermark,
-        weatherText: widget.weatherText,
+        weatherText: _effectiveWeather,
         cityName: widget.cityName,
         temperature: widget.temperature,
         square: _squareCard,
@@ -284,6 +287,35 @@ class _MoodCardMakerState extends State<MoodCardMaker> {
             _watermark = value;
           }
         });
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+        decoration: BoxDecoration(
+          color: isActive ? _accentColor.withAlpha(20) : Colors.transparent,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: isActive ? _accentColor : widget.theme.borderColor,
+            width: isActive ? 1.2 : 0.8,
+          ),
+        ),
+        child: Text(
+          text,
+          style: TextStyle(
+            fontSize: 11,
+            color: isActive ? _accentColor : widget.theme.textSecondary,
+            fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildWeatherChip(String text, String? weather) {
+    final isActive = _weatherOverride == weather;
+    return GestureDetector(
+      onTap: () {
+        HapticFeedback.selectionClick();
+        setState(() => _weatherOverride = weather);
       },
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
@@ -474,6 +506,17 @@ class _MoodCardMakerState extends State<MoodCardMaker> {
                   child: Column(
                     children: [
                       _buildStyleToggle(sheetTheme),
+                      if (_spec.id == 'sunny') ...[
+                        const SizedBox(height: 10),
+                        _buildEditRow('天气图案', [
+                          _buildWeatherChip('自动', null),
+                          _buildWeatherChip('晴', '晴'),
+                          _buildWeatherChip('多云', '多云'),
+                          _buildWeatherChip('阴', '阴'),
+                          _buildWeatherChip('雨', '雨'),
+                          _buildWeatherChip('雪', '雪'),
+                        ]),
+                      ],
                       const SizedBox(height: 10),
                       // Date format
                       _buildEditRow('日期格式', [

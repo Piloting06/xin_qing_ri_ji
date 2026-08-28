@@ -25,7 +25,7 @@ class CityIntroCard extends StatefulWidget {
       barrierLabel: 'city-intro',
       barrierColor: Colors.black54,
       transitionDuration: const Duration(milliseconds: 350),
-      transitionBuilder: (_, anim, __, child) => FadeTransition(
+      transitionBuilder: (_, anim, _, child) => FadeTransition(
         opacity: CurvedAnimation(parent: anim, curve: Curves.easeOutCubic),
         child: SlideTransition(
           position: Tween(
@@ -36,7 +36,7 @@ class CityIntroCard extends StatefulWidget {
           child: child,
         ),
       ),
-      pageBuilder: (_, __, ___) =>
+      pageBuilder: (_, _, _) =>
           CityIntroCard(city: city, intro: intro, footCount: footCount),
     );
   }
@@ -127,7 +127,7 @@ class _CityIntroCardState extends State<CityIntroCard>
                   // ── 色带区 ──
                   AnimatedBuilder(
                     animation: _shimmerCtrl,
-                    builder: (_, __) => Container(
+                    builder: (_, _) => Container(
                       width: double.infinity,
                       padding: const EdgeInsets.symmetric(
                           horizontal: 24, vertical: 20),

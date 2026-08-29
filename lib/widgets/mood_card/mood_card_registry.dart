@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'film_card_template.dart';
+import 'flame_card_template.dart';
 import 'mood_card_data.dart';
 import 'note_card_template.dart';
 import 'sunny_card_template.dart';
 import 'ticket_card_template.dart';
+import 'weekly_card_template.dart';
 
 /// 全部卡片模板。新增模板：写 builder → 在列表里加一条。
 final moodCardTemplates = <MoodCardTemplateSpec>[
@@ -55,6 +57,20 @@ final moodCardTemplates = <MoodCardTemplateSpec>[
     label: 'TICKET',
     dotColors: [Color(0xFFC04848), Color(0xFFE8D5B0), Color(0xFF8C6B3F)],
     buildCard: TicketCardTemplate.build,
+  ),
+  MoodCardTemplateSpec(
+    id: 'flame',
+    name: '火焰',
+    label: 'STREAK',
+    dotColors: [Color(0xFFFF7A3D), Color(0xFFB23A1B), Color(0xFF33190A)],
+    buildCard: FlameCardTemplate.build,
+  ),
+  MoodCardTemplateSpec(
+    id: 'weekly',
+    name: '周历',
+    label: 'WEEKLY',
+    dotColors: [Color(0xFF8A7350), Color(0xFFE0D5C0), Color(0xFF33291C)],
+    buildCard: WeeklyCardTemplate.build,
   ),
 ];
 

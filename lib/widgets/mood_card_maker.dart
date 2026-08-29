@@ -10,6 +10,7 @@ import 'package:provider/provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:share_plus/share_plus.dart';
+import '../api/api_client.dart';
 import '../stores/theme_state.dart';
 import '../theme/xq_decorations.dart';
 import '../constants/mood.dart';
@@ -86,12 +87,16 @@ class _MoodCardMakerState extends State<MoodCardMaker> {
 
   final _repaintKey = GlobalKey();
   final _pageController = PageController();
+  late final _bodyCtrl = TextEditingController(text: widget.text);
   bool _saving = false;
   bool _editMode = false;
   bool _squareCard = false; // false=圆角(温润), true=方形(方寸)
   int _templateIndex = 0;
   bool _shareWithQr = false;
   String? _weatherOverride; // null=跟随真实天气
+  int _streak = 0;
+  List<MoodDay> _week = const [];
+  late String _bodyText = widget.text;
 
   // Edit options
   String _dateStyle = 'cn_full'; // cn_full | en_full | slash | dot
@@ -129,7 +134,7 @@ class _MoodCardMakerState extends State<MoodCardMaker> {
         moodEmoji: moodEmojis[_activeMoodScore] ?? '😊',
         moodLabel: moodLabels[_activeMoodScore] ?? widget.moodLabel,
         moodEn: _moodEnglishFor(_activeMoodScore),
-        bodyText: widget.text,
+        bodyText: _bodyText,
         tags: _activeTags,
         username: _username,
         watermark: _watermark,
@@ -137,6 +142,8 @@ class _MoodCardMakerState extends State<MoodCardMaker> {
         cityName: widget.cityName,
         temperature: widget.temperature,
         square: _squareCard,
+        streakDays: _streak,
+        week: _week,
       );
 
   String _moodEnglishFor(int score) => switch (score) {
@@ -155,6 +162,26 @@ class _MoodCardMakerState extends State<MoodCardMaker> {
   void initState() {
     super.initState();
     _restorePrefs();
+    _loadStats();
+  }
+
+  /// 拉取全部心情记录，计算连续天数与最近7天（火焰卡/周历卡用）
+  Future<void> _loadStats() async {
+    try {
+      final data = await Api.getAllMoods();
+      final moods = (data['moods'] as List?) ?? const [];
+      final stats = computeMoodStats(
+        moods.whereType<Map<String, dynamic>>().toList(),
+        DateTime.now(),
+      );
+      if (!mounted) return;
+      setState(() {
+        _streak = stats.streak;
+        _week = stats.week;
+      });
+    } catch (_) {
+      // 统计加载失败不影响单日卡片
+    }
   }
 
   Future<void> _restorePrefs() async {
@@ -199,6 +226,7 @@ class _MoodCardMakerState extends State<MoodCardMaker> {
   @override
   void dispose() {
     _pageController.dispose();
+    _bodyCtrl.dispose();
     super.dispose();
   }
 
@@ -544,6 +572,30 @@ class _MoodCardMakerState extends State<MoodCardMaker> {
                           labelText: '用户名',
                           hintText: '可选，留空则不显示',
                           labelStyle: TextStyle(color: sheetTheme.textTertiary, fontSize: 12),
+                          hintStyle: TextStyle(color: sheetTheme.textTertiary, fontSize: 12),
+                          isDense: true,
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(XqDecorations.radiusSmall),
+                            borderSide: BorderSide(color: sheetTheme.borderColor),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(XqDecorations.radiusSmall),
+                            borderSide: BorderSide(color: sheetTheme.borderColor),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      // 正文
+                      _buildEditRow('正文', []),
+                      const SizedBox(height: 4),
+                      TextField(
+                        controller: _bodyCtrl,
+                        onChanged: (v) => _bodyText = v,
+                        maxLines: 2,
+                        style: TextStyle(color: sheetTheme.textPrimary, fontSize: 13),
+                        decoration: InputDecoration(
+                          hintText: '写点卡片上的话',
                           hintStyle: TextStyle(color: sheetTheme.textTertiary, fontSize: 12),
                           isDense: true,
                           contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),

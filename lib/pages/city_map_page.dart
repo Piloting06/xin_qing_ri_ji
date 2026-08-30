@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import '../api/api_client.dart';
+import '../constants/mood.dart';
 import '../stores/map_state.dart';
 import '../stores/theme_state.dart';
 import '../widgets/city_comment_sheet.dart';
@@ -22,6 +24,15 @@ class _CityMapPageState extends State<CityMapPage>
   String _moodFilter = 'all';
   String _sortBy = 'hot';
   final _searchCtrl = TextEditingController();
+  Future<Map<String, dynamic>?>? _moodboard;
+
+  Future<Map<String, dynamic>?> _loadMoodboard() async {
+    try {
+      return await Api.getCityMoodboard();
+    } catch (_) {
+      return null;
+    }
+  }
 
   static const _filterOptions = [
     ('all', '全部', null),
@@ -39,6 +50,7 @@ class _CityMapPageState extends State<CityMapPage>
   void initState() {
     super.initState();
     _map = context.read<MapState>();
+    _moodboard = _loadMoodboard();
     WidgetsBinding.instance.addPostFrameCallback((_) => _map.initialize());
   }
 
@@ -123,6 +135,10 @@ class _CityMapPageState extends State<CityMapPage>
               // Stats header
               if (_search.trim().isEmpty && _moodFilter == 'all')
                 SliverToBoxAdapter(child: _statsHeader(map, theme)),
+
+              // 城市心晴榜（最近7天）
+              if (_search.trim().isEmpty && _moodFilter == 'all')
+                SliverToBoxAdapter(child: _moodboardSection(theme)),
 
               // Active cities section
               if (activeCities.isNotEmpty &&
@@ -333,6 +349,121 @@ class _CityMapPageState extends State<CityMapPage>
   }
 
   // ── Search Bar ──
+
+  Widget _moodboardSection(ThemeState theme) {
+    return FutureBuilder<Map<String, dynamic>?>(
+      future: _moodboard,
+      builder: (context, snap) {
+        final board =
+            (snap.data?['board'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+        if (board.isEmpty) return const SizedBox.shrink();
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(0, 12, 0, 4),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+                child: Row(
+                  children: [
+                    Icon(Icons.leaderboard_rounded,
+                        size: 15, color: theme.gold),
+                    const SizedBox(width: 6),
+                    Text(
+                      '城市心晴榜',
+                      style: TextStyle(
+                        color: theme.textPrimary,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      '最近7天',
+                      style: TextStyle(
+                        color: theme.textTertiary,
+                        fontSize: 11,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(
+                height: 78,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  itemCount: board.length,
+                  separatorBuilder: (_, _) => const SizedBox(width: 10),
+                  itemBuilder: (context, i) {
+                    final item = board[i];
+                    final fullName = item['city']?.toString() ?? '';
+                    final city = fullName.split('，').first;
+                    final mood = (item['top_mood'] as num?)?.toInt() ?? 0;
+                    final count = (item['count'] as num?)?.toInt() ?? 0;
+                    final color = Color(moodColors[mood] ?? 0xFF90A4AE);
+                    return Container(
+                      width: 92,
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: theme.cardColor,
+                        borderRadius: BorderRadius.circular(14),
+                        border:
+                            Border.all(color: theme.borderColor.withAlpha(80)),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Text(
+                                '#${i + 1}',
+                                style: TextStyle(
+                                  color: i < 3
+                                      ? theme.gold
+                                      : theme.textTertiary,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                              const Spacer(),
+                              Text(
+                                moodEmojis[mood] ?? '',
+                                style: const TextStyle(fontSize: 15),
+                              ),
+                            ],
+                          ),
+                          const Spacer(),
+                          Text(
+                            city,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: theme.textPrimary,
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          Text(
+                            '$count 条 · ${moodLabels[mood] ?? ''}',
+                            style: TextStyle(
+                              color: color,
+                              fontSize: 10,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
 
   Widget _searchBar(ThemeState theme) {
     return Padding(

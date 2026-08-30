@@ -8,13 +8,17 @@ class MoodApi {
     int score,
     String text,
     List<String> tags,
-    List<String> activities,
-  ) async {
+    List<String> activities, {
+    String? city,
+    int? weatherCode,
+  }) async {
     final body = <String, dynamic>{
       'date': date,
       'emotion_type': score,
       'emotion_tags': tags.join(','),
       'notes': text,
+      'city': ?city,
+      'weather_code': ?weatherCode,
     };
     final res = await http
         .post(

@@ -210,7 +210,18 @@ class _MoodPageState extends State<MoodPage>
     HapticFeedback.mediumImpact();
     final date = context.read<AppState>().selectedDate;
     try {
-      await Api.saveMood(date, _moodScore, _notesCtrl.text, _selectedTags, []);
+      // 附带定位城市与当天天气码（城迹榜 + 心晴签历史洞察的数据源）
+      final prefs = await SharedPreferences.getInstance();
+      final fullCity = prefs.getString('weather_city') ?? '';
+      final city = fullCity.split('，').first;
+      int? weatherCode;
+      try {
+        final wdata = jsonDecode(prefs.getString('weather_data') ?? '{}');
+        weatherCode =
+            ((wdata['current'] as Map?)?['weather_code'] as num?)?.toInt();
+      } catch (_) {}
+      await Api.saveMood(date, _moodScore, _notesCtrl.text, _selectedTags, [],
+          city: city, weatherCode: weatherCode);
 
       await _loadAllMoods();
       final dayMoods = await Api.getMoodsByDate(date);

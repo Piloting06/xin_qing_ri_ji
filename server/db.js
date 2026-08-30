@@ -363,6 +363,12 @@ async function init() {
     db.run('ALTER TABLE time_capsules ADD COLUMN email_notified INTEGER DEFAULT 0');
   }
 
+  // 心情记录关联城市（城迹·城市心晴榜）
+  const moodCols = db.exec('PRAGMA table_info(moods)')[0]?.values?.map((row) => row[1]) || [];
+  if (!moodCols.includes('city')) {
+    db.run('ALTER TABLE moods ADD COLUMN city TEXT');
+  }
+
   saveDb();
 
   // 启动 1 分钟后做当天首次备份，之后每 10 分钟检查一次跨天

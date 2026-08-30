@@ -125,9 +125,12 @@ class Api {
     int score,
     String text,
     List<String> tags,
-    List<String> activities,
-  ) =>
-      MoodApi.saveMood(date, score, text, tags, activities);
+    List<String> activities, {
+    String? city,
+    int? weatherCode,
+  }) =>
+      MoodApi.saveMood(date, score, text, tags, activities,
+          city: city, weatherCode: weatherCode);
 
   static Future<List<Map<String, dynamic>>> getMoodsByDate(String date) =>
       MoodApi.getMoodsByDate(date);
@@ -220,6 +223,9 @@ class Api {
       ContentApi.deleteCapsule(capsuleId);
 
   // ── City ──
+  static Future<Map<String, dynamic>> getCityMoodboard() =>
+      CityApi.getMoodboard();
+
   static Future<Map<String, dynamic>> getCityStats() => CityApi.getCityStats();
 
   static Future<Map<String, dynamic>> getCityComments(

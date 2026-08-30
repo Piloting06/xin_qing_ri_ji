@@ -3,6 +3,16 @@ import 'package:http/http.dart' as http;
 import 'api_base.dart';
 
 class CityApi {
+  static Future<Map<String, dynamic>> getMoodboard() async {
+    final res = await http
+        .get(
+          Uri.parse('${ApiBase.baseUrl}/city/moodboard'),
+          headers: await ApiBase.headers(),
+        )
+        .timeout(ApiBase.timeout);
+    return await ApiBase.handle(res);
+  }
+
   static Future<Map<String, dynamic>> getCityStats() async {
     final res = await http
         .get(

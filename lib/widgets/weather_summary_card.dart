@@ -242,6 +242,17 @@ class _WeatherSummaryCardState extends State<WeatherSummaryCard>
 
   // ── Weather Content ──
 
+  String? _shortTime(String? v) {
+    if (v == null || v.length < 5) return null;
+    // 服务端可能给 "HH:mm" 或完整 ISO，两种都兼容
+    if (RegExp(r'^\d{2}:\d{2}\$').hasMatch(v)) return v;
+    if (v.length >= 16) {
+      final t = v.substring(11, 16);
+      if (RegExp(r'^\d{2}:\d{2}\$').hasMatch(t)) return t;
+    }
+    return null;
+  }
+
   Widget _buildWeather(ThemeState theme) {
     final current = weatherCurrent(widget.weather);
     final today = weatherDay(widget.weather);
@@ -260,6 +271,8 @@ class _WeatherSummaryCardState extends State<WeatherSummaryCard>
     final wind =
         weatherInt(current['wind_current']) ?? weatherInt(today['wind']);
     final prompt = weatherCardPrompt(widget.weather);
+    final sunrise = _shortTime(today['sunrise']?.toString());
+    final sunset = _shortTime(today['sunset']?.toString());
 
     return Material(
       color: Colors.transparent,
@@ -338,11 +351,11 @@ class _WeatherSummaryCardState extends State<WeatherSummaryCard>
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
                             color: theme.textPrimary,
-                            fontSize: 22,
+                            fontSize: 20,
                             fontWeight: FontWeight.w700,
                           ),
                         ),
-                        const SizedBox(height: 4),
+                        const SizedBox(height: 2),
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
@@ -355,9 +368,10 @@ class _WeatherSummaryCardState extends State<WeatherSummaryCard>
                                       : '$currentTemp°',
                                   style: TextStyle(
                                     color: theme.textPrimary,
-                                    fontSize: 42,
-                                    height: 1,
-                                    fontWeight: FontWeight.w300,
+                                    fontSize: 76,
+                                    height: 0.98,
+                                    fontWeight: FontWeight.w200,
+                                    letterSpacing: -3,
                                     fontFeatures: const [
                                       FontFeature.tabularFigures(),
                                     ],
@@ -365,18 +379,48 @@ class _WeatherSummaryCardState extends State<WeatherSummaryCard>
                                 ),
                               ),
                             ),
-                            const SizedBox(width: 8),
+                            const SizedBox(width: 10),
                             Padding(
-                              padding: const EdgeInsets.only(bottom: 5),
-                              child: Text(
-                                '${low == null ? '--' : '$low°'} / ${high == null ? '--' : '$high°'}',
-                                style: TextStyle(
-                                  color: theme.textSecondary,
-                                  fontSize: 12,
-                                  fontFeatures: const [
-                                    FontFeature.tabularFigures(),
-                                  ],
-                                ),
+                              padding: const EdgeInsets.only(bottom: 10),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Icon(
+                                        Icons.arrow_upward_rounded,
+                                        size: 11,
+                                        color: theme.accentColor.withAlpha(160),
+                                      ),
+                                      Text(
+                                        high == null ? '--' : '$high°',
+                                        style: TextStyle(
+                                          color: theme.textSecondary,
+                                          fontSize: 12,
+                                          fontFeatures: const [
+                                            FontFeature.tabularFigures(),
+                                          ],
+                                        ),
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Icon(
+                                        Icons.arrow_downward_rounded,
+                                        size: 11,
+                                        color: theme.accentColor.withAlpha(110),
+                                      ),
+                                      Text(
+                                        low == null ? '--' : '$low°',
+                                        style: TextStyle(
+                                          color: theme.textSecondary,
+                                          fontSize: 12,
+                                          fontFeatures: const [
+                                            FontFeature.tabularFigures(),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
                               ),
                             ),
                           ],
@@ -391,6 +435,8 @@ class _WeatherSummaryCardState extends State<WeatherSummaryCard>
                             if (humidity != null)
                               _metricPill(theme, '湿度', '$humidity%'),
                             if (wind != null) _metricPill(theme, '风', '$wind'),
+                            if (sunrise != null && sunset != null)
+                              _metricPill(theme, '日出日落', '$sunrise/$sunset'),
                           ],
                         ),
                       ],

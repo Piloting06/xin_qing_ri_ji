@@ -13,6 +13,7 @@ import '../theme/xq_decorations.dart';
 import '../theme/xq_paper_textures.dart';
 import '../utils/weather_utils.dart';
 import '../utils/geo_utils.dart';
+import '../widgets/pressable_scale.dart';
 import '../widgets/stagger_in.dart';
 import '../widgets/weather_summary_card.dart';
 import '../widgets/main_scaffold.dart';
@@ -865,9 +866,10 @@ class _HomePageState extends State<HomePage> {
     required String subtitle,
     required VoidCallback onTap,
   }) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
+    return PressableScale(
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
         onTap: () {
           HapticFeedback.selectionClick();
           onTap();
@@ -912,6 +914,7 @@ class _HomePageState extends State<HomePage> {
             ],
           ),
         ),
+      ),
       ),
     );
   }

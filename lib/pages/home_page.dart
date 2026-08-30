@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
@@ -12,6 +13,7 @@ import '../theme/xq_decorations.dart';
 import '../theme/xq_paper_textures.dart';
 import '../utils/weather_utils.dart';
 import '../utils/geo_utils.dart';
+import '../widgets/stagger_in.dart';
 import '../widgets/weather_summary_card.dart';
 import '../widgets/main_scaffold.dart';
 import 'capsule_page.dart';
@@ -493,7 +495,6 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     final theme = context.watch<ThemeState>();
     final appState = context.watch<AppState>();
-    final weekdays = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
     final now = DateTime.now();
 
     return Scaffold(
@@ -504,37 +505,11 @@ class _HomePageState extends State<HomePage> {
           child: ListView(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
             children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          appState.displayName.isNotEmpty
-                              ? appState.displayName
-                              : '朋友',
-                          style: TextStyle(
-                            fontSize: 26,
-                            fontWeight: FontWeight.bold,
-                            color: theme.textPrimary,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          '${now.year}年${now.month}月${now.day}日 ${weekdays[now.weekday == 7 ? 0 : now.weekday]}',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: theme.textSecondary,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
+              StaggerIn(index: 0, child: _buildHeader(theme, appState, now)),
               const SizedBox(height: 16),
-              WeatherSummaryCard(
+              StaggerIn(
+                index: 1,
+                child: WeatherSummaryCard(
                 loading: _loading,
                 refreshing: _refreshing,
                 statusText: _statusText,
@@ -546,19 +521,99 @@ class _HomePageState extends State<HomePage> {
                 onRetry: _loadWeather,
                 onChooseCity: _openCitySearch,
                 onOpenDetail: _openWeatherDetail,
+                ),
               ),
               if (_weather != null && !_loading) const SizedBox(height: 12),
               if (_showCitySearch) ...[
                 _buildCitySearch(theme),
                 const SizedBox(height: 12),
               ],
-              _buildMoodPaperHero(theme, appState),
+              const SizedBox(height: 12),
+              StaggerIn(index: 2, child: _buildMoodPaperHero(theme, appState)),
               const SizedBox(height: 18),
-              _buildTodayDashboard(theme),
+              StaggerIn(index: 3, child: _buildTodayDashboard(theme)),
             ],
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildHeader(ThemeState theme, AppState appState, DateTime now) {
+    final weekdaysFull = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
+    final hour = now.hour;
+    final greet = hour < 5
+        ? '夜深了'
+        : hour < 11
+            ? '早上好'
+            : hour < 14
+                ? '中午好'
+                : hour < 18
+                    ? '下午好'
+                    : '晚上好';
+    final name = appState.displayName.isNotEmpty ? appState.displayName : '朋友';
+    final weekday = weekdaysFull[now.weekday == 7 ? 0 : now.weekday];
+
+    // 天气迷你章
+    final current =
+        _weather != null ? _weather!['current'] as Map<String, dynamic>? : null;
+    final temp = current?['temp_current'];
+    final cond = current?['weather'];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Expanded(
+              child: Text(
+                '$greet，$name',
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w800,
+                  color: theme.textPrimary,
+                  height: 1.15,
+                ),
+              ),
+            ),
+            if (temp != null && cond != null)
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 9, vertical: 4.5),
+                decoration: BoxDecoration(
+                  color: theme.accentColor.withAlpha(20),
+                  borderRadius: BorderRadius.circular(999),
+                  border: Border.all(color: theme.accentColor.withAlpha(45)),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.wb_sunny_rounded,
+                        size: 12, color: theme.accentColor),
+                    const SizedBox(width: 4),
+                    Text(
+                      '\$cond \$temp°',
+                      style: TextStyle(
+                        color: theme.accentColor,
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+          ],
+        ),
+        const SizedBox(height: 5),
+        Text(
+          '${now.year}年${now.month}月${now.day}日 $weekday',
+          style: TextStyle(
+            fontSize: 13,
+            color: theme.textSecondary,
+          ),
+        ),
+      ],
     );
   }
 
@@ -746,93 +801,114 @@ class _HomePageState extends State<HomePage> {
             fontWeight: FontWeight.w700,
           ),
         ),
-        const SizedBox(height: 8),
-        Container(
+        const SizedBox(height: 10),
+        Row(
+          children: [
+            Expanded(
+              child: _gridTile(
+                theme,
+                icon: Icons.explore_outlined,
+                color: theme.accentColor,
+                title: '城迹',
+                subtitle: '城市情绪地图',
+                onTap: _openCityMap,
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: _gridTile(
+                theme,
+                icon: Icons.hourglass_top_rounded,
+                color: theme.gold,
+                title: '胶囊',
+                subtitle: '写给未来',
+                onTap: _openCapsule,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
+        Row(
+          children: [
+            Expanded(
+              child: _gridTile(
+                theme,
+                icon: Icons.calendar_month_rounded,
+                color: const Color(0xFF8A7BC8),
+                title: '心情日历',
+                subtitle: '回看每一天',
+                onTap: () => MainScaffold.switchToTab(context, 1),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: _gridTile(
+                theme,
+                icon: Icons.cottage_rounded,
+                color: const Color(0xFF5FA489),
+                title: '我的小屋',
+                subtitle: '成就与设置',
+                onTap: () => MainScaffold.switchToTab(context, 3),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _gridTile(
+    ThemeState theme, {
+    required IconData icon,
+    required Color color,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () {
+          HapticFeedback.selectionClick();
+          onTap();
+        },
+        borderRadius: BorderRadius.circular(XqDecorations.radiusCard),
+        child: Container(
+          padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
             color: theme.cardColor,
             borderRadius: BorderRadius.circular(XqDecorations.radiusCard),
             border: Border.all(color: theme.borderColor.withAlpha(80)),
           ),
           child: Column(
-            children: [
-              _quickListTile(
-                theme,
-                icon: Icons.explore_outlined,
-                iconColor: theme.accentColor,
-                title: '城迹',
-                subtitle: '看看城市情绪',
-                onTap: _openCityMap,
-              ),
-              Divider(height: 1, color: theme.borderColor.withAlpha(60)),
-              _quickListTile(
-                theme,
-                icon: Icons.hourglass_top_rounded,
-                iconColor: theme.gold,
-                title: '胶囊',
-                subtitle: '写给未来的自己',
-                onTap: _openCapsule,
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _quickListTile(
-    ThemeState theme, {
-    required IconData icon,
-    required Color iconColor,
-    required String title,
-    required String subtitle,
-    Widget? trailing,
-    VoidCallback? onTap,
-  }) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
-          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                width: 36,
-                height: 36,
+                width: 34,
+                height: 34,
                 decoration: BoxDecoration(
-                  color: iconColor.withAlpha(18),
-                  borderRadius: BorderRadius.circular(10),
+                  color: color.withAlpha(22),
+                  borderRadius: BorderRadius.circular(11),
                 ),
-                child: Icon(icon, color: iconColor, size: 20),
+                child: Icon(icon, color: color, size: 19),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: TextStyle(
-                        color: theme.textPrimary,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      subtitle,
-                      style: TextStyle(
-                        color: theme.textSecondary,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ],
+              const SizedBox(height: 10),
+              Text(
+                title,
+                style: TextStyle(
+                  color: theme.textPrimary,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
-              if (trailing != null)
-                trailing
-              else
-                Icon(Icons.chevron_right, size: 18, color: theme.textTertiary),
+              const SizedBox(height: 2),
+              Text(
+                subtitle,
+                style: TextStyle(
+                  color: theme.textSecondary,
+                  fontSize: 11,
+                ),
+              ),
             ],
           ),
         ),

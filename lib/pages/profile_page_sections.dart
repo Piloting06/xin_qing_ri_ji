@@ -177,6 +177,20 @@ extension _ProfilePageSections on _ProfilePageState {
         Divider(height: 1, color: theme.borderColor.withAlpha(80)),
         _listTile(
           theme,
+          icon: Icons.style_outlined,
+          iconColor: theme.gold,
+          title: '卡片册',
+          subtitle: '你做过的所有心情卡片',
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const CardAlbumPage()),
+            );
+          },
+        ),
+        Divider(height: 1, color: theme.borderColor.withAlpha(80)),
+        _listTile(
+          theme,
           icon: Icons.hourglass_empty_rounded,
           iconColor: theme.accentColor,
           title: '时光胶囊',

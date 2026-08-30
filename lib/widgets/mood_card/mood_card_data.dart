@@ -132,3 +132,85 @@ class MoodCardTemplateSpec {
     required this.buildCard,
   });
 }
+
+/// 心晴签：基于当天天气×心情×历史的个性化短语（差异化内容层）
+/// 返回 null 表示没有合适的灵感
+String? inspirationLine({
+  required String? weather,
+  required int moodScore,
+  required String moodLabel,
+  required int streak,
+  required List<Map<String, dynamic>> history,
+  DateTime? now,
+}) {
+  final d = now ?? DateTime.now();
+  final w = weather ?? '';
+  String weatherCat(String? codeText) {
+    final c = int.tryParse(codeText ?? '') ?? -1;
+    if (c == 0) return '晴天';
+    if (c == 2) return '多云';
+    if (c == 3 || c == 45) return '阴天';
+    if (c >= 51 && c < 70) return '雨天';
+    if (c >= 71 && c < 80) return '雪天';
+    if (c >= 80) return '阵雨';
+    return '';
+  }
+
+  final candidates = <String>[];
+
+  // 1) 同天气×同心情的历史次数（数据越攒越多的部分）
+  final todayCat = weatherCatForText(w);
+  if (todayCat.isNotEmpty && moodScore > 0) {
+    var n = 0;
+    for (final m in history) {
+      if (weatherCat(m['weather_code']?.toString()) == todayCat &&
+          (m['emotion_type'] as num?)?.toInt() == moodScore) {
+        n++;
+      }
+    }
+    if (n >= 2) {
+      candidates.add('这是你在$todayCat里写下「$moodLabel」的第 $n 次');
+    }
+  }
+
+  // 2) 连续记录
+  if (streak >= 3) {
+    candidates.add('连续记录 $streak 天，火焰正旺');
+  }
+
+  // 3) 天气情景
+  final weatherLines = <String>[
+    if (w.contains('晴')) '晴天限定的心情，值得装进卡片',
+    if (w.contains('雨')) '雨声是最好的白噪音，适合记录',
+    if (w.contains('雪')) '落雪的日子，字也变得安静',
+    if (w.contains('云')) '云层后面，太阳一直都在',
+    if (w.contains('阴')) '阴天适合向内看',
+  ];
+  candidates.addAll(weatherLines);
+
+  // 4) 时段
+  candidates.add(
+    d.hour < 6
+        ? '夜色里的心事，替你收好'
+        : d.hour < 11
+            ? '清晨写下的一笔，会亮一整天'
+            : d.hour < 18
+                ? '下午的一笔，是今天的注脚'
+                : '暮色里写下的，最诚实',
+  );
+
+  if (candidates.isEmpty) return null;
+  // 按日期+心情做确定性轮换（同一天同心情给同一句，改了心情换一句）
+  final idx = (d.day + moodScore) % candidates.length;
+  return candidates[idx];
+}
+
+/// 把天气文本映射到类别（与 weather_code 类别对齐）
+String weatherCatForText(String w) {
+  if (w.contains('雪')) return '雪天';
+  if (w.contains('雨') || w.contains('雷')) return '雨天';
+  if (w.contains('阴') || w.contains('雾') || w.contains('霾')) return '阴天';
+  if (w.contains('云')) return '多云';
+  if (w.contains('晴')) return '晴天';
+  return '';
+}

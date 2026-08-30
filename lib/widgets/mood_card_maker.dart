@@ -15,6 +15,7 @@ import '../api/api_client.dart';
 import '../stores/theme_state.dart';
 import '../theme/xq_decorations.dart';
 import '../constants/mood.dart';
+import 'mood_card/card_album_store.dart';
 import 'mood_card/mood_card_data.dart';
 import 'mood_card/mood_card_registry.dart';
 import 'xq_toast.dart';
@@ -99,6 +100,7 @@ class _MoodCardMakerState extends State<MoodCardMaker> {
   double _bodyScale = 1.0; // 正文字号 1.0 标准 / 0.9 小
   int _streak = 0;
   List<MoodDay> _week = const [];
+  List<Map<String, dynamic>> _historyMoods = const [];
   late String _bodyText = widget.text;
 
   // Edit options
@@ -184,6 +186,7 @@ class _MoodCardMakerState extends State<MoodCardMaker> {
       setState(() {
         _streak = stats.streak;
         _week = stats.week;
+        _historyMoods = moods.whereType<Map<String, dynamic>>().toList();
       });
     } catch (_) {
       // 统计加载失败不影响单日卡片
@@ -255,6 +258,14 @@ class _MoodCardMakerState extends State<MoodCardMaker> {
       );
       await file.writeAsBytes(byteData.buffer.asUint8List());
       await Gal.putImage(file.path);
+      // 归档进卡片册（失败不影响保存）
+      await CardAlbumStore.archive(
+        sourceFilePath: file.path,
+        date: widget.date,
+        moodScore: _activeMoodScore,
+        templateId: _spec.id,
+        square: _squareRatio,
+      );
       if (mounted) {
         XqToast.success(context, '卡片已保存到相册');
         Navigator.pop(context);
@@ -653,7 +664,44 @@ class _MoodCardMakerState extends State<MoodCardMaker> {
                       ),
                       const SizedBox(height: 10),
                       // 正文
-                      _buildEditRow('正文', []),
+                      _buildEditRow('正文', [
+                        GestureDetector(
+                          onTap: () {
+                            final line = inspirationLine(
+                              weather: _effectiveWeather,
+                              moodScore: _activeMoodScore,
+                              moodLabel:
+                                  moodLabels[_activeMoodScore] ?? widget.moodLabel,
+                              streak: _streak,
+                              history: _historyMoods,
+                            );
+                            if (line == null) return;
+                            HapticFeedback.selectionClick();
+                            setState(() {
+                              _bodyText = _bodyText.trim().isEmpty
+                                  ? line
+                                  : '${_bodyText.trim()} $line';
+                              _bodyCtrl.text = _bodyText;
+                            });
+                          },
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.auto_awesome,
+                                  size: 13, color: sheetTheme.gold),
+                              const SizedBox(width: 3),
+                              Text(
+                                '心晴签',
+                                style: TextStyle(
+                                  color: sheetTheme.gold,
+                                  fontSize: 11.5,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ]),
                       const SizedBox(height: 4),
                       TextField(
                         controller: _bodyCtrl,

@@ -104,3 +104,27 @@ String dashboardPrompt(Map<String, dynamic>? weather) {
   }
   return '今天心情怎么样？不想写很多的话，一句就够了。';
 }
+
+/// 内部 weather_code → 中文文本（历史记录里的天气码用）
+String weatherTextForCode(int? code) {
+  final c = code ?? -1;
+  if (c == 0) return '晴';
+  if (c == 1) return '少云';
+  if (c == 2) return '多云';
+  if (c == 3) return '阴';
+  if (c == 45) return '雾';
+  if (c >= 51 && c <= 55) return '毛毛雨';
+  if (c == 61) return '小雨';
+  if (c == 63) return '中雨';
+  if (c == 65) return '大雨';
+  if (c == 66 || c == 67) return '冻雨';
+  if (c == 71 || c == 77) return '小雪';
+  if (c == 73) return '中雪';
+  if (c == 75) return '大雪';
+  if (c == 80 || c == 81) return '阵雨';
+  if (c == 82) return '强阵雨';
+  if (c == 85 || c == 86) return '阵雪';
+  if (c == 95) return '雷阵雨';
+  if (c >= 96) return '强雷阵雨';
+  return '';
+}

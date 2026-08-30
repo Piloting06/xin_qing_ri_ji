@@ -15,8 +15,10 @@ import '../utils/weather_utils.dart';
 import '../utils/geo_utils.dart';
 import '../widgets/pressable_scale.dart';
 import '../widgets/stagger_in.dart';
+import '../constants/mood.dart';
 import '../widgets/weather_summary_card.dart';
 import '../widgets/main_scaffold.dart';
+import '../widgets/mood_card_maker.dart';
 import 'capsule_page.dart';
 import 'weather_detail_page.dart';
 
@@ -48,11 +50,41 @@ class _HomePageState extends State<HomePage> {
   List<Map<String, dynamic>> _cityResults = [];
   bool _loading = true;
   bool _refreshing = false; // 后台刷新中，不影响前台展示
+  Map<String, dynamic>? _memory; // 那年今日
 
   @override
   void initState() {
     super.initState();
     _loadCachedFirst();
+    _loadMemory();
+  }
+
+  /// 那年今日：往年同月同日最近的一条记录
+  Future<void> _loadMemory() async {
+    try {
+      final data = await Api.getAllMoods();
+      final moods = (data['moods'] as List?) ?? const [];
+      final now = DateTime.now();
+      final suffix =
+          '-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+      Map<String, dynamic>? best;
+      var bestYear = 0;
+      for (final m in moods) {
+        if (m is! Map) continue;
+        final date = m['date']?.toString() ?? '';
+        if (!date.endsWith(suffix)) continue;
+        final year = int.tryParse(date.substring(0, 4)) ?? 0;
+        if (year >= now.year) continue;
+        if (year > bestYear) {
+          bestYear = year;
+          best = Map<String, dynamic>.from(m);
+        }
+      }
+      if (!mounted) return;
+      setState(() => _memory = best);
+    } catch (_) {
+      // 未登录/网络失败都静默
+    }
   }
 
   Future<void> _loadCachedFirst() async {
@@ -531,8 +563,108 @@ class _HomePageState extends State<HomePage> {
               ],
               const SizedBox(height: 12),
               StaggerIn(index: 2, child: _buildMoodPaperHero(theme, appState)),
+              if (_memory != null) ...[
+                const SizedBox(height: 12),
+                StaggerIn(index: 3, child: _buildMemoryCard(theme)),
+              ],
               const SizedBox(height: 18),
-              StaggerIn(index: 3, child: _buildTodayDashboard(theme)),
+              StaggerIn(index: 4, child: _buildTodayDashboard(theme)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMemoryCard(ThemeState theme) {
+    final m = _memory!;
+    final date = m['date']?.toString() ?? '';
+    final year = int.tryParse(date.substring(0, 4));
+    final yearsAgo = year == null ? '' : ' · ${DateTime.now().year - year}年前的今天';
+    final score = (m['emotion_type'] as num?)?.toInt() ?? 0;
+    final emoji = moodEmojis[score] ?? '📝';
+    final moodLabel = moodLabels[score] ?? '';
+    final code = int.tryParse(m['weather_code']?.toString() ?? '');
+    final weatherText = weatherTextForCode(code);
+    final notes = (m['notes']?.toString() ?? '').trim();
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () {
+          HapticFeedback.selectionClick();
+          MoodCardMaker.show(
+            context,
+            date: date,
+            moodLabel: moodLabel,
+            moodScore: score,
+            text: notes,
+            tags: const [],
+            weatherText: weatherText,
+            cityName: '那年今日',
+          );
+        },
+        borderRadius: BorderRadius.circular(XqDecorations.radiusCard),
+        child: Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: theme.cardColor,
+            borderRadius: BorderRadius.circular(XqDecorations.radiusCard),
+            border: Border.all(
+              color: theme.gold.withAlpha(70),
+              width: 0.8,
+            ),
+          ),
+          child: Row(
+            children: [
+              Text(emoji, style: const TextStyle(fontSize: 26)),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.history_rounded,
+                          size: 13,
+                          color: theme.gold,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          '那年今日$yearsAgo${weatherText.isNotEmpty ? " · $weatherText" : ""}',
+                          style: TextStyle(
+                            color: theme.gold,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      notes.isEmpty ? '那天你只留下了心情' : notes,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: theme.textPrimary.withAlpha(220),
+                        fontSize: 13,
+                        height: 1.35,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      '点它，把那天做成卡片',
+                      style: TextStyle(
+                        color: theme.textTertiary,
+                        fontSize: 10.5,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(Icons.chevron_right,
+                  size: 18, color: theme.textTertiary),
             ],
           ),
         ),

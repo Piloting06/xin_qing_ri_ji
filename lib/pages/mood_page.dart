@@ -10,6 +10,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/intl.dart';
 import '../api/api_client.dart';
 import '../constants/mood.dart';
+import '../widgets/mood_card/mood_card_data.dart';
 import '../stores/app_state.dart';
 import '../stores/theme_state.dart';
 import '../widgets/mood_card_maker.dart';
@@ -646,6 +647,8 @@ class _MoodPageState extends State<MoodPage>
 
                   // Quick stats row
                   _buildQuickStats(t),
+                  const SizedBox(height: 10),
+                  _buildWeekSummary(t),
                   const SizedBox(height: 12),
 
                   // Day mood summary / empty state
@@ -847,6 +850,72 @@ class _MoodPageState extends State<MoodPage>
   }
 
   // ── Day Card (Timeline / Empty State) ──
+
+  /// 回顾区：本周小结（记录天数 + 最常出现的心情）
+  Widget _buildWeekSummary(ThemeState t) {
+    final stats = computeMoodStats(_allMoods, DateTime.now());
+    final week = stats.week;
+    final recorded = week
+        .where((d) => d.emoji != null && d.emoji!.isNotEmpty)
+        .length;
+    if (recorded == 0) return const SizedBox.shrink();
+
+    final counts = <String, int>{};
+    final colors = <String, int?>{};
+    for (final d in week) {
+      if (d.emoji == null || d.emoji!.isEmpty) continue;
+      counts[d.emoji!] = (counts[d.emoji!] ?? 0) + 1;
+      colors[d.emoji!] = d.color;
+    }
+    String topEmoji = '';
+    var topCount = 0;
+    counts.forEach((emoji, n) {
+      if (n > topCount) {
+        topCount = n;
+        topEmoji = emoji;
+      }
+    });
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: t.cardColor,
+        borderRadius: BorderRadius.circular(XqDecorations.radiusCard),
+        border: Border.all(color: t.borderColor.withAlpha(80)),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.insights_rounded, size: 17, color: t.accentColor),
+          const SizedBox(width: 8),
+          Text(
+            '本周记录 $recorded/7 天',
+            style: TextStyle(
+              color: t.textPrimary,
+              fontSize: 12.5,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          if (topEmoji.isNotEmpty) ...[
+            const SizedBox(width: 10),
+            Container(
+              width: 1,
+              height: 12,
+              color: t.borderColor,
+            ),
+            const SizedBox(width: 10),
+            Text(
+              '最常出现 $topEmoji ×$topCount',
+              style: TextStyle(
+                color: Color(colors[topEmoji] ?? 0xFF8A7350),
+                fontSize: 12.5,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
 
   Widget _buildDayCard(ThemeState t) {
     if (_dayMoods.isEmpty) return _buildEmptyCard(t);

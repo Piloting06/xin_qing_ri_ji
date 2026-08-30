@@ -130,6 +130,7 @@ class _MoodCardMakerState extends State<MoodCardMaker> {
 
   MoodCardData get _cardData => MoodCardData(
         dateText: _formattedDate,
+        rawDate: widget.date,
         moodScore: _activeMoodScore,
         moodEmoji: moodEmojis[_activeMoodScore] ?? '😊',
         moodLabel: moodLabels[_activeMoodScore] ?? widget.moodLabel,

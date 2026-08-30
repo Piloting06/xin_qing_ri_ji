@@ -4,6 +4,7 @@ import '../../constants/mood.dart';
 /// 心情卡片模板共享数据包：模板是无状态的，所有可编辑内容都从这里来
 class MoodCardData {
   final String dateText;
+  final String rawDate; // YYYY-MM-DD 原始日期（节气等按真实日期计算）
   final int moodScore;
   final String moodEmoji;
   final String moodLabel;
@@ -21,6 +22,7 @@ class MoodCardData {
 
   const MoodCardData({
     required this.dateText,
+    this.rawDate = '',
     required this.moodScore,
     required this.moodEmoji,
     required this.moodLabel,

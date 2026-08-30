@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'film_card_template.dart';
 import 'flame_card_template.dart';
 import 'mood_card_data.dart';
+import 'minimal_card_template.dart';
 import 'note_card_template.dart';
+import 'seasonal_card_template.dart';
+import 'sticker_card_template.dart';
 import 'sunny_card_template.dart';
 import 'ticket_card_template.dart';
 import 'weekly_card_template.dart';
@@ -71,6 +74,27 @@ final moodCardTemplates = <MoodCardTemplateSpec>[
     label: 'WEEKLY',
     dotColors: [Color(0xFF8A7350), Color(0xFFE0D5C0), Color(0xFF33291C)],
     buildCard: WeeklyCardTemplate.build,
+  ),
+  MoodCardTemplateSpec(
+    id: 'seasonal',
+    name: '节气',
+    label: 'SEASONAL',
+    dotColors: [Color(0xFF6B9A4B), Color(0xFFB27B2E), Color(0xFF6B80A0)],
+    buildCard: SeasonalCardTemplate.build,
+  ),
+  MoodCardTemplateSpec(
+    id: 'sticker',
+    name: '贴纸',
+    label: 'JOURNAL',
+    dotColors: [Color(0xFFE8B4B8), Color(0xFFA8C6B5), Color(0xFFA5B8D0)],
+    buildCard: StickerCardTemplate.build,
+  ),
+  MoodCardTemplateSpec(
+    id: 'minimal',
+    name: '极简',
+    label: 'MINIMAL',
+    dotColors: [Color(0xFF2B2A27), Color(0xFF9E9B94), Color(0xFFFEFDFB)],
+    buildCard: MinimalCardTemplate.build,
   ),
 ];
 

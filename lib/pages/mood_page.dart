@@ -459,18 +459,6 @@ class _MoodPageState extends State<MoodPage>
                   ),
                   const SizedBox(height: 12),
 
-                  // 7-day mood streak strip
-                  _buildMoodStreak(t, appState),
-                  const SizedBox(height: 12),
-
-                  // Quick stats row
-                  _buildQuickStats(t),
-                  const SizedBox(height: 12),
-
-                  // Day mood summary / empty state
-                  _buildDayCard(t),
-                  const SizedBox(height: 16),
-
                   // 4-column emotion pills
                   GridView.count(
                     key: _emotionsKey,
@@ -640,6 +628,28 @@ class _MoodPageState extends State<MoodPage>
 
                   // Save bar
                   _buildInlineSaveBar(t),
+                  const SizedBox(height: 24),
+
+                  // ── 回顾区 ──
+                  Text(
+                    '最近的轨迹',
+                    style: TextStyle(
+                      color: t.textPrimary,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  // 7-day mood streak strip
+                  _buildMoodStreak(t, appState),
+                  const SizedBox(height: 12),
+
+                  // Quick stats row
+                  _buildQuickStats(t),
+                  const SizedBox(height: 12),
+
+                  // Day mood summary / empty state
+                  _buildDayCard(t),
                   const SizedBox(height: 16),
 
                   // Treehole link

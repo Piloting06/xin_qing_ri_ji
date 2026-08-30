@@ -25,7 +25,7 @@ class TicketCardTemplate {
       child: ClipRRect(
         borderRadius: BorderRadius.circular(br),
         child: SizedBox(
-          height: 216,
+          height: data.height,
           child: Row(
             children: [
               Expanded(

@@ -48,7 +48,7 @@ class FlameCardTemplate {
               ),
             ),
             SizedBox(
-              height: 216,
+              height: data.height,
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(18, 12, 18, 10),
                 child: Column(

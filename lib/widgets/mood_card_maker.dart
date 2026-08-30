@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math' as math;
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -94,6 +95,8 @@ class _MoodCardMakerState extends State<MoodCardMaker> {
   int _templateIndex = 0;
   bool _shareWithQr = false;
   String? _weatherOverride; // null=跟随真实天气
+  bool _squareRatio = false; // false=竖版 true=1:1方图
+  double _bodyScale = 1.0; // 正文字号 1.0 标准 / 0.9 小
   int _streak = 0;
   List<MoodDay> _week = const [];
   late String _bodyText = widget.text;
@@ -128,7 +131,7 @@ class _MoodCardMakerState extends State<MoodCardMaker> {
 
   String? get _effectiveWeather => _weatherOverride ?? widget.weatherText;
 
-  MoodCardData get _cardData => MoodCardData(
+  MoodCardData _cardDataFor(double height) => MoodCardData(
         dateText: _formattedDate,
         rawDate: widget.date,
         moodScore: _activeMoodScore,
@@ -145,6 +148,8 @@ class _MoodCardMakerState extends State<MoodCardMaker> {
         square: _squareCard,
         streakDays: _streak,
         week: _week,
+        height: height,
+        bodyScale: _bodyScale,
       );
 
   String _moodEnglishFor(int score) => switch (score) {
@@ -438,11 +443,67 @@ class _MoodCardMakerState extends State<MoodCardMaker> {
     );
   }
 
+  Widget _buildOptionPill(
+    ThemeState theme,
+    String label,
+    bool isActive,
+    VoidCallback onTap,
+  ) {
+    return GestureDetector(
+      onTap: () {
+        HapticFeedback.selectionClick();
+        onTap();
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeOutCubic,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
+        decoration: BoxDecoration(
+          color: isActive ? _accentColor.withAlpha(22) : Colors.transparent,
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(
+            color: isActive ? _accentColor.withAlpha(120) : theme.borderColor,
+            width: isActive ? 1.2 : 0.8,
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
+            color: isActive ? _accentColor : theme.textSecondary,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRatioToggle(ThemeState theme) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        _buildOptionPill(
+            theme, '竖版', !_squareRatio, () => setState(() => _squareRatio = false)),
+        const SizedBox(width: 8),
+        _buildOptionPill(
+            theme, '方图', _squareRatio, () => setState(() => _squareRatio = true)),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final sheetTheme = widget.theme;
     final screenHeight = MediaQuery.of(context).size.height;
-    final sheetHeight = _editMode ? screenHeight * 0.85 : screenHeight * 0.72;
+    final screenWidth = MediaQuery.of(context).size.width;
+    // 方图让预览区变高，弹层随之加高并封顶
+    final cardHeight =
+        _squareRatio ? math.min(screenWidth - 32, 420.0) : 216.0;
+    final sheetHeight = math.min(
+      (_editMode ? 0.85 : 0.72) * screenHeight +
+          (_squareRatio ? cardHeight - 216.0 : 0.0),
+      screenHeight * 0.94,
+    );
     final d = DateTime.tryParse(widget.date) ?? DateTime.now();
     const enMonths = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
@@ -525,6 +586,8 @@ class _MoodCardMakerState extends State<MoodCardMaker> {
             if (!_editMode) ...[
               const SizedBox(height: 10),
               _buildStyleToggle(sheetTheme),
+              const SizedBox(height: 8),
+              _buildRatioToggle(sheetTheme),
             ],
 
             // Edit panel (scrollable when expanded)
@@ -535,6 +598,8 @@ class _MoodCardMakerState extends State<MoodCardMaker> {
                   child: Column(
                     children: [
                       _buildStyleToggle(sheetTheme),
+                      const SizedBox(height: 8),
+                      _buildRatioToggle(sheetTheme),
                       if (_spec.id == 'sunny') ...[
                         const SizedBox(height: 10),
                         _buildEditRow('天气图案', [
@@ -610,6 +675,13 @@ class _MoodCardMakerState extends State<MoodCardMaker> {
                           ),
                         ),
                       ),
+                      const SizedBox(height: 10),
+                      _buildEditRow('字号', [
+                        _buildOptionPill(sheetTheme, '标准', _bodyScale == 1.0,
+                            () => setState(() => _bodyScale = 1.0)),
+                        _buildOptionPill(sheetTheme, '小', _bodyScale == 0.9,
+                            () => setState(() => _bodyScale = 0.9)),
+                      ]),
                       const SizedBox(height: 10),
                       // Emoji picker (mutually exclusive with tag picker)
                       GestureDetector(
@@ -733,7 +805,7 @@ class _MoodCardMakerState extends State<MoodCardMaker> {
 
             // Card preview (fixed height, swipeable templates)
             SizedBox(
-              height: 216,
+              height: cardHeight,
               child: PageView.builder(
                 controller: _pageController,
                 itemCount: moodCardTemplates.length,
@@ -741,7 +813,7 @@ class _MoodCardMakerState extends State<MoodCardMaker> {
                 itemBuilder: (context, i) {
                   final card = RepaintBoundary(
                     key: i == _templateIndex ? _repaintKey : GlobalKey(),
-                    child: moodCardTemplates[i].buildCard(_cardData),
+                    child: moodCardTemplates[i].buildCard(_cardDataFor(cardHeight)),
                   );
                   if (i != _templateIndex || !_shareWithQr) {
                     return Padding(

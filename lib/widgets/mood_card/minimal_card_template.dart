@@ -24,7 +24,7 @@ class MinimalCardTemplate {
       child: ClipRRect(
         borderRadius: BorderRadius.circular(br),
         child: SizedBox(
-          height: 216,
+          height: data.height,
           child: Padding(
             padding: const EdgeInsets.fromLTRB(24, 14, 24, 12),
             child: Column(
@@ -71,7 +71,7 @@ class MinimalCardTemplate {
                         textAlign: TextAlign.center,
                         style: XqTypography.handwrittenBody.copyWith(
                           color: _ink,
-                          fontSize: 15,
+                          fontSize: 15 * data.bodyScale,
                           height: 1.6,
                         ),
                         maxLines: 3,

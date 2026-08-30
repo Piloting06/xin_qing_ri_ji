@@ -55,7 +55,7 @@ class SeasonalCardTemplate {
         child: Stack(
           children: [
             SizedBox(
-              height: 216,
+              height: data.height,
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
                 child: Column(
@@ -129,7 +129,7 @@ class SeasonalCardTemplate {
                             color: data.bodyText.isNotEmpty
                                 ? p.text
                                 : p.text.withAlpha(60),
-                            fontSize: data.bodyText.isNotEmpty ? 14 : 13.5,
+                            fontSize: (data.bodyText.isNotEmpty ? 14.0 : 13.5) * data.bodyScale,
                             height: 1.35,
                           ),
                           maxLines: 3,

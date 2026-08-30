@@ -19,6 +19,8 @@ class MoodCardData {
   final bool square; // false=温润圆角 true=方寸直角
   final int streakDays; // 连续记录天数（含今天或昨天）
   final List<MoodDay> week; // 最近7天（今天在前）
+  final double height; // 卡片高度：216=竖版，约等于卡宽=方图
+  final double bodyScale; // 正文字号缩放（1.0 标准 / 0.9 小字）
 
   const MoodCardData({
     required this.dateText,
@@ -37,6 +39,8 @@ class MoodCardData {
     required this.square,
     this.streakDays = 0,
     this.week = const [],
+    this.height = 216,
+    this.bodyScale = 1.0,
   });
 }
 

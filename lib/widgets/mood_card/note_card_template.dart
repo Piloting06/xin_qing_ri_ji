@@ -50,7 +50,7 @@ class NoteCardTemplate {
         child: Stack(
           children: [
             SizedBox(
-              height: 216,
+              height: data.height,
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(16, 10, 16, 8),
                 child: Column(
@@ -157,7 +157,7 @@ class NoteCardTemplate {
                                 color: data.bodyText.isNotEmpty
                                     ? textColor
                                     : textColor.withAlpha(60),
-                                fontSize: data.bodyText.isNotEmpty ? 15 : 14,
+                                fontSize: (data.bodyText.isNotEmpty ? 15.0 : 14.0) * data.bodyScale,
                               ),
                               maxLines: 4,
                               overflow: TextOverflow.ellipsis,

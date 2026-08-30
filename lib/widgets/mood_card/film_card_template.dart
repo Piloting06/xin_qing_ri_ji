@@ -31,7 +31,7 @@ class FilmCardTemplate {
               child: IgnorePointer(child: CustomPaint(painter: _FilmGrainPainter())),
             ),
             SizedBox(
-              height: 216,
+              height: data.height,
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
                 child: Column(
@@ -88,9 +88,11 @@ class FilmCardTemplate {
                                       color: data.bodyText.isNotEmpty
                                           ? _cream
                                           : _cream.withAlpha(60),
-                                      fontSize: data.bodyText.isNotEmpty
-                                          ? 14.5
-                                          : 14,
+                                      fontSize:
+                                          (data.bodyText.isNotEmpty
+                                                  ? 14.5
+                                                  : 14.0) *
+                                              data.bodyScale,
                                       height: 1.4,
                                     ),
                                     maxLines: 4,

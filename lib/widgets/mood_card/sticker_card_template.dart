@@ -63,7 +63,7 @@ class StickerCardTemplate {
               ),
             ),
             SizedBox(
-              height: 216,
+              height: data.height,
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(18, 26, 18, 10),
                 child: Column(
@@ -114,7 +114,7 @@ class StickerCardTemplate {
                           color: data.bodyText.isNotEmpty
                               ? _ink
                               : _ink.withAlpha(60),
-                          fontSize: data.bodyText.isNotEmpty ? 14 : 13.5,
+                          fontSize: (data.bodyText.isNotEmpty ? 14.0 : 13.5) * data.bodyScale,
                           height: 1.4,
                         ),
                         maxLines: 4,

@@ -47,7 +47,7 @@ class WeeklyCardTemplate {
       child: ClipRRect(
         borderRadius: BorderRadius.circular(br),
         child: SizedBox(
-          height: 216,
+          height: data.height,
           child: Padding(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 10),
             child: Column(

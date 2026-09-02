@@ -123,6 +123,9 @@ class _CityMapPageState extends State<CityMapPage>
         child: RefreshIndicator(
           onRefresh: () async {
             await _map.refresh();
+            final f = _loadMoodboard();
+            setState(() => _moodboard = f);
+            await f;
           },
           child: CustomScrollView(
             slivers: [

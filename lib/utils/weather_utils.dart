@@ -125,6 +125,6 @@ String weatherTextForCode(int? code) {
   if (c == 82) return '强阵雨';
   if (c == 85 || c == 86) return '阵雪';
   if (c == 95) return '雷阵雨';
-  if (c >= 96) return '强雷阵雨';
+  if (c == 96 || c == 99) return '强雷阵雨';
   return '';
 }
